@@ -133,8 +133,8 @@ jQuery(function() {
           message: "edit_image",
           html: html
         }));
-        update_window_dimensions();
         jQuery('#cloudinary-library').show();
+        update_window_dimensions();
       });
     } else {
       setTimeout(register_edit_image, 10);
