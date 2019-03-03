@@ -685,7 +685,8 @@ class CloudinaryPlugin
         $attachment = get_post($attachment_id);
 
         if (!empty($md)) {
-            $full_path = wp_upload_dir()['basedir'].DIRECTORY_SEPARATOR.$md['file'];
+            $wp_upload_dir = wp_upload_dir();
+            $full_path     = $wp_upload_dir['basedir'] . DIRECTORY_SEPARATOR . $md['file'];
         } else {
             $full_path = $attachment->guid;
             if (empty($full_path)) {
