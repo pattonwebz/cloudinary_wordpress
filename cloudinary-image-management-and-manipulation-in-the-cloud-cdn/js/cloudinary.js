@@ -77,7 +77,7 @@ jQuery(function() {
   } 
 
   function update_window_dimensions() {  	
-    if ($('#cloudinary-library').is(':visible')) {
+    if (jQuery('#cloudinary-library').is(':visible')) {
       var footer = jQuery('#footer').size() > 0 ? jQuery('#footer') : jQuery('#wpfooter');
       var body_height = jQuery('body').height() - jQuery(footer).outerHeight(true);
       jQuery('#wpcontent').css('margin-left', '156px');
