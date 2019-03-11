@@ -161,6 +161,9 @@ N/A
 
 == Changelog ==
 
+= 1.1.12 (11 Mar 2019) =
+  * Fix jQuery exception
+
 = 1.1.11 (3 Mar 2019) =
   * Add CLI command for syncing media
   * Fix `update_window_dimensions` to fire only when library is visible
