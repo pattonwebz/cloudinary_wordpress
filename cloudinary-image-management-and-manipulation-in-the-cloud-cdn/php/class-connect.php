@@ -198,7 +198,7 @@ class Connect implements Config, Setup, Notice {
 		}
 
 		$this->config_from_url( $url );
-		$test = new Api( $this );
+		$test = new Connect\Api( $this, $this->plugin->version );
 		$test = $test->ping();
 		if ( is_wp_error( $test ) ) {
 			$result['type']    = 'connection_error';
