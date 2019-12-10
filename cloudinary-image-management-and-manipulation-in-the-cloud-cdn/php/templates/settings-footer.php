@@ -5,7 +5,7 @@
  * @package Cloudinary
  */
 
-$tab               = $this->get_tab(); // WPCS: override ok. (false positive).
+$tab               = $this->get_tab(); // phpcs:ignore
 $save_button_label = ! empty( $tab['save_button_label'] ) ? $tab['save_button_label'] : $this->ui['save_button_label'];
 ?>
 	<?php if ( ! empty( $tab ) && empty( $tab['hide_button'] ) ) : ?>

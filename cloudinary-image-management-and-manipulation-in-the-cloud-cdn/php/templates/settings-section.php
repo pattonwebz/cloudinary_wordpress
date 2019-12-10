@@ -5,7 +5,7 @@
  * @package Cloudinary
  */
 
-$tab     = $this->get_tab(); // WPCS: override ok. (false positive).
+$tab     = $this->get_tab(); // phpcs:ignore
 $section = $this->setting_slug();
 $classes = array(
 	'settings-tab-section',

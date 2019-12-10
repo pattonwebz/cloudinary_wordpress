@@ -189,7 +189,7 @@ class Upload_Queue {
 			'post_status'         => 'inherit',
 			'posts_per_page'      => 1000, // phpcs:ignore
 			'fields'              => 'ids',
-			'meta_query'          => array( // WPCS: slow query ok. Used only within an initial bulk sync.
+			'meta_query'          => array( // phpcs:ignore
 				'relation' => 'AND',
 				array(
 					'key'     => Sync::META_KEYS['sync_error'],

@@ -89,11 +89,21 @@ const Terms_Order = {
 		} );
 
 	},
+	_createItem: function( id, name ) {
+		let li = jQuery( '<li/>' ),
+			input = jQuery( '<input/>' ),
+			icon = jQuery( '<span/>' );
+
+		li.addClass( 'cld-tax-order-list-item' ).attr( 'data-item', id );
+		input.addClass( 'cld-tax-order-list-item-input' ).attr( 'type', 'hidden' ).attr( 'name', 'cld_tax_order[]' ).val( id );
+		icon.addClass( 'dashicons dashicons-menu cld-tax-order-list-item-handle' );
+
+		li.append( icon ).append( name ).append( input ); // phpcs:ignore WordPressVIPMinimum.JS.HTMLExecutingFunctions.append
+		return li;
+	},
 	_pushItem: function( id, text ) {
-		if ( !this.template ) {
-			this.template = jQuery( '#templ-term-item' ).html();
-		}
-		this.tags.append( this.template.replace( /{id}/g, id ).replace( /{name}/g, text ) );
+		let item = this._createItem( id, text );
+		this.tags.append( item ); // phpcs:ignore WordPressVIPMinimum.JS.HTMLExecutingFunctions.append
 	},
 	_sortable: function() {
 
@@ -139,9 +149,9 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 		class customHandler extends OriginalComponent {
 
 			makeItem( item ) {
-				let row = this.makeElement( item, this.props.slug );
+				let row = this.makeElement( item );
 				let box = jQuery( '#cld-tax-items' );
-				box.append( row );
+				box.append( row ); // phpcs:ignore WordPressVIPMinimum.JS.HTMLExecutingFunctions.append
 			}
 
 			findOrCreateTerm( termName ) {
@@ -168,7 +178,7 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 			}
 
 			pickItem( event ) {
-				if( typeof event === 'object' ){
+				if ( typeof event === 'object' ) {
 					if ( event.target ) {
 						for (let p in this.state.availableTerms) {
 							if ( this.state.availableTerms[ p ].id === parseInt( event.target.value ) ) {
@@ -214,9 +224,17 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 
 			}
 
-			makeElement( item, slug ) {
-				let html = jQuery( '#templ-term-item' ).html();
-				return html.replace( /{id}/g, item.id ).replace( /{name}/g, item.name );
+			makeElement( item ) {
+				let li = jQuery( '<li/>' ),
+					input = jQuery( '<input/>' ),
+					icon = jQuery( '<span/>' );
+
+				li.addClass( 'cld-tax-order-list-item' ).attr( 'data-item', item.id );
+				input.addClass( 'cld-tax-order-list-item-input' ).attr( 'type', 'hidden' ).attr( 'name', 'cld_tax_order[]' ).val( item.id );
+				icon.addClass( 'dashicons dashicons-menu cld-tax-order-list-item-handle' );
+
+				li.append( icon ).append( item.name ).append( input ); // phpcs:ignore WordPressVIPMinimum.JS.HTMLExecutingFunctions.append
+				return li;
 			}
 		}
 
