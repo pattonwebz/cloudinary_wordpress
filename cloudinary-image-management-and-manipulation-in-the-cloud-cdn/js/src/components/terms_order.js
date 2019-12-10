@@ -168,7 +168,16 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 			}
 
 			pickItem( event ) {
-				if ( typeof event === 'number' ) {
+				if( typeof event === 'object' ){
+					if ( event.target ) {
+						for (let p in this.state.availableTerms) {
+							if ( this.state.availableTerms[ p ].id === parseInt( event.target.value ) ) {
+								return this.state.availableTerms[ p ];
+							}
+						}
+					}
+				}
+				else if ( typeof event === 'number' ) {
 					for (let p in this.state.availableTerms) {
 						if ( this.state.availableTerms[ p ].id === event ) {
 							return this.state.availableTerms[ p ];
