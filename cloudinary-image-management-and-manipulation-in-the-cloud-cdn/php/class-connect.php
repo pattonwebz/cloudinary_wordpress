@@ -118,7 +118,7 @@ class Connect implements Config, Setup, Notice {
 	 */
 	public function verify_connection( $data ) {
 		if ( empty( $data['cloudinary_url'] ) ) {
-			delete_site_option( 'cloudinary_connection_signature' );
+			delete_option( 'cloudinary_connection_signature' );
 			add_settings_error( 'cloudinary_connect', 'connection_error', __( 'Connection to Cloudinary has been removed.', 'cloudinary' ), 'notice-warning' );
 
 			return $data;
@@ -318,6 +318,7 @@ class Connect implements Config, Setup, Notice {
 					update_option( 'cloudinary_connect', $data );
 					update_option( 'cloudinary_connection_signature', $signature );
 					update_option( 'cloudinary_version', $this->plugin->version );
+					delete_option( 'cloudinary_settings_cache' ); // remove the cache.
 					$this->plugin->config['settings']['connect'] = $data; // Set the connection url for this round.
 				}
 			}

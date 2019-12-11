@@ -23,7 +23,7 @@ $struct = array(
 			'label'    => null,
 			'type'     => 'custom',
 			'callback' => function () {
-				if ( empty( $this->plugin->config['connect'] ) ) { // phpcs:ignore
+				if ( empty( Cloudinary\get_plugin_instance()->config['connect'] ) ) {
 					esc_html_e( "Don't have an account?", 'cloudinary' ); ?>
 					<a href="https://cloudinary.com/users/register/free" target="_blank" class="button sign-up"><?php esc_html_e( 'Sign up Free', 'cloudinary' ); ?></a>
 					<?php
