@@ -82,9 +82,10 @@ class Global_Transformations {
 	 * Add fields to Add taxonomy term screen.
 	 */
 	public function add_taxonomy_fields() {
-
-		include $this->media->plugin->template_path . 'taxonomy-transformation-fields.php';
-
+		$template_file = $this->media->plugin->template_path . 'taxonomy-transformation-fields.php';
+		if ( file_exists( $template_file ) ) {
+			include $template_file; // phpcs:ignore
+		}
 	}
 
 	/**
@@ -93,9 +94,10 @@ class Global_Transformations {
 	 * @param \WP_Term $term The tern being edited.
 	 */
 	public function edit_taxonomy_fields( $term ) {
-
-		include $this->media->plugin->template_path . 'taxonomy-term-transformation-fields.php';
-
+		$template_file = $this->media->plugin->template_path . 'taxonomy-term-transformation-fields.php';
+		if ( file_exists( $template_file ) ) {
+			include $template_file; // phpcs:ignore
+		}
 	}
 
 	/**
@@ -166,7 +168,7 @@ class Global_Transformations {
 				// check screen context.
 				switch ( $screen->base ) {
 					case 'term':
-						$term_id         = filter_input( INPUT_GET, 'tag_ID' );
+						$term_id         = filter_input( INPUT_GET, 'tag_ID', FILTER_DEFAULT );
 						$transformations = $this->get_term_transformations( $term_id, $type );
 						break;
 					case 'toplevel_page_cloudinary':
@@ -433,20 +435,6 @@ class Global_Transformations {
 	}
 
 	/**
-	 * Output post editor ordering templates.
-	 */
-	public function post_footer_templates() {
-		$taxonomies = get_object_taxonomies( get_post_type() );
-		if ( ! empty( $taxonomies ) ) {
-			?>
-			<script type="text/html" id="templ-term-item">
-				<?php echo $this->make_term_sort_item( '{id}', '{name}' ); // phpcs:ignore ?>
-			</script>
-			<?php
-		}
-	}
-
-	/**
 	 * Setup hooks for the filters.
 	 */
 	public function setup_hooks() {
@@ -465,7 +453,5 @@ class Global_Transformations {
 		// Add ordering metaboxes.
 		add_action( 'add_meta_boxes', array( $this, 'taxonomy_ordering' ), 10, 2 );
 		add_action( 'save_post', array( $this, 'save_taxonomy_ordering' ), 10, 4 );
-		add_action( 'admin_footer-post.php', array( $this, 'post_footer_templates' ) );
-		add_action( 'admin_footer-post-new.php', array( $this, 'post_footer_templates' ) );
 	}
 }

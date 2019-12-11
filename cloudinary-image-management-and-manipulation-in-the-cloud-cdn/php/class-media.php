@@ -224,7 +224,7 @@ class Media implements Setup {
 			'post_type'   => 'attachment',
 			'post_status' => 'inherit',
 			'fields'      => 'ids',
-			'meta_query'  => $meta_query, // phpcs: ignore.
+			'meta_query'  => $meta_query, // phpcs:ignore
 		);
 
 		$query         = new \WP_Query( $query_args );
@@ -396,7 +396,7 @@ class Media implements Setup {
 			$transformations,
 			function ( $part ) {
 				$keys   = array_keys( $part );
-				$return = false;
+				$return = false; // phpcs:ignore
 				foreach ( $keys as $key ) {
 					if ( in_array( $key, array( 'overlay', 'underlay' ), true ) ) {
 						return false; // end immediately since overlay and underlay has internal crops.

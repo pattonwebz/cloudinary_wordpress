@@ -516,7 +516,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		foreach ( $atts as $key => $value ) {
 			$out[] = esc_attr( $key ) . '="' . esc_attr( $value ) . '"';
 		}
-		echo implode( ' ', $out ); // phpcs:XSS ok.
+		echo implode( ' ', $out ); // phpcs:ignore
 
 	}
 
@@ -816,7 +816,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		}
 		$tab = filter_input( INPUT_GET, 'tab', FILTER_SANITIZE_STRING );
 		if ( ! $this->validate_tab( $tab ) ) { // Tab is invalid or not set, check if in a POST.
-			$tab = filter_input( INPUT_POST, 'tab' );
+			$tab = filter_input( INPUT_POST, 'tab', FILTER_DEFAULT );
 			if ( ! $this->validate_tab( $tab ) ) { // Tab is invalid or not set, load the default/first tab.
 				$tab = array_keys( $page['tabs'] );
 				$tab = array_shift( $tab );
