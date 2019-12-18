@@ -52,7 +52,7 @@ class Video {
 	 *
 	 * @var string
 	 */
-	const PLAYER_VER = '1.1.1';
+	const PLAYER_VER = '1.3.3';
 
 	/**
 	 * Cloudinary Core Version.
