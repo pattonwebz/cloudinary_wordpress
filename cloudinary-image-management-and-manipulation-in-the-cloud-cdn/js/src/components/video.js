@@ -2,7 +2,6 @@
 
 import { __ } from '@wordpress/i18n';
 import { ToggleControl, PanelBody } from '@wordpress/components';
-import { InspectorControls } from '@wordpress/block-editor';
 import { cloneElement, createElement } from '@wordpress/element';
 
 const Video = {
@@ -108,7 +107,8 @@ const cldImageInspectorControls = ( props ) => {
 	if ( !isSelected || !id ) {
 		return null;
 	}
-	let media = wp.data.select( 'core' ).getMedia( id );
+  let media = wp.data.select( 'core' ).getMedia( id );
+  const { InspectorControls } = wp.editor;
 
 	if ( media && media.transformations ) {
 		setAttributes( {transformations: true} );
