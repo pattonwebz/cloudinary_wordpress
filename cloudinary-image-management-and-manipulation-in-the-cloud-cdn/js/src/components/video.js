@@ -2,7 +2,9 @@
 
 import { __ } from '@wordpress/i18n';
 import { ToggleControl, PanelBody } from '@wordpress/components';
-import { cloneElement, createElement } from '@wordpress/element';
+import { cloneElement } from '@wordpress/element';
+
+const { withSelect } = wp.data;
 
 const Video = {
 	_init: function() {
@@ -82,31 +84,7 @@ const TransformationsToggle = ( props ) => {
 	);
 };
 
-const cldFilterBlocksEdit = ( BlockEdit ) => {
-
-	const EnhancedBlockEdit = function( props ) {
-		const { name } = props;
-    let inspectorControls = null;
-    
-		if ( 'core/image' === name || 'core/video' === name ) {
-			inspectorControls = cldImageInspectorControls( props );
-    }
-    
-		return (
-			<>
-				{inspectorControls}
-				<BlockEdit {...props} />
-			</>
-		);
-
-	};
-
-	return EnhancedBlockEdit;
-};
-
-const { withSelect } = wp.data;
-
-let cldImageInspectorControls = ( props ) => {
+let ImageInspectorControls = ( props ) => {
 	const { setAttributes, media } = props;
   const { InspectorControls } = wp.editor;
 
@@ -121,10 +99,32 @@ let cldImageInspectorControls = ( props ) => {
 	);
 };
 
-cldImageInspectorControls = withSelect( ( select, ownProps ) => ( {
+ImageInspectorControls = withSelect( ( select, ownProps ) => ( {
   ...ownProps,
   media: ownProps.attributes.id ? select( 'core' ).getMedia( ownProps.attributes.id ) : null
-} ))( cldImageInspectorControls )
+} ))( ImageInspectorControls )
+
+const cldFilterBlocksEdit = ( BlockEdit ) => {
+
+	const EnhancedBlockEdit = function( props ) {
+		const { name } = props;
+    let inspectorControls = null;
+    
+		if ( 'core/image' === name || 'core/video' === name ) {
+      inspectorControls = <ImageInspectorControls {...props} />;
+    }
+    
+		return (
+			<>
+				{inspectorControls}
+				<BlockEdit {...props} />
+			</>
+		);
+
+	};
+
+	return EnhancedBlockEdit;
+};
 
 wp.hooks.addFilter( 'editor.BlockEdit', 'cloudinary/filterEdit', cldFilterBlocksEdit, 20 );
 
