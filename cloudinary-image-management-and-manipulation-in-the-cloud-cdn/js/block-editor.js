@@ -122,12 +122,15 @@ var cloudinaryBlocks = {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @wordpress/element */ "@wordpress/element");
-/* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_wordpress_element__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @wordpress/i18n */ "@wordpress/i18n");
-/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @wordpress/components */ "@wordpress/components");
-/* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var _babel_runtime_helpers_objectSpread__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/objectSpread */ "./node_modules/@babel/runtime/helpers/objectSpread.js");
+/* harmony import */ var _babel_runtime_helpers_objectSpread__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_helpers_objectSpread__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @wordpress/element */ "@wordpress/element");
+/* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_wordpress_element__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @wordpress/i18n */ "@wordpress/i18n");
+/* harmony import */ var _wordpress_i18n__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @wordpress/components */ "@wordpress/components");
+/* harmony import */ var _wordpress_components__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__);
+
 
 
 /* global window wp */
@@ -198,10 +201,10 @@ var TransformationsToggle = function TransformationsToggle(props) {
     return null;
   }
 
-  return Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_0__["createElement"])(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__["PanelBody"], {
-    title: Object(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__["__"])('Transformations', 'cloudinary')
-  }, Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_0__["createElement"])(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__["ToggleControl"], {
-    label: Object(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_1__["__"])('Overwrite Transformations', 'cloudinary'),
+  return Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_1__["createElement"])(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__["PanelBody"], {
+    title: Object(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__["__"])('Transformations', 'cloudinary')
+  }, Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_1__["createElement"])(_wordpress_components__WEBPACK_IMPORTED_MODULE_3__["ToggleControl"], {
+    label: Object(_wordpress_i18n__WEBPACK_IMPORTED_MODULE_2__["__"])('Overwrite Transformations', 'cloudinary'),
     checked: overwrite_transformations,
     onChange: function onChange(value) {
       setAttributes({
@@ -214,28 +217,23 @@ var TransformationsToggle = function TransformationsToggle(props) {
 var cldFilterBlocksEdit = function cldFilterBlocksEdit(BlockEdit) {
   var EnhancedBlockEdit = function EnhancedBlockEdit(props) {
     var name = props.name;
-    var inspectorControls;
+    var inspectorControls = null;
 
     if ('core/image' === name || 'core/video' === name) {
       inspectorControls = cldImageInspectorControls(props);
     }
 
-    return Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_0__["createElement"])(_wordpress_element__WEBPACK_IMPORTED_MODULE_0__["Fragment"], null, inspectorControls, Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_0__["createElement"])(BlockEdit, props));
+    return Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_1__["createElement"])(_wordpress_element__WEBPACK_IMPORTED_MODULE_1__["Fragment"], null, inspectorControls, Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_1__["createElement"])(BlockEdit, props));
   };
 
   return EnhancedBlockEdit;
 };
 
+var withSelect = wp.data.withSelect;
+
 var cldImageInspectorControls = function cldImageInspectorControls(props) {
-  var id = props.attributes.id,
-      setAttributes = props.setAttributes,
-      isSelected = props.isSelected;
-
-  if (!isSelected || !id) {
-    return null;
-  }
-
-  var media = wp.data.select('core').getMedia(id);
+  var setAttributes = props.setAttributes,
+      media = props.media;
   var InspectorControls = wp.editor.InspectorControls;
 
   if (media && media.transformations) {
@@ -244,32 +242,37 @@ var cldImageInspectorControls = function cldImageInspectorControls(props) {
     });
   }
 
-  return Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_0__["createElement"])(InspectorControls, null, Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_0__["createElement"])(TransformationsToggle, props));
+  return Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_1__["createElement"])(InspectorControls, null, Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_1__["createElement"])(TransformationsToggle, props));
 };
 
+cldImageInspectorControls = withSelect(function (select, ownProps) {
+  return _babel_runtime_helpers_objectSpread__WEBPACK_IMPORTED_MODULE_0___default()({}, ownProps, {
+    media: ownProps.attributes.id ? select('core').getMedia(ownProps.attributes.id) : null
+  });
+})(cldImageInspectorControls);
 wp.hooks.addFilter('editor.BlockEdit', 'cloudinary/filterEdit', cldFilterBlocksEdit, 20);
 
 var cldfilterBlocksSave = function cldfilterBlocksSave(element, blockType, attributes) {
   if ('core/image' === blockType.name && attributes.overwrite_transformations) {
-    var children = Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_0__["cloneElement"])(element.props.children);
+    var children = Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_1__["cloneElement"])(element.props.children);
     var classname = children.props.children[0].props.className ? children.props.children[0].props.className : '';
-    var child = Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_0__["cloneElement"])(children.props.children[0], {
+    var child = Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_1__["cloneElement"])(children.props.children[0], {
       className: classname + ' cld-overwrite'
     });
-    var neChildren = Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_0__["cloneElement"])(children, {
+    var neChildren = Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_1__["cloneElement"])(children, {
       children: [child, false]
     });
-    return Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_0__["cloneElement"])(element, {
+    return Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_1__["cloneElement"])(element, {
       children: neChildren
     });
   }
 
   if ('core/video' === blockType.name && attributes.overwrite_transformations) {
-    var _children = Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_0__["cloneElement"])(element.props.children[0], {
+    var _children = Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_1__["cloneElement"])(element.props.children[0], {
       className: ' cld-overwrite'
     });
 
-    return Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_0__["cloneElement"])(element, {
+    return Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_1__["cloneElement"])(element, {
       children: _children
     });
   }
@@ -278,6 +281,64 @@ var cldfilterBlocksSave = function cldfilterBlocksSave(element, blockType, attri
 };
 
 wp.hooks.addFilter('blocks.getSaveElement', 'cloudinary/filterSave', cldfilterBlocksSave);
+
+/***/ }),
+
+/***/ "./node_modules/@babel/runtime/helpers/defineProperty.js":
+/*!***************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/defineProperty.js ***!
+  \***************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+function _defineProperty(obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+}
+
+module.exports = _defineProperty;
+
+/***/ }),
+
+/***/ "./node_modules/@babel/runtime/helpers/objectSpread.js":
+/*!*************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/objectSpread.js ***!
+  \*************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var defineProperty = __webpack_require__(/*! ./defineProperty */ "./node_modules/@babel/runtime/helpers/defineProperty.js");
+
+function _objectSpread(target) {
+  for (var i = 1; i < arguments.length; i++) {
+    var source = arguments[i] != null ? Object(arguments[i]) : {};
+    var ownKeys = Object.keys(source);
+
+    if (typeof Object.getOwnPropertySymbols === 'function') {
+      ownKeys = ownKeys.concat(Object.getOwnPropertySymbols(source).filter(function (sym) {
+        return Object.getOwnPropertyDescriptor(source, sym).enumerable;
+      }));
+    }
+
+    ownKeys.forEach(function (key) {
+      defineProperty(target, key, source[key]);
+    });
+  }
+
+  return target;
+}
+
+module.exports = _objectSpread;
 
 /***/ }),
 

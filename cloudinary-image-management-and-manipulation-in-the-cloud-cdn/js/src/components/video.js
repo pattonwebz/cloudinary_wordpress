@@ -63,18 +63,19 @@ wp.hooks.addFilter( 'blocks.registerBlockType', 'cloudinary/addAttributes', cldA
  * @return {Component} Element.
  */
 const TransformationsToggle = ( props ) => {
-
-	const {attributes: {overwrite_transformations, transformations}, setAttributes} = props;
-	if ( !transformations ) {
+  const { attributes: { overwrite_transformations, transformations }, setAttributes } = props;
+  
+	if ( ! transformations ) {
 		return null;
-	}
+  }
+  
 	return (
 		<PanelBody title={__( 'Transformations', 'cloudinary' )}>
 			<ToggleControl
 				label={__( 'Overwrite Transformations', 'cloudinary' )}
 				checked={overwrite_transformations}
 				onChange={( value ) => {
-					setAttributes( {overwrite_transformations: value} );
+					setAttributes( { overwrite_transformations: value } );
 				}}
 			/>
 		</PanelBody>
@@ -84,12 +85,13 @@ const TransformationsToggle = ( props ) => {
 const cldFilterBlocksEdit = ( BlockEdit ) => {
 
 	const EnhancedBlockEdit = function( props ) {
-		const {name} = props;
-
-		let inspectorControls;
+		const { name } = props;
+    let inspectorControls = null;
+    
 		if ( 'core/image' === name || 'core/video' === name ) {
 			inspectorControls = cldImageInspectorControls( props );
-		}
+    }
+    
 		return (
 			<>
 				{inspectorControls}
@@ -101,24 +103,28 @@ const cldFilterBlocksEdit = ( BlockEdit ) => {
 
 	return EnhancedBlockEdit;
 };
-const cldImageInspectorControls = ( props ) => {
-	const {attributes: {id}, setAttributes, isSelected} = props;
 
-	if ( !isSelected || !id ) {
-		return null;
-	}
-  let media = wp.data.select( 'core' ).getMedia( id );
+const { withSelect } = wp.data;
+
+let cldImageInspectorControls = ( props ) => {
+	const { setAttributes, media } = props;
   const { InspectorControls } = wp.editor;
 
 	if ( media && media.transformations ) {
-		setAttributes( {transformations: true} );
-	}
+		setAttributes( { transformations: true } );
+  }
+  
 	return (
 		<InspectorControls>
 			<TransformationsToggle {...props} />
 		</InspectorControls>
 	);
 };
+
+cldImageInspectorControls = withSelect( ( select, ownProps ) => ( {
+  ...ownProps,
+  media: ownProps.attributes.id ? select( 'core' ).getMedia( ownProps.attributes.id ) : null
+} ))( cldImageInspectorControls )
 
 wp.hooks.addFilter( 'editor.BlockEdit', 'cloudinary/filterEdit', cldFilterBlocksEdit, 20 );
 
