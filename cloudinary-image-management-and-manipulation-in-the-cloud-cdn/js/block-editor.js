@@ -133,33 +133,35 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-/* global window wp */
+/* global window wp CLD_VIDEO_PLAYER */
 
 
 
 var withSelect = wp.data.withSelect;
 var Video = {
   _init: function _init() {
-    if (typeof CLD_VIDEO_PLAYER !== 'undefined') {
-      // Gutenberg Video Settings
-      wp.hooks.addFilter('blocks.registerBlockType', 'Cloudinary/Media/Video', function (settings, name) {
-        if (name === 'core/video') {
-          if ('off' !== CLD_VIDEO_PLAYER.video_autoplay_mode) {
-            settings.attributes.autoplay.default = true;
-          }
+    if (typeof CLD_VIDEO_PLAYER === 'undefined') {
+      return;
+    } // Gutenberg Video Settings
 
-          if ('on' === CLD_VIDEO_PLAYER.video_loop) {
-            settings.attributes.loop.default = true;
-          }
 
-          if ('off' === CLD_VIDEO_PLAYER.video_controls) {
-            settings.attributes.controls.default = false;
-          }
+    wp.hooks.addFilter('blocks.registerBlockType', 'Cloudinary/Media/Video', function (settings, name) {
+      if (name === 'core/video') {
+        if ('off' !== CLD_VIDEO_PLAYER.video_autoplay_mode) {
+          settings.attributes.autoplay.default = true;
         }
 
-        return settings;
-      });
-    }
+        if ('on' === CLD_VIDEO_PLAYER.video_loop) {
+          settings.attributes.loop.default = true;
+        }
+
+        if ('off' === CLD_VIDEO_PLAYER.video_controls) {
+          settings.attributes.controls.default = false;
+        }
+      }
+
+      return settings;
+    });
   }
 };
 /* harmony default export */ __webpack_exports__["default"] = (Video); // Init.
@@ -236,7 +238,7 @@ ImageInspectorControls = withSelect(function (select, ownProps) {
 })(ImageInspectorControls);
 
 var cldFilterBlocksEdit = function cldFilterBlocksEdit(BlockEdit) {
-  var EnhancedBlockEdit = function EnhancedBlockEdit(props) {
+  return function (props) {
     var name = props.name;
     var inspectorControls = null;
 
@@ -246,8 +248,6 @@ var cldFilterBlocksEdit = function cldFilterBlocksEdit(BlockEdit) {
 
     return Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_1__["createElement"])(_wordpress_element__WEBPACK_IMPORTED_MODULE_1__["Fragment"], null, inspectorControls, Object(_wordpress_element__WEBPACK_IMPORTED_MODULE_1__["createElement"])(BlockEdit, props));
   };
-
-  return EnhancedBlockEdit;
 };
 
 wp.hooks.addFilter('editor.BlockEdit', 'cloudinary/filterEdit', cldFilterBlocksEdit, 20);
