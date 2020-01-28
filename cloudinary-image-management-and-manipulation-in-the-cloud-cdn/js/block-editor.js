@@ -133,7 +133,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-/* global window wp CLD_VIDEO_PLAYER */
+/* global window wp */
 
 
 
@@ -221,6 +221,7 @@ var ImageInspectorControls = function ImageInspectorControls(props) {
   var setAttributes = props.setAttributes,
       media = props.media;
   var InspectorControls = wp.editor.InspectorControls;
+  console.log(media);
 
   if (media && media.transformations) {
     setAttributes({

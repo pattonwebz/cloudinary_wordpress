@@ -1,4 +1,4 @@
-/* global window wp CLD_VIDEO_PLAYER */
+/* global window wp */
 
 import { __ } from '@wordpress/i18n';
 import { ToggleControl, PanelBody } from '@wordpress/components';
@@ -72,10 +72,10 @@ wp.hooks.addFilter( 'blocks.registerBlockType', 'cloudinary/addAttributes', cldA
  */
 const TransformationsToggle = ( props ) => {
 	const { attributes: { overwrite_transformations, transformations }, setAttributes } = props;
-  
+	
 	if ( ! transformations ) {
 		return null;
-  	}
+  }
   
 	return (
 		<PanelBody title={__( 'Transformations', 'cloudinary' )}>
@@ -93,11 +93,11 @@ const TransformationsToggle = ( props ) => {
 let ImageInspectorControls = ( props ) => {
 	const { setAttributes, media } = props;
 	const { InspectorControls } = wp.editor;
-
+	
 	if ( media && media.transformations ) {
 		setAttributes( { transformations: true } );
 	}
-  
+
 	return (
 		<InspectorControls>
 			<TransformationsToggle {...props} />
@@ -116,9 +116,9 @@ const cldFilterBlocksEdit = ( BlockEdit ) => {
 		let inspectorControls = null;
 
 		if ( 'core/image' === name || 'core/video' === name ) {
-		  inspectorControls = <ImageInspectorControls {...props} />;
+			inspectorControls = <ImageInspectorControls {...props} />;
 		}
-
+		
 		return (
 			<>
 				{inspectorControls}
