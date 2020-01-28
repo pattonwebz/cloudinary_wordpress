@@ -410,10 +410,10 @@ class Filter {
 	 * @return \WP_REST_Response
 	 */
 	public function filter_attachment_for_rest( $attachment ) {
-        $cloudinary_id = $this->media->cloudinary_id( $attachment->data['id'] );
+		$cloudinary_id = $this->media->cloudinary_id( $attachment->data['id'] );
 
-        if ( false !== $cloudinary_id ) {
-            $attachment->data['source_url'] = $this->media->cloudinary_url( $attachment->data['id'], false );
+		if ( false !== $cloudinary_id ) {
+			$attachment->data['source_url'] = $this->media->cloudinary_url( $attachment->data['id'], false );
 		}
 		
 		if ( $hasTranformations = ! ( empty( $this->media->get_transformation_from_meta( $attachment->data['id'] ) ) ) ) {

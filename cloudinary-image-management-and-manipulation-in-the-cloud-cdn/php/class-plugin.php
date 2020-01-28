@@ -273,11 +273,11 @@ class Plugin {
          * @var  Component\Setup $component
          */
         foreach ( $this->components as $key => $component ) {
-		    if ( ! $this->is_setup_component( $component ) ) {
-		        continue;
-            }
+			if ( ! $this->is_setup_component( $component ) ) {
+				continue;
+			}
 
-		    $component->setup();
+			$component->setup();
         }
 	}
 
