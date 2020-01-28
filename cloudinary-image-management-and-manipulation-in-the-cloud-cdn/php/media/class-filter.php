@@ -374,18 +374,27 @@ class Filter {
 	 * @return array
 	 */
 	public function filter_attachment_for_js( $attachment ) {
-
 		$cloudinary_id = $this->media->cloudinary_id( $attachment['id'] );
+
 		if ( false !== $cloudinary_id ) {
 			$transformations = array();
+
 			if ( ! empty( $attachment['transformations'] ) ) {
 				$transformations = $attachment['transformations'];
 			} else {
 				$attachment['transformations'] = $this->media->get_transformation_from_meta( $attachment['id'] );
 			}
+
 			$attachment['url']       = $this->media->cloudinary_url( $attachment['id'], false, $transformations );
 			$attachment['public_id'] = $attachment['type'] . '/upload/' . $this->media->get_public_id( $attachment['id'] );
+		}
 
+		if ( empty( $attachment['transformations'] ) ) {
+			$transformations = $this->media->get_transformation_from_meta( $attachment['id'] );
+	
+			if ( $transformations ) {
+				$attachment['transformations'] = $transformations;
+			}
 		}
 
 		return $attachment;
@@ -404,9 +413,12 @@ class Filter {
         $cloudinary_id = $this->media->cloudinary_id( $attachment->data['id'] );
 
         if ( false !== $cloudinary_id ) {
-            $attachment->data['source_url']      = $this->media->cloudinary_url( $attachment->data['id'], false );
-            $attachment->data['transformations'] = ! ( empty( $this->media->get_transformation_from_meta( $attachment->data['id'] ) ) );
-        }
+            $attachment->data['source_url'] = $this->media->cloudinary_url( $attachment->data['id'], false );
+		}
+		
+		if ( $hasTranformations = ! ( empty( $this->media->get_transformation_from_meta( $attachment->data['id'] ) ) ) ) {
+			$attachment->data['transformations'] = $hasTranformations;
+		}
 
 		return $attachment;
 	}
