@@ -416,10 +416,10 @@ class Filter {
 			$attachment->data['source_url'] = $this->media->cloudinary_url( $attachment->data['id'], false );
 		}
 		
-		if ( $hasTranformations = ! empty( $this->media->get_transformation_from_meta( $attachment->data['id'] ) ) ) {
-			$attachment->data['transformations'] = $hasTranformations;
+		if ( $has_transformations = ! empty( $this->media->get_transformation_from_meta( $attachment->data['id'] ) ) ) {
+			$attachment->data['transformations'] = $has_transformations;
 		}
-
+ 
 		return $attachment;
 	}
 
@@ -617,10 +617,11 @@ class Filter {
 		// Replace template.
 		$str_label      = '<label class="setting align">';
 		$str_div        = '<div class="setting align">';
+		$str_container  = strpos($template, $str_div) !== false ? $str_div : '<fieldset class="setting-group">';
 		$str_vid_edit   = '<# if ( ! _.isEmpty( data.model.poster ) ) { #>';
 		$str_vid_insert = '<# if ( \'undefined\' !== typeof data.sizes ) { #>';
 		$template       = str_replace( $str_label, $this->template_overwrite_insert() . $str_label, $template );
-		$template       = str_replace( $str_div, $this->template_overwrite_edit() . $str_div, $template );
+		$template       = str_replace( $str_container, $this->template_overwrite_edit() . $str_container, $template );
 		$template       = str_replace( $str_vid_edit, $this->template_overwrite_video_edit() . $str_vid_edit, $template );
 		$template       = str_replace( $str_vid_insert, $this->template_overwrite_insert_video() . $str_vid_insert, $template );
 
