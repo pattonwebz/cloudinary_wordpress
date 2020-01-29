@@ -105,8 +105,8 @@ let ImageInspectorControls = ( props ) => {
 };
 
 ImageInspectorControls = withSelect( ( select, ownProps ) => ( {
-  ...ownProps,
-  media: ownProps.attributes.id ? select( 'core' ).getMedia( ownProps.attributes.id ) : null
+	...ownProps,
+	media: ownProps.attributes.id ? select( 'core' ).getMedia( ownProps.attributes.id ) : null
 } ))( ImageInspectorControls );
 
 const cldFilterBlocksEdit = ( BlockEdit ) => {

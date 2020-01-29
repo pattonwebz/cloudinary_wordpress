@@ -128,12 +128,12 @@ class Plugin {
 	public function set_config() {
 		$components = array_filter( $this->components, array( $this, 'is_config_component' ) );
 
-		/**
-		 * Component that implements Component\Config.
-		 *
-		 * @var  Component\Config $component
-		 */
 		foreach ( $components as $slug => $component ) {
+			/**
+			 * Component that implements Component\Config.
+			 *
+			 * @var  Component\Config $component
+			 */
 			$this->config[ $slug ] = $component->get_config();
 		}
 	}
