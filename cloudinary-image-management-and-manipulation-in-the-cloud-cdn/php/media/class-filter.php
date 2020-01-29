@@ -374,18 +374,27 @@ class Filter {
 	 * @return array
 	 */
 	public function filter_attachment_for_js( $attachment ) {
-
 		$cloudinary_id = $this->media->cloudinary_id( $attachment['id'] );
+
 		if ( false !== $cloudinary_id ) {
 			$transformations = array();
+
 			if ( ! empty( $attachment['transformations'] ) ) {
 				$transformations = $attachment['transformations'];
 			} else {
 				$attachment['transformations'] = $this->media->get_transformation_from_meta( $attachment['id'] );
 			}
+
 			$attachment['url']       = $this->media->cloudinary_url( $attachment['id'], false, $transformations );
 			$attachment['public_id'] = $attachment['type'] . '/upload/' . $this->media->get_public_id( $attachment['id'] );
+		}
 
+		if ( empty( $attachment['transformations'] ) ) {
+			$transformations = $this->media->get_transformation_from_meta( $attachment['id'] );
+	
+			if ( $transformations ) {
+				$attachment['transformations'] = $transformations;
+			}
 		}
 
 		return $attachment;
@@ -401,14 +410,20 @@ class Filter {
 	 * @return \WP_REST_Response
 	 */
 	public function filter_attachment_for_rest( $attachment ) {
-		if ( ! empty( $attachment->data['source_url'] ) ) {
-			$cloudinary_id = $this->media->cloudinary_id( $attachment->data['id'] );
-			if ( false !== $cloudinary_id ) {
-				$attachment->data['source_url']      = $this->media->cloudinary_url( $attachment->data['id'], false );
-				$attachment->data['transformations'] = ! ( empty( $this->media->get_transformation_from_meta( $attachment->data['id'] ) ) );
-			}
+		if ( ! isset( $attachment->data['id'] ) ) {
+			return $attachment;
 		}
 
+		$cloudinary_id = $this->media->cloudinary_id( $attachment->data['id'] );
+
+		if ( false !== $cloudinary_id ) {
+			$attachment->data['source_url'] = $this->media->cloudinary_url( $attachment->data['id'], false );
+		}
+		
+		if ( $has_transformations = ! empty( $this->media->get_transformation_from_meta( $attachment->data['id'] ) ) ) {
+			$attachment->data['transformations'] = $has_transformations;
+		}
+ 
 		return $attachment;
 	}
 
@@ -606,10 +621,11 @@ class Filter {
 		// Replace template.
 		$str_label      = '<label class="setting align">';
 		$str_div        = '<div class="setting align">';
+		$str_container  = strpos( $template, $str_div ) !== false ? $str_div : '<fieldset class="setting-group">';
 		$str_vid_edit   = '<# if ( ! _.isEmpty( data.model.poster ) ) { #>';
 		$str_vid_insert = '<# if ( \'undefined\' !== typeof data.sizes ) { #>';
 		$template       = str_replace( $str_label, $this->template_overwrite_insert() . $str_label, $template );
-		$template       = str_replace( $str_div, $this->template_overwrite_edit() . $str_div, $template );
+		$template       = str_replace( $str_container, $this->template_overwrite_edit() . $str_container, $template );
 		$template       = str_replace( $str_vid_edit, $this->template_overwrite_video_edit() . $str_vid_edit, $template );
 		$template       = str_replace( $str_vid_insert, $this->template_overwrite_insert_video() . $str_vid_insert, $template );
 

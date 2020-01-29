@@ -128,12 +128,12 @@ class Plugin {
 	public function set_config() {
 		$components = array_filter( $this->components, array( $this, 'is_config_component' ) );
 
-		/**
-		 * Component that implements Component\Config.
-		 *
-		 * @var  Component\Config $component
-		 */
 		foreach ( $components as $slug => $component ) {
+			/**
+			 * Component that implements Component\Config.
+			 *
+			 * @var  Component\Config $component
+			 */
 			$this->config[ $slug ] = $component->get_config();
 		}
 	}
@@ -266,18 +266,19 @@ class Plugin {
 	 */
 	public function setup() {
 		$this->set_config();
-		$components = array_filter( $this->components, array( $this, 'is_setup_component' ) );
-		array_map(
-			function ( $component ) {
-				/**
-				 * Component that implements Component\Setup.
-				 *
-				 * @var  Component\Setup $component
-				 */
-				$component->setup();
-			},
-			$components
-		);
+
+		/**
+		 * Component that implements Component\Setup.
+		 *
+		 * @var  Component\Setup $component
+		 */ 
+		foreach ( $this->components as $key => $component ) {
+			if ( ! $this->is_setup_component( $component ) ) {
+				continue;
+			}
+
+			$component->setup();
+		}
 	}
 
 	/**
