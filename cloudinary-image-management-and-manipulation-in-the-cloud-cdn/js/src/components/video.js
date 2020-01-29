@@ -1,10 +1,9 @@
 /* global window wp */
 
 import { __ } from '@wordpress/i18n';
-import { ToggleControl, PanelBody } from '@wordpress/components';
+import { withSelect } from '@wordpress/data';
 import { cloneElement } from '@wordpress/element';
-
-const { withSelect } = wp.data;
+import { ToggleControl, PanelBody } from '@wordpress/components';
 
 const Video = {
 	_init: function() {
@@ -71,7 +70,7 @@ wp.hooks.addFilter( 'blocks.registerBlockType', 'cloudinary/addAttributes', cldA
  * @return {Component} Element.
  */
 const TransformationsToggle = ( props ) => {
-	const { attributes: { overwrite_transformations, transformations }, setAttributes } = props;
+	const {attributes: {overwrite_transformations, transformations}, setAttributes} = props;
 	
 	if ( ! transformations ) {
 		return null;
@@ -83,7 +82,7 @@ const TransformationsToggle = ( props ) => {
 				label={__( 'Overwrite Transformations', 'cloudinary' )}
 				checked={overwrite_transformations}
 				onChange={( value ) => {
-					setAttributes( { overwrite_transformations: value } );
+					setAttributes( {overwrite_transformations: value} );
 				}}
 			/>
 		</PanelBody>
@@ -91,11 +90,11 @@ const TransformationsToggle = ( props ) => {
 };
 
 let ImageInspectorControls = ( props ) => {
-	const { setAttributes, media } = props;
-	const { InspectorControls } = wp.editor;
+	const {setAttributes, media} = props;
+	const {InspectorControls} = wp.editor;
 	
 	if ( media && media.transformations ) {
-		setAttributes( { transformations: true } );
+		setAttributes( {transformations: true} );
 	}
 
 	return (
@@ -112,16 +111,12 @@ ImageInspectorControls = withSelect( ( select, ownProps ) => ( {
 
 const cldFilterBlocksEdit = ( BlockEdit ) => {
 	return ( props ) => {
-		const { name } = props;
-		let inspectorControls = null;
+		const {name} = props;
+		const shouldDisplayInspector = 'core/image' === name || 'core/video' === name
 
-		if ( 'core/image' === name || 'core/video' === name ) {
-			inspectorControls = <ImageInspectorControls {...props} />;
-		}
-		
 		return (
 			<>
-				{inspectorControls}
+				{shouldDisplayInspector ? <ImageInspectorControls {...props} /> : null}
 				<BlockEdit {...props} />
 			</>
 		);
@@ -134,14 +129,14 @@ const cldfilterBlocksSave = ( element, blockType, attributes ) => {
 	if ( 'core/image' === blockType.name && attributes.overwrite_transformations ) {
 		let children = cloneElement( element.props.children );
 		let classname = children.props.children[ 0 ].props.className ? children.props.children[ 0 ].props.className : '';
-		let child = cloneElement( children.props.children[ 0 ], { className: classname + ' cld-overwrite' } );
-		let neChildren = cloneElement( children, { children: [ child, false ] } );
-		return cloneElement( element, { children: neChildren } );
+		let child = cloneElement( children.props.children[ 0 ], {className: classname + ' cld-overwrite'} );
+		let neChildren = cloneElement( children, {children: [ child, false ]} );
+		return cloneElement( element, {children: neChildren} );
 	}
 
 	if ( 'core/video' === blockType.name && attributes.overwrite_transformations ) {
-		let children = cloneElement( element.props.children[ 0 ], { className: ' cld-overwrite' } );
-		return cloneElement( element, { children } );
+		let children = cloneElement( element.props.children[ 0 ], {className: ' cld-overwrite'} );
+		return cloneElement( element, {children} );
 	}
 
 	return element;

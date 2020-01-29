@@ -416,7 +416,7 @@ class Filter {
 			$attachment->data['source_url'] = $this->media->cloudinary_url( $attachment->data['id'], false );
 		}
 		
-		if ( $hasTranformations = ! ( empty( $this->media->get_transformation_from_meta( $attachment->data['id'] ) ) ) ) {
+		if ( $hasTranformations = ! empty( $this->media->get_transformation_from_meta( $attachment->data['id'] ) ) ) {
 			$attachment->data['transformations'] = $hasTranformations;
 		}
 

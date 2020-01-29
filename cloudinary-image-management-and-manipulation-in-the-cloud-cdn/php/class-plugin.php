@@ -268,17 +268,17 @@ class Plugin {
 		$this->set_config();
 
 		/**
-         * Component that implements Component\Setup.
-         *
-         * @var  Component\Setup $component
-         */
-        foreach ( $this->components as $key => $component ) {
+		 * Component that implements Component\Setup.
+		 *
+		 * @var  Component\Setup $component
+		 */ 
+		foreach ( $this->components as $key => $component ) {
 			if ( ! $this->is_setup_component( $component ) ) {
 				continue;
 			}
 
 			$component->setup();
-        }
+		}
 	}
 
 	/**
