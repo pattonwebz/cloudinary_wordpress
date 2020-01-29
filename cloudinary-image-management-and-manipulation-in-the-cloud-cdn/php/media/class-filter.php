@@ -410,6 +410,10 @@ class Filter {
 	 * @return \WP_REST_Response
 	 */
 	public function filter_attachment_for_rest( $attachment ) {
+		if ( ! isset( $attachment->data['id'] ) ) {
+			return $attachment;
+		}
+
 		$cloudinary_id = $this->media->cloudinary_id( $attachment->data['id'] );
 
 		if ( false !== $cloudinary_id ) {
@@ -617,7 +621,7 @@ class Filter {
 		// Replace template.
 		$str_label      = '<label class="setting align">';
 		$str_div        = '<div class="setting align">';
-		$str_container  = strpos($template, $str_div) !== false ? $str_div : '<fieldset class="setting-group">';
+		$str_container  = strpos( $template, $str_div ) !== false ? $str_div : '<fieldset class="setting-group">';
 		$str_vid_edit   = '<# if ( ! _.isEmpty( data.model.poster ) ) { #>';
 		$str_vid_insert = '<# if ( \'undefined\' !== typeof data.sizes ) { #>';
 		$template       = str_replace( $str_label, $this->template_overwrite_insert() . $str_label, $template );

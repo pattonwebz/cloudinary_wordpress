@@ -112,7 +112,7 @@ ImageInspectorControls = withSelect( ( select, ownProps ) => ( {
 const cldFilterBlocksEdit = ( BlockEdit ) => {
 	return ( props ) => {
 		const {name} = props;
-		const shouldDisplayInspector = 'core/image' === name || 'core/video' === name
+		const shouldDisplayInspector = 'core/image' === name || 'core/video' === name;
 
 		return (
 			<>
