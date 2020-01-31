@@ -141,7 +141,7 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 		let taxonomies = wp.data.select( 'core' ).getTaxonomies();
 
 		if ( taxonomies ) {
-			for (let t in taxonomies) {
+			for ( let t in taxonomies ) {
 				const set = wp.data.select( 'core/editor' ).getEditedPostAttribute( taxonomies[ t ].rest_base );
 				orderSet[ taxonomies[ t ].slug ] = set;
 			}
@@ -151,7 +151,7 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 	const el = wp.element.createElement;
 	const CustomizeTaxonomySelector = ( OriginalComponent ) => {
 		class CustomHandler extends OriginalComponent {
-			constructor(props) {
+			constructor( props ) {
 				super(props)
 
 				this.currentItems = jQuery( '.cld-tax-order-list-item' )
@@ -170,13 +170,13 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 			}
 
 			removeItem( item ) {
-				const elementWithId = jQuery( `[data-item="${this.getId(item)}"]` );
+				const elementWithId = jQuery( `[data-item="${this.getId( item )}"]` );
 
 				if ( elementWithId.length ) {
 					elementWithId.remove();
 
 					this.currentItems = this.currentItems.filter( ( taxIdentifier ) => {
-						return taxIdentifier !== this.getId(item);
+						return taxIdentifier !== this.getId( item );
 					} );
 				}
 			}
@@ -256,7 +256,7 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 				}
 			}
 
-			getId(item) {
+			getId( item ) {
 				return `${this.props.slug}:${item.id}`
 			}
 
@@ -267,12 +267,12 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 
 				li
 					.addClass( 'cld-tax-order-list-item' )
-					.attr( 'data-item', this.getId(item) );
+					.attr( 'data-item', this.getId( item ) );
 
 				input
 					.addClass( 'cld-tax-order-list-item-input' )
 					.attr( 'type', 'hidden' )
-					.attr( 'name', 'cld_tax_order[]' ).val( this.getId(item) );
+					.attr( 'name', 'cld_tax_order[]' ).val( this.getId( item ) );
 
 				icon.addClass( 'dashicons dashicons-menu cld-tax-order-list-item-handle' );
 
