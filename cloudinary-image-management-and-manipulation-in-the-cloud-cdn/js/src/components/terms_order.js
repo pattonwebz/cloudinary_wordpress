@@ -1,19 +1,24 @@
 /* global window wp wpAjax */
 
+function getTaxonomy( el ) {
+	return el.closest(jQuery('.hndle.ui-sortable-handle'))
+}
+
 const Terms_Order = {
 	template: '',
 	tags: jQuery( '#cld-tax-items' ),
 	tagDelimiter: (window.tagsSuggestL10n && window.tagsSuggestL10n.tagDelimiter) || ',',
 	_init: function() {
-
 		// Check that we found the tax-items.
-		if ( !this.tags.length ) {
+		if ( ! this.tags.length ) {
 			return;
 		}
+
 		// Init sortables.
 		this._sortable();
 
 		let self = this;
+
 		// Setup ajax overrides.
 		if ( typeof wpAjax !== 'undefined' ) {
 			wpAjax.procesParseAjaxResponse = wpAjax.parseAjaxResponse;
@@ -33,42 +38,54 @@ const Terms_Order = {
 		if ( typeof window.tagBox !== 'undefined' ) {
 			window.tagBox.processflushTags = window.tagBox.flushTags;
 			window.tagBox.flushTags = function( el, a, f ) {
-
 				if ( typeof f === 'undefined' ) {
-					var taxonomy = el.prop( 'id' ),
+					let taxonomy = el.prop( 'id' ),
 						text,
 						list,
-						newtag = $( 'input.newtag', el );
+						newtag = jQuery( 'input.newtag', el );
 
 					a = a || false;
 
-					text = a ? $( a ).text() : newtag.val();
+					text = a ? jQuery( a ).text() : newtag.val();
 					list = window.tagBox.clean( text ).split( self.tagDelimiter );
 
-					for (var i in list) {
-						var tag = taxonomy + ':' + list[ i ];
-						if ( !jQuery( '[data-item="' + tag + '"]' ).length ) {
-							self._pushItem( tag, list[ i ] );
-						}
-					}
+					new wp.api.collections.Tags()
+						.fetch( { data: { orderby: 'id', order: 'desc', per_page: 1 } } )
+						.done( tags => {
+							for (let i in list) {
+								let tag = taxonomy + ':' + ( tags[0].id + 1 );
+								if ( ! jQuery( '[data-item="' + tag + '"]' ).length ) {
+									self._pushItem( tag, list[ i ] );
+								}
+							}
+						} );
 				}
+
 				return this.processflushTags( el, a, f );
 			};
 
 			window.tagBox.processTags = window.tagBox.parseTags;
-			window.tagBox.parseTags = function( el ) {
 
+			window.tagBox.parseTags = function( el ) {
 				let id = el.id,
 					num = id.split( '-check-num-' )[ 1 ],
 					taxonomy = id.split( '-check-num-' )[ 0 ],
-					taxbox = $( el ).closest( '.tagsdiv' ),
+					taxbox = jQuery( el ).closest( '.tagsdiv' ),
 					thetags = taxbox.find( '.the-tags' ),
 					current_tags = window.tagBox.clean( thetags.val() ).split( self.tagDelimiter ),
-					remove_tag = current_tags[ num ],
-					remove_sortable = jQuery( '[data-item="' + taxonomy + ':' + remove_tag + '"]' );
+					remove_tag = current_tags[ num ];
 
-				remove_sortable.remove();
-				this.processTags( el );
+				new wp.api.collections.Tags()
+					.fetch( { data: { slug: remove_tag } } )
+					.done( ( tag ) => {
+						if ( tag.length ) {
+							jQuery( '[data-item="' + taxonomy + ':' + tag[0].id + '"]' ).remove();
+						} else {
+							jQuery( `.cld-tax-order-list-item:contains(${remove_tag})` ).remove();
+						}
+
+						this.processTags( el );
+					} );
 			};
 		}
 
@@ -79,15 +96,11 @@ const Terms_Order = {
 				checked = clicked.is( ':checked' );
 
 			if ( true === checked ) {
-
-				self._pushItem( id, text );
+				self._pushItem( `category:${id}`, text );
+			} else {
+				self.tags.find( `[data-item="category:${id}"]` ).remove();
 			}
-			else {
-				self.tags.find( '[data-item="' + id + '"]' ).remove();
-			}
-
 		} );
-
 	},
 	_createItem: function( id, name ) {
 		let li = jQuery( '<li/>' ),
@@ -99,6 +112,7 @@ const Terms_Order = {
 		icon.addClass( 'dashicons dashicons-menu cld-tax-order-list-item-handle' );
 
 		li.append( icon ).append( name ).append( input ); // phpcs:ignore WordPressVIPMinimum.JS.HTMLExecutingFunctions.append
+		
 		return li;
 	},
 	_pushItem: function( id, text ) {
@@ -106,8 +120,8 @@ const Terms_Order = {
 		this.tags.append( item ); // phpcs:ignore WordPressVIPMinimum.JS.HTMLExecutingFunctions.append
 	},
 	_sortable: function() {
-
 		let items = jQuery( '.cld-tax-order-list' );
+
 		items.sortable( {
 			connectWith: '.cld-tax-order',
 			axis: 'y',
@@ -146,12 +160,16 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 		class CustomHandler extends OriginalComponent {
 			constructor(props) {
 				super(props)
-				this.currentItems = $('.cld-tax-order-list-item').map( ( _, taxonomy ) => $( taxonomy ).data( 'item' ) ).get()
+				this.currentItems = jQuery( '.cld-tax-order-list-item' ).map( ( _, taxonomy ) => jQuery( taxonomy ).data( 'item' ) ).get()
+			}
+
+			componentDidUpdate() {
+				console.log(this.state.availableTerms);
 			}
 
 			makeItem( item ) {
-				// Prevent duplicates in the order box
-				if ( $.inArray( this.getId(item), this.currentItems ) !== -1 ) {
+				// Prevent duplicates in the tax order box
+				if (this.currentItems.includes( this.getId( item ) ) ) {
 					return;
 				}
 
@@ -161,7 +179,7 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 			}
 
 			removeItem( item ) {
-				const elementWithId = jQuery( '[data-item="' + this.getId(item) + '"]' );
+				const elementWithId = jQuery( `[data-item="${this.getId(item)}"]` );
 
 				if ( elementWithId.length ) {
 					elementWithId.remove();
@@ -182,7 +200,9 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 			onChange( event ) {
 				super.onChange( event );
 				const item = this.pickItem( event );
+
 				console.log(item)
+
 				if ( item ) {
 					if ( orderSet[ this.props.slug ].indexOf( item.id ) >= 0 ) {
 						this.makeItem( item );
@@ -204,7 +224,9 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 					// as its expected that they return back with an "id" property.
 					} else if ( Array.isArray( event ) ) {
 						const existingTag = event[ event.length - 1 ];
-						return this.state.availableTerms.find( ( item ) => item.name === existingTag );
+						const term = this.state.availableTerms.find( ( item ) => item.name === existingTag );
+
+						return !term && this.state.availableTerms.length === 1 ? this.state.availableTerms[0] : term
 					}
 				}
 				else if ( typeof event === 'number' ) {
@@ -252,7 +274,7 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 					icon = jQuery( '<span/>' );
 
 				li.addClass( 'cld-tax-order-list-item' ).attr( 'data-item', this.getId(item) );
-				input.addClass( 'cld-tax-order-list-item-input' ).attr( 'type', 'hidden' ).attr( 'name', 'cld_tax_order[]' ).val( item.id );
+				input.addClass( 'cld-tax-order-list-item-input' ).attr( 'type', 'hidden' ).attr( 'name', 'cld_tax_order[]' ).val( this.getId(item) );
 				icon.addClass( 'dashicons dashicons-menu cld-tax-order-list-item-handle' );
 
 				li.append( icon ).append( item.name ).append( input ); // phpcs:ignore WordPressVIPMinimum.JS.HTMLExecutingFunctions.append
