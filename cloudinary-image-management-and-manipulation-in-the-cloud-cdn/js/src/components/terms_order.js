@@ -1,23 +1,18 @@
 /* global window wp wpAjax */
 
-function getTaxonomy( el ) {
-	return el.closest(jQuery('.hndle.ui-sortable-handle'))
-}
-
 export const Terms_Order = {
 	template: '',
 	tags: jQuery( '#cld-tax-items' ),
 	tagDelimiter: (window.tagsSuggestL10n && window.tagsSuggestL10n.tagDelimiter) || ',',
+	startId: null,
 	_init: function() {
 		// Check that we found the tax-items.
 		if ( ! this.tags.length ) {
 			return;
 		}
 
-		// Init sortables.
-		this._sortable();
-
 		const self = this;
+		this._sortable();
 
 		// Setup ajax overrides.
 		if ( typeof wpAjax !== 'undefined' ) {
@@ -53,11 +48,10 @@ export const Terms_Order = {
 					new wp.api.collections.Tags()
 						.fetch( { data: { orderby: 'id', order: 'desc', per_page: 1 } } )
 						.done( tags => {
-							for (let i in list) {
-								let tag = taxonomy + ':' + ( tags[0].id + 1 );
-								if ( ! jQuery( '[data-item="' + tag + '"]' ).length ) {
-									self._pushItem( tag, list[ i ] );
-								}
+							self.startId = self.startId === null ? tags[0].id + 1 : ++self.startId;
+							const tag = taxonomy + ':' + self.startId;
+							if ( ! jQuery( '[data-item="' + tag + '"]' ).length ) {
+								self._pushItem( tag, list[ list.length - 1 ] );
 							}
 						} );
 				}
@@ -73,16 +67,18 @@ export const Terms_Order = {
 				const taxonomy = id.split( '-check-num-' )[ 0 ];
 				const taxBox = jQuery( el ).closest( '.tagsdiv' );
 				const tagsTextarea = taxBox.find( '.the-tags' );
-				const currentTags = window.tagBox.clean( tagsTextarea.val() ).split( self.tagDelimiter );
-				const tagToRemove = currentTags[ num ];
+				const tagToRemove = window.tagBox.clean( tagsTextarea.val() ).split( self.tagDelimiter )[ num ];
 
 				new wp.api.collections.Tags()
 					.fetch( { data: { slug: tagToRemove } } )
 					.done( ( tag ) => {
-						if ( tag.length ) {
-							jQuery( '[data-item="' + taxonomy + ':' + tag[0].id + '"]' ).remove();
+						const tagFromDatabase = tag.length ? jQuery( '[data-item="' + taxonomy + ':' + tag[0].id + '"]' ) : false;
+
+						if ( tagFromDatabase.length ) {
+							tagFromDatabase.remove();
 						} else {
 							jQuery( `.cld-tax-order-list-item:contains(${tagToRemove})` ).remove();
+							--self.startId;
 						}
 
 						this.processTags( el );
@@ -277,7 +273,7 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 					.addClass( 'cld-tax-order-list-item-input' )
 					.attr( 'type', 'hidden' )
 					.attr( 'name', 'cld_tax_order[]' ).val( this.getId(item) );
-					
+
 				icon.addClass( 'dashicons dashicons-menu cld-tax-order-list-item-handle' );
 
 				li.append( icon ).append( item.name ).append( input ); // phpcs:ignore WordPressVIPMinimum.JS.HTMLExecutingFunctions.append
