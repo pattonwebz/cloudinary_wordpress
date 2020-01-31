@@ -164,11 +164,11 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 			onChange( event ) {
 				super.onChange( event );
 				let item = this.pickItem( event );
+				console.log(item)
 				if ( item ) {
 					if ( order_set[ this.props.slug ].indexOf( item.id ) >= 0 ) {
 						this.makeItem( item );
-					}
-					else {
+					} else {
 						let element = jQuery( '[data-item="' + item.id + '"]' );
 						if ( element.length ) {
 							element.remove();
@@ -185,6 +185,11 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 								return this.state.availableTerms[ p ];
 							}
 						}
+					// Tags that are already registered need to be selected separately
+					// as its expected that they return back with an "id" property.
+					} else if ( Array.isArray( event ) ) {
+						const existingTag = event[ event.length - 1 ];
+						return this.state.availableTerms.find( ( item ) => item.name === existingTag );
 					}
 				}
 				else if ( typeof event === 'number' ) {
