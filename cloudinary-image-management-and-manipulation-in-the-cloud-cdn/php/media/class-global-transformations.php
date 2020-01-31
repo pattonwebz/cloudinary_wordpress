@@ -422,9 +422,7 @@ class Global_Transformations {
 		);
 
 		$taxonomy_order = filter_input_array( INPUT_POST, $args );
-
-		// echo '<pre>';
-		// var_dump($taxonomy_order);exit;
+		
 		if ( ! empty( $taxonomy_order['cld_tax_order'] ) ) {
 			update_post_meta( $post_id, self::META_ORDER_KEY . '_terms', $taxonomy_order['cld_tax_order'] );
 		} else {
