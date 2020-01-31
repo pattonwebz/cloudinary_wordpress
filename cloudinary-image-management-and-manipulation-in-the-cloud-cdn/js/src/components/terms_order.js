@@ -128,61 +128,66 @@ if ( typeof window.CLDN !== 'undefined' ) {
 
 // Gutenberg.
 if ( wp.data && wp.data.select( 'core/editor' ) ) {
-	let order_set = {};
+	let orderSet = {};
 	wp.data.subscribe( function() {
-
 		let taxonomies = wp.data.select( 'core' ).getTaxonomies();
 
 		if ( taxonomies ) {
 			for (let t in taxonomies) {
 				let set = wp.data.select( 'core/editor' ).getEditedPostAttribute( taxonomies[ t ].rest_base );
-				order_set[ taxonomies[ t ].slug ] = set;
+				orderSet[ taxonomies[ t ].slug ] = set;
 			}
 		}
-
 	} );
 
-	let el = wp.element.createElement;
-
-	let CustomizeTaxonomySelector = function( OriginalComponent ) {
+	const el = wp.element.createElement;
+	const CustomizeTaxonomySelector = function( OriginalComponent ) {
 
 		class CustomHandler extends OriginalComponent {
 			constructor(props) {
 				super(props)
-				this.currentItems = $('.cld-tax-order-list-item').map( ( _, taxonomy ) => $( taxonomy ).data( 'item' ) )
+				this.currentItems = $('.cld-tax-order-list-item').map( ( _, taxonomy ) => $( taxonomy ).data( 'item' ) ).get()
 			}
 
 			makeItem( item ) {
-				if ( 
-					$.inArray( item.id, this.currentItems ) || 
-					$.inArray( `${this.props.slug}:${item.name}`, this.currentItems ) 
-				) {
+				// Prevent duplicates in the order box
+				if ( $.inArray( this.getId(item), this.currentItems ) !== -1 ) {
 					return;
 				}
 
-				let row = this.makeElement( item );
-				let box = jQuery( '#cld-tax-items' );
+				const row = this.makeElement( item );
+				const box = jQuery( '#cld-tax-items' );
 				box.append( row ); // phpcs:ignore WordPressVIPMinimum.JS.HTMLExecutingFunctions.append
 			}
 
+			removeItem( item ) {
+				const elementWithId = jQuery( '[data-item="' + this.getId(item) + '"]' );
+
+				if ( elementWithId.length ) {
+					elementWithId.remove();
+
+					this.currentItems = this.currentItems.filter( ( taxIdentifier ) => {
+						return taxIdentifier !== this.getId(item)
+					} );
+				}
+			}
+
 			findOrCreateTerm( termName ) {
-				let self = this;
 				termName = super.findOrCreateTerm( termName );
-				termName.then( ( item ) => self.makeItem( item ) );
+				termName.then( ( item ) => this.makeItem( item ) );
+
 				return termName;
 			}
 
 			onChange( event ) {
 				super.onChange( event );
-				let item = this.pickItem( event );
+				const item = this.pickItem( event );
+				console.log(item)
 				if ( item ) {
-					if ( order_set[ this.props.slug ].indexOf( item.id ) >= 0 ) {
+					if ( orderSet[ this.props.slug ].indexOf( item.id ) >= 0 ) {
 						this.makeItem( item );
 					} else {
-						let element = jQuery( '[data-item="' + item.id + '"]' );
-						if ( element.length ) {
-							element.remove();
-						}
+						this.removeItem( item );
 					}
 				}
 			}
@@ -237,12 +242,16 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 				}
 			}
 
+			getId(item) {
+				return `${this.props.slug}:${item.id}`
+			}
+
 			makeElement( item ) {
 				let li = jQuery( '<li/>' ),
 					input = jQuery( '<input/>' ),
 					icon = jQuery( '<span/>' );
 
-				li.addClass( 'cld-tax-order-list-item' ).attr( 'data-item', item.id );
+				li.addClass( 'cld-tax-order-list-item' ).attr( 'data-item', this.getId(item) );
 				input.addClass( 'cld-tax-order-list-item-input' ).attr( 'type', 'hidden' ).attr( 'name', 'cld_tax_order[]' ).val( item.id );
 				icon.addClass( 'dashicons dashicons-menu cld-tax-order-list-item-handle' );
 

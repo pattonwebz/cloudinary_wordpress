@@ -318,11 +318,12 @@ class Global_Transformations {
 					} else {
 						$term = get_term( $item );
 					}
+
 					// Return if term is valid.
 					if ( $term instanceof \WP_Term ) {
 						return array(
 							'term'  => $term,
-							'value' => $item,
+							'value' => $term->taxonomy . ':' . $item,
 						);
 					}
 
@@ -339,11 +340,8 @@ class Global_Transformations {
 			if ( ! empty( $current_terms ) ) {
 				$terms = array_map(
 					function ( $term ) {
+						$value = $term->taxonomy . ':' . $term->term_id;
 
-						$value = $term->term_id;
-						if ( false === is_taxonomy_hierarchical( $term->taxonomy ) ) {
-							$value = $term->taxonomy . ':' . $term->name;
-						}
 						$item = array(
 							'term'  => $term,
 							'value' => $value,
