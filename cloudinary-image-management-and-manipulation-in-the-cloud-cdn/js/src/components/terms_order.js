@@ -148,7 +148,7 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 
 		if ( taxonomies ) {
 			for (let t in taxonomies) {
-				let set = wp.data.select( 'core/editor' ).getEditedPostAttribute( taxonomies[ t ].rest_base );
+				const set = wp.data.select( 'core/editor' ).getEditedPostAttribute( taxonomies[ t ].rest_base );
 				orderSet[ taxonomies[ t ].slug ] = set;
 			}
 		}
@@ -160,11 +160,11 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 		class CustomHandler extends OriginalComponent {
 			constructor(props) {
 				super(props)
-				this.currentItems = jQuery( '.cld-tax-order-list-item' ).map( ( _, taxonomy ) => jQuery( taxonomy ).data( 'item' ) ).get()
-			}
 
-			componentDidUpdate() {
-				console.log(this.state.availableTerms);
+				this.currentItems = jQuery( '.cld-tax-order-list-item' )
+					.map( ( _, taxonomy ) => jQuery( taxonomy ).data( 'item' ) ).get()
+
+				this.currentFlatItems = null
 			}
 
 			makeItem( item ) {
@@ -201,10 +201,8 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 				super.onChange( event );
 				const item = this.pickItem( event );
 
-				console.log(item)
-
 				if ( item ) {
-					if ( orderSet[ this.props.slug ].indexOf( item.id ) >= 0 ) {
+					if ( orderSet[ this.props.slug ].includes( item.id ) ) {
 						this.makeItem( item );
 					} else {
 						this.removeItem( item );
@@ -223,20 +221,25 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 					// Tags that are already registered need to be selected separately
 					// as its expected that they return back with an "id" property.
 					} else if ( Array.isArray( event ) ) {
-						const existingTag = event[ event.length - 1 ];
-						const term = this.state.availableTerms.find( ( item ) => item.name === existingTag );
+						// Figure out the diff between the current state and the event and determine which tag is getting removed
+						let enteredTag = this.state.selectedTerms.filter( flatItem => !event.includes( flatItem ) )[0];
+
+						if ( typeof enteredTag === 'undefined' ) {
+							// If the above returns undefined, then we presume the user is adding, so reverse the logic to figure out the new item
+							enteredTag = event.filter( flatItem => !this.state.selectedTerms.includes( flatItem ) )[0]; // Adding tag
+						}
+
+						const term = this.state.availableTerms.find( ( item ) => item.name === enteredTag );
 
 						return !term && this.state.availableTerms.length === 1 ? this.state.availableTerms[0] : term
 					}
-				}
-				else if ( typeof event === 'number' ) {
+				} else if ( typeof event === 'number' ) {
 					for (let p in this.state.availableTerms) {
 						if ( this.state.availableTerms[ p ].id === event ) {
 							return this.state.availableTerms[ p ];
 						}
 					}
-				}
-				else {
+				} else {
 					let text;
 					// add or remove.
 					if ( event.length > this.state.selectedTerms.length ) {
@@ -246,8 +249,7 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 								text = event[ o ];
 							}
 						}
-					}
-					else {
+					} else {
 						// removed.
 						for (let o in this.state.selectedTerms) {
 							if ( event.indexOf( this.state.selectedTerms[ o ] ) === -1 ) {
