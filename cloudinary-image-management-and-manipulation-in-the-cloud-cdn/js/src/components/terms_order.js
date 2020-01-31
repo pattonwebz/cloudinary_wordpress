@@ -146,9 +146,20 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 
 	let CustomizeTaxonomySelector = function( OriginalComponent ) {
 
-		class customHandler extends OriginalComponent {
+		class CustomHandler extends OriginalComponent {
+			constructor(props) {
+				super(props)
+				this.currentItems = $('.cld-tax-order-list-item').map( ( _, taxonomy ) => $( taxonomy ).data( 'item' ) )
+			}
 
 			makeItem( item ) {
+				if ( 
+					$.inArray( item.id, this.currentItems ) || 
+					$.inArray( `${this.props.slug}:${item.name}`, this.currentItems ) 
+				) {
+					return;
+				}
+
 				let row = this.makeElement( item );
 				let box = jQuery( '#cld-tax-items' );
 				box.append( row ); // phpcs:ignore WordPressVIPMinimum.JS.HTMLExecutingFunctions.append
@@ -164,7 +175,6 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 			onChange( event ) {
 				super.onChange( event );
 				let item = this.pickItem( event );
-				console.log(item)
 				if ( item ) {
 					if ( order_set[ this.props.slug ].indexOf( item.id ) >= 0 ) {
 						this.makeItem( item );
@@ -224,9 +234,7 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 							return this.state.availableTerms[ p ];
 						}
 					}
-
 				}
-
 			}
 
 			makeElement( item ) {
@@ -239,18 +247,12 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 				icon.addClass( 'dashicons dashicons-menu cld-tax-order-list-item-handle' );
 
 				li.append( icon ).append( item.name ).append( input ); // phpcs:ignore WordPressVIPMinimum.JS.HTMLExecutingFunctions.append
+
 				return li;
 			}
 		}
 
-		return function( props ) {
-
-			return el(
-				customHandler,
-				props
-			);
-		};
-
+		return ( props ) => el( CustomHandler, props );
 	};
 
 	wp.hooks.addFilter(
