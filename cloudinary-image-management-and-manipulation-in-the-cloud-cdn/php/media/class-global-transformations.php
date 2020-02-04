@@ -333,7 +333,7 @@ class Global_Transformations {
 				},
 				$items
 			);
-			$terms = array_filter($items);
+			$terms = array_filter( $items );
 		} else {
 			$taxonomies    = get_object_taxonomies( get_post_type( $post_id ) );
 			$current_terms = wp_get_object_terms( $post_id, $taxonomies );

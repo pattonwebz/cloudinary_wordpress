@@ -48,8 +48,10 @@ export const Terms_Order = {
 					new wp.api.collections.Tags()
 						.fetch( { data: { orderby: 'id', order: 'desc', per_page: 1 } } )
 						.done( tags => {
-							self.startId = self.startId === null ? tags[0].id + 1 : ++self.startId;
+							const nextTagId = tags.length ? tags[0].id + 1 : 1
+							self.startId = self.startId === null ? nextTagId : ++self.startId;
 							const tag = taxonomy + ':' + self.startId;
+
 							if ( ! jQuery( '[data-item="' + tag + '"]' ).length ) {
 								self._pushItem( tag, list[ list.length - 1 ] );
 							}
