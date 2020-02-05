@@ -344,7 +344,7 @@ class Video {
 				}
 
 				$code[] = sprintf(
-					'var video_%1$s = cld.videoPlayer( "cloudinary-video-%1$s", %2$s );',
+					'var video%1$s = cld.videoPlayer( "cloudinary-video-%1$s", %2$s );',
 					$instance,
 					wp_json_encode( $config )
 				);
@@ -352,10 +352,13 @@ class Video {
 				if ( isset( $this->config['video_freeform'] ) ) {
 					$code[] = sprintf(
 						'window.onload = function () {
-							var videoContainer = document.getElementById( video_%s.videojs.id_ );
-							videoContainer.style.overflow = "hidden";
-							var videoElement = videoContainer.getElementsByTagName( "video" )[0];
-							videoElement.src = videoElement.src.replace( "upload/", "upload/%s/" );
+							var videoContainer%1$s = document.getElementById( video%s.videojs.id_ );
+							var videoElement%1$s = videoContainer%1$s.getElementsByTagName( "video" )[0];
+							videoElement%1$s.src = videoElement%1$s.src.replace( "upload/", "upload/%2$s/" );
+
+							if ( videoElement%1$s.width < 320 ) {
+								video%1$s.controls(false);
+							}
 						};', 
 						$instance, 
 						$this->config['video_freeform']
