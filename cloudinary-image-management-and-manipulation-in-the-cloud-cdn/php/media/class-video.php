@@ -338,11 +338,28 @@ class Video {
 				}
 
 				$config = wp_parse_args( $video['args'], $default );
-				// Sizing.
-				if ( empty( $config['size'] ) ) {
+
+				if ( empty( $config['size'] ) && ! isset( $this->config['video_freeform'] ) ) {
 					$config['fluid'] = true;
 				}
-				$code[] = 'cld.videoPlayer(\'cloudinary-video-' . $instance . '\', ' . wp_json_encode( $config ) . ');';
+
+				$code[] = sprintf(
+					'var video_%1$s = cld.videoPlayer("cloudinary-video-%1$s", %2$s);',
+					$instance,
+					wp_json_encode( $config )
+				);
+
+				if ( isset( $this->config['video_freeform'] ) ) {
+					$code[] = sprintf(
+						'window.onload = function () {
+							var videoContainer = document.getElementById(video_%s.videojs.id_);
+							var videoElement = videoContainer.getElementsByTagName("video")[0];
+							videoElement.src = videoElement.src.replace("upload/", "upload/%s/");
+						};', 
+						$instance, 
+						$this->config['video_freeform']
+					);
+				}
 			}
 			// If code was populated, output.
 			if ( ! empty( $code ) ) {
