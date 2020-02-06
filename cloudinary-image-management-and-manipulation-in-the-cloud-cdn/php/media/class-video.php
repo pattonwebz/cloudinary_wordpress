@@ -344,20 +344,29 @@ class Video {
 				}
 
 				$code[] = sprintf(
-					'var video%1$s = cld.videoPlayer( "cloudinary-video-%1$s", %2$s );',
+					"var video%1\$s = cld.videoPlayer( \"cloudinary-video-%1\$s\", %2\$s );\n",
 					$instance,
 					wp_json_encode( $config )
 				);
 
+				// Apply transformations via URL
+				// The "320" is hardcoded here as that the rough 
+				// estimate of pixels that occupy the player controls.
 				if ( isset( $this->config['video_freeform'] ) ) {
 					$onload_code[] = sprintf(
-						'var videoContainer%1$s = document.getElementById( video%s.videojs.id_ );
-						var videoElement%1$s = videoContainer%1$s.getElementsByTagName( "video" )[0];
-						videoElement%1$s.src = videoElement%1$s.src.replace( "upload/", "upload/%2$s/" );
+						'
+	var videoContainer%1$s = document.getElementById( video%s.videojs.id_ );
+	var videoElement%1$s = videoContainer%1$s.getElementsByTagName( "video" );
 
-						if ( videoElement%1$s.width < 320 ) {
-							video%1$s.controls(false);
-						}', 
+	if ( videoElement%1$s.length === 1 ) {
+		videoElement%1$s = videoElement%1$s[0];
+		videoElement%1$s.src = videoElement%1$s.src.replace( "upload/", "upload/%2$s/" );
+
+		if ( videoElement%1$s.width < 320 ) {
+			video%1$s.controls(false);
+		}
+	}
+', 
 						$instance, 
 						$this->config['video_freeform']
 					);
@@ -382,7 +391,7 @@ class Video {
 	 * @return string
 	 */
 	protected function window_onload_wrapper( $code ) {
-		return $code ? 'window.onload = function () { ' . $code . ' }' : '';
+		return $code ? "\nwindow.onload = function () { {$code} }" : '';
 	}
 
 	/**
