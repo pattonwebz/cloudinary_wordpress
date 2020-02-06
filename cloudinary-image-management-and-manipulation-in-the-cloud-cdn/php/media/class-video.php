@@ -320,7 +320,7 @@ class Video {
 
 		if ( $this->player_enabled() && ! empty( $this->attachments ) ) {
 
-			$code = array();
+			$code = $onload_code = array();
 			foreach ( $this->attachments as $instance => $video ) {
 				// @todo - ping the URL to ensure it has transformation available, else update an eager.
 				$cloudinary_id = $this->media->get_public_id( $video['id'] );
@@ -350,26 +350,39 @@ class Video {
 				);
 
 				if ( isset( $this->config['video_freeform'] ) ) {
-					$code[] = sprintf(
-						'window.onload = function () {
-							var videoContainer%1$s = document.getElementById( video%s.videojs.id_ );
-							var videoElement%1$s = videoContainer%1$s.getElementsByTagName( "video" )[0];
-							videoElement%1$s.src = videoElement%1$s.src.replace( "upload/", "upload/%2$s/" );
+					$onload_code[] = sprintf(
+						'var videoContainer%1$s = document.getElementById( video%s.videojs.id_ );
+						var videoElement%1$s = videoContainer%1$s.getElementsByTagName( "video" )[0];
+						videoElement%1$s.src = videoElement%1$s.src.replace( "upload/", "upload/%2$s/" );
 
-							if ( videoElement%1$s.width < 320 ) {
-								video%1$s.controls(false);
-							}
-						};', 
+						if ( videoElement%1$s.width < 320 ) {
+							video%1$s.controls(false);
+						}', 
 						$instance, 
 						$this->config['video_freeform']
 					);
 				}
 			}
+			
 			// If code was populated, output.
 			if ( ! empty( $code ) ) {
-				wp_add_inline_script( 'cld-player', implode( $code ) );
+				wp_add_inline_script( 
+					'cld-player', 
+					implode( $code ) . $this->window_onload_wrapper( implode( $onload_code ) ) 
+				);
 			}
 		}
+	}
+
+	/**
+	 * Wraps a JS string in a window.onload callback.
+	 *
+	 * @param string $code
+	 * 
+	 * @return string
+	 */
+	protected function window_onload_wrapper( $code ) {
+		return $code ? 'window.onload = function () { ' . $code . ' }' : '';
 	}
 
 	/**
