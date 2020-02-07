@@ -344,7 +344,7 @@ class Video {
 				}
 
 				$code[] = sprintf(
-					"var video%1\$s = cld.videoPlayer( \"cloudinary-video-%1\$s\", %2\$s );\n",
+					'var video%1$s = cld.videoPlayer( "cloudinary-video-%1$s", %2$s );' . "\n",
 					$instance,
 					wp_json_encode( $config )
 				);
@@ -355,7 +355,7 @@ class Video {
 				if ( isset( $this->config['video_freeform'] ) ) {
 					$onload_code[] = sprintf(
 						'
-	var videoContainer%1$s = document.getElementById( video%s.videojs.id_ );
+	var videoContainer%1$s = document.getElementById( video%1$s.videojs.id_ );
 	var videoElement%1$s = videoContainer%1$s.getElementsByTagName( "video" );
 
 	if ( videoElement%1$s.length === 1 ) {
@@ -367,8 +367,8 @@ class Video {
 		}
 	}
 ', 
-						$instance, 
-						$this->config['video_freeform']
+						esc_attr( $instance ), 
+						esc_attr( $this->config['video_freeform'] )
 					);
 				}
 			}
@@ -391,7 +391,7 @@ class Video {
 	 * @return string
 	 */
 	protected function window_onload_wrapper( $code ) {
-		return $code ? "\nwindow.onload = function () { {$code} }" : '';
+		return $code ? "\nwindow.addEventListener( 'load', function () { {$code} });" : '';
 	}
 
 	/**
