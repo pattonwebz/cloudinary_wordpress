@@ -353,7 +353,7 @@ class Video {
 
 			ob_start();
 			?>
-var cldVideos = <?php echo wp_json_encode( $cld_videos ); ?>;
+			var cldVideos = <?php echo wp_json_encode( $cld_videos ); ?>;
 
 for ( var videoInstance in cldVideos ) {
 	var config = cldVideos[ videoInstance ];
