@@ -320,7 +320,7 @@ class Video {
 
 		if ( $this->player_enabled() && ! empty( $this->attachments ) ) {
 
-			$code = array();
+			$cld_videos = array();
 			foreach ( $this->attachments as $instance => $video ) {
 				// @todo - ping the URL to ensure it has transformation available, else update an eager.
 				$cloudinary_id = $this->media->get_public_id( $video['id'] );
@@ -338,16 +338,54 @@ class Video {
 				}
 
 				$config = wp_parse_args( $video['args'], $default );
-				// Sizing.
-				if ( empty( $config['size'] ) ) {
+
+				if ( empty( $config['size'] ) && ! isset( $this->config['video_freeform'] ) ) {
 					$config['fluid'] = true;
 				}
-				$code[] = 'cld.videoPlayer(\'cloudinary-video-' . $instance . '\', ' . wp_json_encode( $config ) . ');';
+
+				$cld_videos[ $instance ] = $config;
+
 			}
-			// If code was populated, output.
-			if ( ! empty( $code ) ) {
-				wp_add_inline_script( 'cld-player', implode( $code ) );
+
+			if ( empty( $cld_videos ) ) {
+				return;
 			}
+
+			ob_start();
+			?>
+			var cldVideos = <?php echo wp_json_encode( $cld_videos ); ?>;
+
+			for ( var videoInstance in cldVideos ) {
+				var cldConfig = cldVideos[ videoInstance ];
+				var cldId = 'cloudinary-video-' + videoInstance;
+				cld.videoPlayer( cldId, cldConfig );
+			}
+
+			<?php if ( $this->config['video_freeform'] ): ?>
+			window.addEventListener( 'load', function() {
+				for ( var videoInstance in cldVideos ) {
+					var cldId = 'cloudinary-video-' + videoInstance;
+					var videoContainer = document.getElementById( cldId );
+					var videoElement = videoContainer.getElementsByTagName( 'video' );
+
+					if ( videoElement.length === 1 ) {
+						videoElement = videoElement[0];
+						videoElement.src = videoElement.src.replace( 
+							'upload/', 
+							'upload/<?php echo esc_js( $this->config['video_freeform'] ) ?>/' 
+						);
+					}
+				}
+			} );
+			<?php 
+			endif; 
+			
+			$script = ob_get_clean();
+
+			wp_add_inline_script(
+				'cld-player',
+				$script
+			);
 		}
 	}
 
