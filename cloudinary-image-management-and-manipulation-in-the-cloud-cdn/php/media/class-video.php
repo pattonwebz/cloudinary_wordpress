@@ -378,8 +378,9 @@ window.addEventListener( 'load', function() {
 		}
 	}
 } );
-<?php endif ?>
-			<?php
+			<?php 
+			endif; 
+			
 			$script = ob_get_clean();
 
 			wp_add_inline_script(
