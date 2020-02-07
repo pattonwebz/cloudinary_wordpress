@@ -320,7 +320,7 @@ class Video {
 
 		if ( $this->player_enabled() && ! empty( $this->attachments ) ) {
 
-			$code = $onload_code = array();
+			$cld_videos = array();
 			foreach ( $this->attachments as $instance => $video ) {
 				// @todo - ping the URL to ensure it has transformation available, else update an eager.
 				$cloudinary_id = $this->media->get_public_id( $video['id'] );
@@ -343,43 +343,49 @@ class Video {
 					$config['fluid'] = true;
 				}
 
-				$code[] = sprintf(
-					'var video%1$s = cld.videoPlayer( "cloudinary-video-%1$s", %2$s );' . "\n",
-					$instance,
-					wp_json_encode( $config )
-				);
+				$cld_videos[ $instance ] = $config;
 
-				// Apply transformations via URL
-				// The "320" is hardcoded here as that the rough 
-				// estimate of pixels that occupy the player controls.
-				if ( isset( $this->config['video_freeform'] ) ) {
-					$onload_code[] = sprintf(
-						'
-	var videoContainer%1$s = document.getElementById( video%1$s.videojs.id_ );
-	var videoElement%1$s = videoContainer%1$s.getElementsByTagName( "video" );
+			}
 
-	if ( videoElement%1$s.length === 1 ) {
-		videoElement%1$s = videoElement%1$s[0];
-		videoElement%1$s.src = videoElement%1$s.src.replace( "upload/", "upload/%2$s/" );
+			if ( empty( $cld_videos ) ) {
+				return;
+			}
 
-		if ( videoElement%1$s.width < 320 ) {
-			video%1$s.controls(false);
+			ob_start();
+			?>
+var cldVideos = <?php echo wp_json_encode( $cld_videos ); ?>;
+
+for ( var videoInstance in cldVideos ) {
+	var config = cldVideos[ videoInstance ];
+	var id = 'cloudinary-video-' + videoInstance;
+	cld.videoPlayer( id, config );
+}
+
+<?php if ( $this->config['video_freeform'] ): ?>
+window.addEventListener( 'load', function() {
+	for ( const instance in cldVideos ) {
+		var config = cldVideos[ instance ];
+		var id = 'cloudinary-video-' + instance;
+		var videoContainer = document.getElementById( id );
+		var videoElement = videoContainer.getElementsByTagName( 'video' );
+
+		if ( videoElement.length === 1 ) {
+			videoElement = videoElement[0];
+			videoElement.src = videoElement.src.replace( 
+				'upload/', 
+				'upload/<?php echo esc_js( $this->config['video_freeform'] ) ?>' 
+			);
 		}
 	}
-', 
-						esc_attr( $instance ), 
-						esc_attr( $this->config['video_freeform'] )
-					);
-				}
-			}
-			
-			// If code was populated, output.
-			if ( ! empty( $code ) ) {
-				wp_add_inline_script( 
-					'cld-player', 
-					implode( $code ) . $this->window_onload_wrapper( implode( $onload_code ) ) 
-				);
-			}
+} );
+<?php endif ?>
+			<?php
+			$script = ob_get_clean();
+
+			wp_add_inline_script(
+				'cld-player',
+				$script
+			);
 		}
 	}
 
