@@ -391,17 +391,6 @@ window.addEventListener( 'load', function() {
 	}
 
 	/**
-	 * Wraps a JS string in a window.onload callback.
-	 *
-	 * @param string $code
-	 * 
-	 * @return string
-	 */
-	protected function window_onload_wrapper( $code ) {
-		return $code ? "\nwindow.addEventListener( 'load', function () { {$code} });" : '';
-	}
-
-	/**
 	 * Enqueue BLock Assets
 	 */
 	public function enqueue_block_assets() {
