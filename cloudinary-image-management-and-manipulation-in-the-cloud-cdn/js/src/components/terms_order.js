@@ -1,104 +1,117 @@
 /* global window wp wpAjax */
 
-const Terms_Order = {
+export const Terms_Order = {
 	template: '',
 	tags: jQuery( '#cld-tax-items' ),
 	tagDelimiter: (window.tagsSuggestL10n && window.tagsSuggestL10n.tagDelimiter) || ',',
+	startId: null,
 	_init: function() {
-
 		// Check that we found the tax-items.
-		if ( !this.tags.length ) {
+		if ( ! this.tags.length ) {
 			return;
 		}
-		// Init sortables.
+
+		const self = this;
 		this._sortable();
 
-		let self = this;
 		// Setup ajax overrides.
 		if ( typeof wpAjax !== 'undefined' ) {
 			wpAjax.procesParseAjaxResponse = wpAjax.parseAjaxResponse;
-			wpAjax.parseAjaxResponse = function( response, settings_response, element ) {
-				let new_response = wpAjax.procesParseAjaxResponse( response, settings_response, element );
-				if ( !new_response.errors && new_response.responses[ 0 ] ) {
-					if ( jQuery( '[data-taxonomy="' + new_response.responses[ 0 ].what + '"]' ).length ) {
-						let data = jQuery( new_response.responses[ 0 ].data ),
-							text = data.find( 'label' ).last().text().trim();
-						self._pushItem( new_response.responses[ 0 ].what, text );
+			wpAjax.parseAjaxResponse = function( response, settingsResponse, element ) {
+				let newResponse = wpAjax.procesParseAjaxResponse( response, settingsResponse, element );
+				if ( !newResponse.errors && newResponse.responses[ 0 ] ) {
+					if ( jQuery( '[data-taxonomy="' + newResponse.responses[ 0 ].what + '"]' ).length ) {
+						const data = jQuery( newResponse.responses[ 0 ].data );
+						const text = data.find( 'label' ).last().text().trim();
+
+						self._pushItem( newResponse.responses[ 0 ].what, text );
 					}
 				}
-				return new_response;
+
+				return newResponse;
 			};
 		}
 
 		if ( typeof window.tagBox !== 'undefined' ) {
 			window.tagBox.processflushTags = window.tagBox.flushTags;
 			window.tagBox.flushTags = function( el, a, f ) {
-
 				if ( typeof f === 'undefined' ) {
-					var taxonomy = el.prop( 'id' ),
-						text,
-						list,
-						newtag = $( 'input.newtag', el );
+					let text, list;
+					const taxonomy = el.prop( 'id' );
+					const	newTag = jQuery( 'input.newtag', el );
 
 					a = a || false;
 
-					text = a ? $( a ).text() : newtag.val();
+					text = a ? jQuery( a ).text() : newTag.val();
 					list = window.tagBox.clean( text ).split( self.tagDelimiter );
 
-					for (var i in list) {
-						var tag = taxonomy + ':' + list[ i ];
-						if ( !jQuery( '[data-item="' + tag + '"]' ).length ) {
-							self._pushItem( tag, list[ i ] );
-						}
-					}
+					new wp.api.collections.Tags()
+						.fetch( { data: { orderby: 'id', order: 'desc', per_page: 1 } } )
+						.done( tags => {
+							const nextTagId = tags.length ? tags[0].id + 1 : 1
+							self.startId = self.startId === null ? nextTagId : ++self.startId;
+							const tag = taxonomy + ':' + self.startId;
+
+							if ( ! jQuery( '[data-item="' + tag + '"]' ).length ) {
+								self._pushItem( tag, list[ list.length - 1 ] );
+							}
+						} );
 				}
+
 				return this.processflushTags( el, a, f );
 			};
 
 			window.tagBox.processTags = window.tagBox.parseTags;
+
 			window.tagBox.parseTags = function( el ) {
+				const id = el.id;
+				const num = id.split( '-check-num-' )[ 1 ];
+				const taxonomy = id.split( '-check-num-' )[ 0 ];
+				const taxBox = jQuery( el ).closest( '.tagsdiv' );
+				const tagsTextarea = taxBox.find( '.the-tags' );
+				const tagToRemove = window.tagBox.clean( tagsTextarea.val() ).split( self.tagDelimiter )[ num ];
 
-				let id = el.id,
-					num = id.split( '-check-num-' )[ 1 ],
-					taxonomy = id.split( '-check-num-' )[ 0 ],
-					taxbox = $( el ).closest( '.tagsdiv' ),
-					thetags = taxbox.find( '.the-tags' ),
-					current_tags = window.tagBox.clean( thetags.val() ).split( self.tagDelimiter ),
-					remove_tag = current_tags[ num ],
-					remove_sortable = jQuery( '[data-item="' + taxonomy + ':' + remove_tag + '"]' );
+				new wp.api.collections.Tags()
+					.fetch( { data: { slug: tagToRemove } } )
+					.done( ( tag ) => {
+						const tagFromDatabase = tag.length ? jQuery( '[data-item="' + taxonomy + ':' + tag[0].id + '"]' ) : false;
 
-				remove_sortable.remove();
-				this.processTags( el );
+						if ( tagFromDatabase.length ) {
+							tagFromDatabase.remove();
+						} else {
+							jQuery( `.cld-tax-order-list-item:contains(${tagToRemove})` ).remove();
+							--self.startId;
+						}
+
+						this.processTags( el );
+					} );
 			};
 		}
 
 		jQuery( 'body' ).on( 'change', '.selectit input', function() {
-			let clicked = jQuery( this ),
-				text = clicked.parent().text().trim(),
-				id = clicked.val(),
-				checked = clicked.is( ':checked' );
+			const clickedItem = jQuery( this );
+			const id = clickedItem.val();
+			const checked = clickedItem.is( ':checked' );
+			const text = clickedItem.parent().text().trim();
 
 			if ( true === checked ) {
-
-				self._pushItem( id, text );
+				self._pushItem( `category:${id}`, text );
+			} else {
+				self.tags.find( `[data-item="category:${id}"]` ).remove();
 			}
-			else {
-				self.tags.find( '[data-item="' + id + '"]' ).remove();
-			}
-
 		} );
-
 	},
 	_createItem: function( id, name ) {
-		let li = jQuery( '<li/>' ),
-			input = jQuery( '<input/>' ),
-			icon = jQuery( '<span/>' );
+		const li = jQuery( '<li/>' );
+		const icon = jQuery( '<span/>' );
+		const input = jQuery( '<input/>' );
 
 		li.addClass( 'cld-tax-order-list-item' ).attr( 'data-item', id );
 		input.addClass( 'cld-tax-order-list-item-input' ).attr( 'type', 'hidden' ).attr( 'name', 'cld_tax_order[]' ).val( id );
 		icon.addClass( 'dashicons dashicons-menu cld-tax-order-list-item-handle' );
 
 		li.append( icon ).append( name ).append( input ); // phpcs:ignore WordPressVIPMinimum.JS.HTMLExecutingFunctions.append
+		
 		return li;
 	},
 	_pushItem: function( id, text ) {
@@ -106,8 +119,8 @@ const Terms_Order = {
 		this.tags.append( item ); // phpcs:ignore WordPressVIPMinimum.JS.HTMLExecutingFunctions.append
 	},
 	_sortable: function() {
+		const items = jQuery( '.cld-tax-order-list' );
 
-		let items = jQuery( '.cld-tax-order-list' );
 		items.sortable( {
 			connectWith: '.cld-tax-order',
 			axis: 'y',
@@ -119,60 +132,73 @@ const Terms_Order = {
 	}
 };
 
-export default Terms_Order;
-
-// Init.
 if ( typeof window.CLDN !== 'undefined' ) {
 	Terms_Order._init();
 }
 
 // Gutenberg.
 if ( wp.data && wp.data.select( 'core/editor' ) ) {
-	let order_set = {};
+	const orderSet = {};
 	wp.data.subscribe( function() {
-
 		let taxonomies = wp.data.select( 'core' ).getTaxonomies();
 
 		if ( taxonomies ) {
-			for (let t in taxonomies) {
-				let set = wp.data.select( 'core/editor' ).getEditedPostAttribute( taxonomies[ t ].rest_base );
-				order_set[ taxonomies[ t ].slug ] = set;
+			for ( let t in taxonomies ) {
+				const set = wp.data.select( 'core/editor' ).getEditedPostAttribute( taxonomies[ t ].rest_base );
+				orderSet[ taxonomies[ t ].slug ] = set;
 			}
 		}
-
 	} );
 
-	let el = wp.element.createElement;
+	const el = wp.element.createElement;
+	const CustomizeTaxonomySelector = ( OriginalComponent ) => {
+		class CustomHandler extends OriginalComponent {
+			constructor( props ) {
+				super(props)
 
-	let CustomizeTaxonomySelector = function( OriginalComponent ) {
-
-		class customHandler extends OriginalComponent {
+				this.currentItems = jQuery( '.cld-tax-order-list-item' )
+					.map( ( _, taxonomy ) => jQuery( taxonomy ).data( 'item' ) ).get();
+			}
 
 			makeItem( item ) {
-				let row = this.makeElement( item );
-				let box = jQuery( '#cld-tax-items' );
+				// Prevent duplicates in the tax order box
+				if (this.currentItems.includes( this.getId( item ) ) ) {
+					return;
+				}
+
+				const row = this.makeElement( item );
+				const box = jQuery( '#cld-tax-items' );
 				box.append( row ); // phpcs:ignore WordPressVIPMinimum.JS.HTMLExecutingFunctions.append
 			}
 
+			removeItem( item ) {
+				const elementWithId = jQuery( `[data-item="${this.getId( item )}"]` );
+
+				if ( elementWithId.length ) {
+					elementWithId.remove();
+
+					this.currentItems = this.currentItems.filter( ( taxIdentifier ) => {
+						return taxIdentifier !== this.getId( item );
+					} );
+				}
+			}
+
 			findOrCreateTerm( termName ) {
-				let self = this;
 				termName = super.findOrCreateTerm( termName );
-				termName.then( ( item ) => self.makeItem( item ) );
+				termName.then( ( item ) => this.makeItem( item ) );
+
 				return termName;
 			}
 
 			onChange( event ) {
 				super.onChange( event );
-				let item = this.pickItem( event );
+				const item = this.pickItem( event );
+
 				if ( item ) {
-					if ( order_set[ this.props.slug ].indexOf( item.id ) >= 0 ) {
+					if ( orderSet[ this.props.slug ].includes( item.id ) ) {
 						this.makeItem( item );
-					}
-					else {
-						let element = jQuery( '[data-item="' + item.id + '"]' );
-						if ( element.length ) {
-							element.remove();
-						}
+					} else {
+						this.removeItem( item );
 					}
 				}
 			}
@@ -185,17 +211,28 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 								return this.state.availableTerms[ p ];
 							}
 						}
+					// Tags that are already registered need to be selected separately
+					// as its expected that they return back with an "id" property.
+					} else if ( Array.isArray( event ) ) {
+						// Figure out the diff between the current state and the event and determine which tag is getting removed
+						let enteredTag = this.state.selectedTerms.filter( flatItem => !event.includes( flatItem ) )[0];
+
+						if ( typeof enteredTag === 'undefined' ) {
+							// If the above returns undefined, then we presume the user is adding, so reverse the logic to figure out the new item
+							enteredTag = event.filter( flatItem => !this.state.selectedTerms.includes( flatItem ) )[0];
+						}
+
+						return this.state.availableTerms.find( ( item ) => item.name === enteredTag );
 					}
-				}
-				else if ( typeof event === 'number' ) {
+				} else if ( typeof event === 'number' ) {
 					for (let p in this.state.availableTerms) {
 						if ( this.state.availableTerms[ p ].id === event ) {
 							return this.state.availableTerms[ p ];
 						}
 					}
-				}
-				else {
+				} else {
 					let text;
+
 					// add or remove.
 					if ( event.length > this.state.selectedTerms.length ) {
 						// Added.
@@ -204,8 +241,7 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 								text = event[ o ];
 							}
 						}
-					}
-					else {
+					} else {
 						// removed.
 						for (let o in this.state.selectedTerms) {
 							if ( event.indexOf( this.state.selectedTerms[ o ] ) === -1 ) {
@@ -219,33 +255,36 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 							return this.state.availableTerms[ p ];
 						}
 					}
-
 				}
+			}
 
+			getId( item ) {
+				return `${this.props.slug}:${item.id}`
 			}
 
 			makeElement( item ) {
-				let li = jQuery( '<li/>' ),
-					input = jQuery( '<input/>' ),
-					icon = jQuery( '<span/>' );
+				const li = jQuery( '<li/>' );
+				const	icon = jQuery( '<span/>' );
+				const	input = jQuery( '<input/>' );
 
-				li.addClass( 'cld-tax-order-list-item' ).attr( 'data-item', item.id );
-				input.addClass( 'cld-tax-order-list-item-input' ).attr( 'type', 'hidden' ).attr( 'name', 'cld_tax_order[]' ).val( item.id );
+				li
+					.addClass( 'cld-tax-order-list-item' )
+					.attr( 'data-item', this.getId( item ) );
+
+				input
+					.addClass( 'cld-tax-order-list-item-input' )
+					.attr( 'type', 'hidden' )
+					.attr( 'name', 'cld_tax_order[]' ).val( this.getId( item ) );
+
 				icon.addClass( 'dashicons dashicons-menu cld-tax-order-list-item-handle' );
 
 				li.append( icon ).append( item.name ).append( input ); // phpcs:ignore WordPressVIPMinimum.JS.HTMLExecutingFunctions.append
+
 				return li;
 			}
 		}
 
-		return function( props ) {
-
-			return el(
-				customHandler,
-				props
-			);
-		};
-
+		return ( props ) => el( CustomHandler, props );
 	};
 
 	wp.hooks.addFilter(
