@@ -361,7 +361,6 @@ class Video {
 				cld.videoPlayer( cldId, cldConfig );
 			}
 
-			<?php if ( $this->config['video_freeform'] ): ?>
 			window.addEventListener( 'load', function() {
 				for ( var videoInstance in cldVideos ) {
 					var cldId = 'cloudinary-video-' + videoInstance;
@@ -370,16 +369,18 @@ class Video {
 
 					if ( videoElement.length === 1 ) {
 						videoElement = videoElement[0];
+						videoElement.style.width = '100%';
+
+						<?php if ( $this->config['video_freeform'] ): ?>
 						videoElement.src = videoElement.src.replace( 
 							'upload/', 
 							'upload/<?php echo esc_js( $this->config['video_freeform'] ) ?>/' 
 						);
+						<?php endif ?>
 					}
 				}
 			} );
-			<?php 
-			endif; 
-			
+			<?php 			
 			$script = ob_get_clean();
 
 			wp_add_inline_script(
