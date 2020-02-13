@@ -350,9 +350,13 @@ class Push_Sync {
 			$public_id  = $post->{Sync::META_KEYS['public_id']}; // use the __get method on the \WP_Post to get post_meta.
 			$dirs       = wp_get_upload_dir();
 			$cld_folder = false;
+			$folder     = trailingslashit( $dirs['cloudinary_folder'] );
+			if ( '/' === $dirs['cloudinary_folder'] ) {
+				$folder = '';
+			}
 			if ( empty( $public_id ) ) {
 				$file_info = pathinfo( $file );
-				$public_id = trailingslashit( $dirs['cloudinary_folder'] ) . $file_info['filename'];
+				$public_id = $folder . $file_info['filename'];
 			}
 
 			// Check if cloudinary folder is in public_id.
