@@ -315,7 +315,7 @@ class Global_Transformations {
 
 						if ( ! $term ) {
 							$term = get_term_by( 'term_taxonomy_id', $parts[1], $parts[0] );
-						} 
+						}
 					} else {
 						// Something went wrong, and value was not an int and didn't contain a tax:slug string.
 						return null;
@@ -422,9 +422,30 @@ class Global_Transformations {
 		);
 
 		$taxonomy_order = filter_input_array( INPUT_POST, $args );
-		
+
 		if ( ! empty( $taxonomy_order['cld_tax_order'] ) ) {
-			update_post_meta( $post_id, self::META_ORDER_KEY . '_terms', $taxonomy_order['cld_tax_order'] );
+			// Map to ID's where needed.
+			$order = array_map(
+				function ( $line ) {
+					$parts = explode( ':', $line );
+					if ( ! empty( $parts[1] ) && ! is_numeric( $parts[1] ) ) {
+						// Tag based, find term ID.
+						$line = null;
+						$term = get_term_by( 'name', $parts[1], $parts[0] );
+						if ( ! empty( $term ) ) {
+							$line = $term->taxonomy . ':' . $term->term_id;
+						}
+					} elseif ( empty( $parts[1] ) ) {
+						// strange '0' based section, remove to be safe.
+						$line = null;
+					}
+
+					return $line;
+				},
+				$taxonomy_order['cld_tax_order']
+			);
+			$order = array_filter( $order );
+			update_post_meta( $post_id, self::META_ORDER_KEY . '_terms', $order );
 		} else {
 			delete_post_meta( $post_id, self::META_ORDER_KEY . '_terms' );
 		}
