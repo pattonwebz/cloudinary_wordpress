@@ -266,6 +266,9 @@ class Video {
 			}
 
 			$url           = $this->media->filter->get_url_from_tag( $tag );
+			if( false === $url ){
+				continue;
+			}
 			$attachment_id = $this->media->get_id_from_url( $url );
 			// Enable Autoplay for this video.
 			if ( false !== strpos( $tag, 'autoplay' ) ) {
@@ -369,7 +372,7 @@ class Video {
 
 					if ( videoElement.length === 1 ) {
 						videoElement = videoElement[0];
-						videoElement.style.width = '100%';
+
 
 						<?php if ( $this->config['video_freeform'] ): ?>
 						videoElement.src = videoElement.src.replace( 
