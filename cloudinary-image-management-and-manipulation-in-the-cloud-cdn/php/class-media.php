@@ -509,7 +509,7 @@ class Media implements Setup {
 					$default['quality'] = 'auto';
 				}
 			}
-			$default = array_filter( $default ); // Clear out empty settings.
+			$default                   = array_filter( $default ); // Clear out empty settings.
 			$new_transformations['qf'] = \Cloudinary\Connect\Api::generate_transformation_string( array( $default ), $type );
 			// Add freeform global transformations.
 			$freeform_type = $type . '_freeform';
@@ -892,7 +892,6 @@ class Media implements Setup {
 				'api_key'       => $this->credentials['api_key'],
 				'cms_type'      => 'wordpress',
 				'remove_header' => true,
-				'folder'        => array( 'path' => $this->cloudinary_folder ),
 				'integration'   => array(
 					'type'     => 'wordpress_plugin',
 					'platform' => 'WordPress ' . get_bloginfo( 'version' ),
@@ -900,6 +899,11 @@ class Media implements Setup {
 				),
 			),
 		);
+
+		// Set folder if needed.
+		if ( !empty( $this->cloudinary_folder ) ) {
+			$params['mloptions']['folder'] = array( 'path' => $this->cloudinary_folder );
+		}
 
 		$params['mloptions']['insert_transformation'] = true;
 		$params['mloptions']['inline_container']      = '#cloudinary-dam';
