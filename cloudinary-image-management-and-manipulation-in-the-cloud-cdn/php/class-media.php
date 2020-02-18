@@ -901,7 +901,7 @@ class Media implements Setup {
 		);
 
 		// Set folder if needed.
-		if ( !empty( $this->cloudinary_folder ) ) {
+		if ( ! empty( $this->cloudinary_folder ) ) {
 			$params['mloptions']['folder'] = array( 'path' => $this->cloudinary_folder );
 		}
 
@@ -1007,7 +1007,7 @@ class Media implements Setup {
 			}
 			$transformations = $this->get_transformations_from_string( $url );
 			if ( ! empty( $transformations ) ) {
-				$sync_key                .= wp_json_encode( $transformations );
+				$sync_key                 .= wp_json_encode( $transformations );
 				$asset['transformations'] = $transformations;
 			}
 			// Check Format and url extension.
@@ -1274,7 +1274,7 @@ class Media implements Setup {
 
 			$this->base_url               = $this->plugin->components['connect']->api->cloudinary_url( '/' );
 			$this->credentials            = $this->plugin->components['connect']->get_credentials();
-			$this->cloudinary_folder      = $this->plugin->config['settings']['sync_media']['cloudinary_folder'];
+			$this->cloudinary_folder      = $this->plugin->config['settings']['sync_media']['cloudinary_folder'] ? $this->plugin->config['settings']['sync_media']['cloudinary_folder'] : '';
 			$this->filter                 = new Filter( $this );
 			$this->upgrade                = new Upgrade( $this );
 			$this->global_transformations = new Global_Transformations( $this );
