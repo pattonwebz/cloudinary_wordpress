@@ -498,7 +498,7 @@ class Media implements Setup {
 			$default = array();
 			if ( 'video' === $type ) {
 				$default['quality'] = 'auto';
-				if ( isset( $global['video_limit_bitrate'] ) ) {
+				if ( isset( $global['video_limit_bitrate'] ) && 'on' === $global['video_limit_bitrate'] ) {
 					$default['bit_rate'] = $global['video_bitrate'] . 'k';
 				}
 			} else {
