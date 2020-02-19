@@ -71,11 +71,7 @@ wp.hooks.addFilter( 'blocks.registerBlockType', 'cloudinary/addAttributes', cldA
  */
 const TransformationsToggle = ( props ) => {
 	const {attributes: {overwrite_transformations, transformations}, setAttributes} = props;
-	
-	if ( ! transformations ) {
-		return null;
-  }
-  
+
 	return (
 		<PanelBody title={__( 'Transformations', 'cloudinary' )}>
 			<ToggleControl
@@ -92,7 +88,7 @@ const TransformationsToggle = ( props ) => {
 let ImageInspectorControls = ( props ) => {
 	const {setAttributes, media} = props;
 	const {InspectorControls} = wp.editor;
-	
+
 	if ( media && media.transformations ) {
 		setAttributes( {transformations: true} );
 	}

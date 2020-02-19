@@ -265,11 +265,14 @@ class Video {
 				}
 			}
 
-			$url           = $this->media->filter->get_url_from_tag( $tag );
-			if( false === $url ){
+			$url = $this->media->filter->get_url_from_tag( $tag );
+			if ( false === $url ) {
 				continue;
 			}
 			$attachment_id = $this->media->get_id_from_url( $url );
+			if ( empty( $attachment_id ) ) {
+				continue; // Missing or no attachment ID found.
+			}
 			// Enable Autoplay for this video.
 			if ( false !== strpos( $tag, 'autoplay' ) ) {
 				$args['autoplayMode'] = $this->config['video_autoplay_mode']; // if on, use defined mode.
@@ -342,7 +345,7 @@ class Video {
 
 				$config = wp_parse_args( $video['args'], $default );
 
-				if ( empty( $config['size'] ) && ! isset( $this->config['video_freeform'] ) ) {
+				if ( empty( $config['size'] ) && ! empty( $config['transformation'] ) && ! $this->media->get_crop_from_transformation( $config['transformation'] ) ) {
 					$config['fluid'] = true;
 				}
 
@@ -359,31 +362,31 @@ class Video {
 			var cldVideos = <?php echo wp_json_encode( $cld_videos ); ?>;
 
 			for ( var videoInstance in cldVideos ) {
-				var cldConfig = cldVideos[ videoInstance ];
-				var cldId = 'cloudinary-video-' + videoInstance;
-				cld.videoPlayer( cldId, cldConfig );
+			var cldConfig = cldVideos[ videoInstance ];
+			var cldId = 'cloudinary-video-' + videoInstance;
+			cld.videoPlayer( cldId, cldConfig );
 			}
 
 			window.addEventListener( 'load', function() {
-				for ( var videoInstance in cldVideos ) {
-					var cldId = 'cloudinary-video-' + videoInstance;
-					var videoContainer = document.getElementById( cldId );
-					var videoElement = videoContainer.getElementsByTagName( 'video' );
+			for ( var videoInstance in cldVideos ) {
+			var cldId = 'cloudinary-video-' + videoInstance;
+			var videoContainer = document.getElementById( cldId );
+			var videoElement = videoContainer.getElementsByTagName( 'video' );
 
-					if ( videoElement.length === 1 ) {
-						videoElement = videoElement[0];
+			if ( videoElement.length === 1 ) {
+			videoElement = videoElement[0];
 
 
-						<?php if ( $this->config['video_freeform'] ): ?>
-						videoElement.src = videoElement.src.replace( 
-							'upload/', 
-							'upload/<?php echo esc_js( $this->config['video_freeform'] ) ?>/' 
-						);
-						<?php endif ?>
-					}
-				}
+			<?php if ( $this->config['video_freeform'] ): ?>
+				videoElement.src = videoElement.src.replace(
+				'upload/',
+				'upload/<?php echo esc_js( $this->config['video_freeform'] ) ?>/'
+				);
+			<?php endif ?>
+			}
+			}
 			} );
-			<?php 			
+			<?php
 			$script = ob_get_clean();
 
 			wp_add_inline_script(

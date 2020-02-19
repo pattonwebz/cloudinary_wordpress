@@ -88,7 +88,9 @@ const Terms_Order = {
             const text = clickedItem.parent().text().trim();
 
             if ( true === checked ) {
-                self._pushItem( `category:${ id }`, text );
+                if( ! self.tags.find(`[data-item="category:${ id }"]`).length ) {
+                    self._pushItem( `category:${ id }`, text );
+                }
             }
             else {
                 self.tags.find( `[data-item="category:${ id }"]` ).remove();
