@@ -1,6 +1,6 @@
 /* global window wp wpAjax */
 
-export const Terms_Order = {
+const Terms_Order = {
     template: '',
     tags: jQuery( '#cld-tax-items' ),
     tagDelimiter: ( window.tagsSuggestL10n && window.tagsSuggestL10n.tagDelimiter ) || ',',
@@ -304,3 +304,5 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
         CustomizeTaxonomySelector
     );
 }
+
+export default Terms_Order;
