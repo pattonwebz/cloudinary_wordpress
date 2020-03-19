@@ -290,14 +290,19 @@ class Filter {
 		$assets = $this->get_media_tags( $content, 'img' );
 		foreach ( $assets as $asset ) {
 
-			$url = $this->get_url_from_tag( $asset );
+			$url           = $this->get_url_from_tag( $asset );
+			$attachment_id = $this->get_id_from_tag( $asset );
 
 			// Check if this is not already a cloudinary url.
 			if ( $this->media->is_cloudinary_url( $url ) ) {
-				continue; // Already a cloudinary URL. Possibly from a previous version. Will correct on post update.
-			}
+				// Is a content based ID. If has a cloudinary ID, it's from an older plugin version.
+				// Check if has an ID, and push update to reset.
+				if ( ! empty( $attachment_id ) && ! $this->media->plugin->components['sync']->is_synced( $attachment_id ) ) {
+					$this->media->cloudinary_id( $attachment_id ); // Start an on-demand sync.
+				}
 
-			$attachment_id = $this->get_id_from_tag( $asset );
+				continue; // Already a cloudinary URL. Possibly from a previous version. Will correct on post update after synced.
+			}
 
 			if ( false === $attachment_id ) {
 				$attachment_id = $this->media->get_id_from_url( $url );

@@ -216,7 +216,7 @@ class Media implements Setup {
 
 		$meta_query = array(
 			array(
-				'key'     => md5( $sync_key ),
+				'key'     => '_' . md5( $sync_key ),
 				'compare' => 'EXISTS',
 			),
 		);
@@ -946,7 +946,7 @@ class Media implements Setup {
 			update_post_meta( $attachment_id, Sync::META_KEYS['transformation'], $asset['transformations'] );
 		}
 		// create a trackable key in post meta.
-		update_post_meta( $attachment_id, md5( $sync_key ), true );
+		update_post_meta( $attachment_id, '_' . md5( $sync_key ), true );
 		// record a base to ensure primary isn't deleted.
 		update_post_meta( $attachment_id, '_' . md5( $public_id ), true );
 		// Capture the ALT Text.
