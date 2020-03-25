@@ -199,14 +199,21 @@ class Video {
 		if ( false === $this->player_enabled ) {
 			return $html;
 		};
-
-		// Queue video.
-		$video                     = wp_get_attachment_metadata( $attr['id'] );
+		// Check for override flag.
 		$overwrite_transformations = false;
 		if ( ! empty( $attr['cldoverwrite'] ) ) {
 			$overwrite_transformations = true;
 		}
-		$cloudinary_url  = $this->media->cloudinary_url( $attr['id'], false, false, null, $overwrite_transformations );
+		// Check for a cloudinary url, or prep sync if not found.
+		$cloudinary_url = $this->media->cloudinary_url( $attr['id'], false, false, null, $overwrite_transformations );
+		if ( ! $this->media->plugin->components['sync']->is_synced( $attr['id'] ) ) {
+			// If the asset is not synced, then the metadata will not be complete since v1 didn't save any.
+			// Return html for now since cloudinary_url will queue it up for syncing in the background.
+			return $html;
+		}
+
+		// Queue video.
+		$video           = wp_get_attachment_metadata( $attr['id'] );
 		$transformations = $this->media->get_transformations_from_string( $cloudinary_url, 'video' );
 		$args            = array();
 
