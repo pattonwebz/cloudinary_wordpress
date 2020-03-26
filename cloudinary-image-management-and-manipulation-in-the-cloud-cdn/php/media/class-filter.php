@@ -651,6 +651,27 @@ class Filter {
 	}
 
 	/**
+	 * Filter an image block to add the class for cld-overriding.
+	 *
+	 * @param array $block        The current block structure.
+	 * @param array $source_block The source, unfiltered block structure.
+	 *
+	 * @return array
+	 */
+	public function filter_image_block_pre_render( $block, $source_block ) {
+
+		if ( 'core/image' === $source_block['blockName'] ) {
+			if ( ! empty( $source_block['attrs']['overwrite_transformations'] ) ) {
+				foreach ( $block['innerContent'] as &$content ) {
+					$content = str_replace( 'wp-image-' . $block['attrs']['id'], 'wp-image-' . $block['attrs']['id'] . ' cld-overwrite', $content );
+				}
+			}
+		}
+
+		return $block;
+	}
+
+	/**
 	 * Setup hooks for the filters.
 	 */
 	public function setup_hooks() {
@@ -684,6 +705,9 @@ class Filter {
 
 		// Add checkbox to media modal template.
 		add_action( 'admin_footer', array( $this, 'catch_media_templates_maybe' ), 9 );
+
+		// Filter for block rendering.
+		add_filter( 'render_block_data', array( $this, 'filter_image_block_pre_render' ), 10, 2 );
 
 	}
 }
