@@ -111,6 +111,7 @@ class Upgrade {
 			'attachment_id'   => $attachment_id,
 			'src'             => $file,
 			'transformations' => $media->get_transformations_from_string( $file ),
+			'filename'        => basename( $file ),
 		);
 		$media->plugin->components['api']->background_request( 'asset', $params );
 

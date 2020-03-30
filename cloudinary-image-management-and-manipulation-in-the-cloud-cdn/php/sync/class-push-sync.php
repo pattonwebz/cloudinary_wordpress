@@ -350,9 +350,13 @@ class Push_Sync {
 			$public_id  = $post->{Sync::META_KEYS['public_id']}; // use the __get method on the \WP_Post to get post_meta.
 			$dirs       = wp_get_upload_dir();
 			$cld_folder = false;
+			$folder     = trailingslashit( $dirs['cloudinary_folder'] );
+			if ( '/' === $dirs['cloudinary_folder'] ) {
+				$folder = '';
+			}
 			if ( empty( $public_id ) ) {
 				$file_info = pathinfo( $file );
-				$public_id = trailingslashit( $dirs['cloudinary_folder'] ) . $file_info['filename'];
+				$public_id = $folder . $file_info['filename'];
 			}
 
 			// Check if cloudinary folder is in public_id.
@@ -574,6 +578,14 @@ class Push_Sync {
 				$meta                                  = wp_get_attachment_metadata( $attachment->ID, true );
 				$meta[ Sync::META_KEYS['cloudinary'] ] = $meta_data;
 				wp_update_attachment_metadata( $attachment->ID, $meta );
+				// Search and update link references in content.
+				$content_search = new \WP_Query( array( 's' => 'wp-image-' . $attachment->ID, 'fields' => 'ids', 'posts_per_page' => 1000 ) );
+				if ( ! empty( $content_search->found_posts ) ) {
+					$content_posts = array_unique( $content_search->get_posts() ); // ensure post only gets updated once.
+					foreach ( $content_posts as $content_id ) {
+						wp_update_post( array( 'ID' => $content_id ) ); // Trigger an update, internal filters will filter out remote URLS.
+					}
+				}
 			}
 
 			$stats['processed'] += 1;

@@ -290,14 +290,19 @@ class Filter {
 		$assets = $this->get_media_tags( $content, 'img' );
 		foreach ( $assets as $asset ) {
 
-			$url = $this->get_url_from_tag( $asset );
+			$url           = $this->get_url_from_tag( $asset );
+			$attachment_id = $this->get_id_from_tag( $asset );
 
 			// Check if this is not already a cloudinary url.
 			if ( $this->media->is_cloudinary_url( $url ) ) {
-				continue; // Already a cloudinary URL. Possibly from a previous version. Will correct on post update.
-			}
+				// Is a content based ID. If has a cloudinary ID, it's from an older plugin version.
+				// Check if has an ID, and push update to reset.
+				if ( ! empty( $attachment_id ) && ! $this->media->plugin->components['sync']->is_synced( $attachment_id ) ) {
+					$this->media->cloudinary_id( $attachment_id ); // Start an on-demand sync.
+				}
 
-			$attachment_id = $this->get_id_from_tag( $asset );
+				continue; // Already a cloudinary URL. Possibly from a previous version. Will correct on post update after synced.
+			}
 
 			if ( false === $attachment_id ) {
 				$attachment_id = $this->media->get_id_from_url( $url );
@@ -374,18 +379,27 @@ class Filter {
 	 * @return array
 	 */
 	public function filter_attachment_for_js( $attachment ) {
-
 		$cloudinary_id = $this->media->cloudinary_id( $attachment['id'] );
+
 		if ( false !== $cloudinary_id ) {
 			$transformations = array();
+
 			if ( ! empty( $attachment['transformations'] ) ) {
 				$transformations = $attachment['transformations'];
 			} else {
 				$attachment['transformations'] = $this->media->get_transformation_from_meta( $attachment['id'] );
 			}
+
 			$attachment['url']       = $this->media->cloudinary_url( $attachment['id'], false, $transformations );
 			$attachment['public_id'] = $attachment['type'] . '/upload/' . $this->media->get_public_id( $attachment['id'] );
+		}
 
+		if ( empty( $attachment['transformations'] ) ) {
+			$transformations = $this->media->get_transformation_from_meta( $attachment['id'] );
+	
+			if ( $transformations ) {
+				$attachment['transformations'] = $transformations;
+			}
 		}
 
 		return $attachment;
@@ -401,14 +415,20 @@ class Filter {
 	 * @return \WP_REST_Response
 	 */
 	public function filter_attachment_for_rest( $attachment ) {
-		if ( ! empty( $attachment->data['source_url'] ) ) {
-			$cloudinary_id = $this->media->cloudinary_id( $attachment->data['id'] );
-			if ( false !== $cloudinary_id ) {
-				$attachment->data['source_url']      = $this->media->cloudinary_url( $attachment->data['id'], false );
-				$attachment->data['transformations'] = ! ( empty( $this->media->get_transformation_from_meta( $attachment->data['id'] ) ) );
-			}
+		if ( ! isset( $attachment->data['id'] ) ) {
+			return $attachment;
 		}
 
+		$cloudinary_id = $this->media->cloudinary_id( $attachment->data['id'] );
+
+		if ( false !== $cloudinary_id ) {
+			$attachment->data['source_url'] = $this->media->cloudinary_url( $attachment->data['id'], false );
+		}
+		
+		if ( $has_transformations = ! empty( $this->media->get_transformation_from_meta( $attachment->data['id'] ) ) ) {
+			$attachment->data['transformations'] = $has_transformations;
+		}
+ 
 		return $attachment;
 	}
 
@@ -606,10 +626,11 @@ class Filter {
 		// Replace template.
 		$str_label      = '<label class="setting align">';
 		$str_div        = '<div class="setting align">';
+		$str_container  = strpos( $template, $str_div ) !== false ? $str_div : '<fieldset class="setting-group">';
 		$str_vid_edit   = '<# if ( ! _.isEmpty( data.model.poster ) ) { #>';
 		$str_vid_insert = '<# if ( \'undefined\' !== typeof data.sizes ) { #>';
 		$template       = str_replace( $str_label, $this->template_overwrite_insert() . $str_label, $template );
-		$template       = str_replace( $str_div, $this->template_overwrite_edit() . $str_div, $template );
+		$template       = str_replace( $str_container, $this->template_overwrite_edit() . $str_container, $template );
 		$template       = str_replace( $str_vid_edit, $this->template_overwrite_video_edit() . $str_vid_edit, $template );
 		$template       = str_replace( $str_vid_insert, $this->template_overwrite_insert_video() . $str_vid_insert, $template );
 
@@ -627,6 +648,27 @@ class Filter {
 			// Prepare output buffer filtering..
 			add_action( 'print_media_templates', array( $this, 'overwrite_template_inject' ), 11 );
 		}
+	}
+
+	/**
+	 * Filter an image block to add the class for cld-overriding.
+	 *
+	 * @param array $block        The current block structure.
+	 * @param array $source_block The source, unfiltered block structure.
+	 *
+	 * @return array
+	 */
+	public function filter_image_block_pre_render( $block, $source_block ) {
+
+		if ( 'core/image' === $source_block['blockName'] ) {
+			if ( ! empty( $source_block['attrs']['overwrite_transformations'] ) ) {
+				foreach ( $block['innerContent'] as &$content ) {
+					$content = str_replace( 'wp-image-' . $block['attrs']['id'], 'wp-image-' . $block['attrs']['id'] . ' cld-overwrite', $content );
+				}
+			}
+		}
+
+		return $block;
 	}
 
 	/**
@@ -663,6 +705,9 @@ class Filter {
 
 		// Add checkbox to media modal template.
 		add_action( 'admin_footer', array( $this, 'catch_media_templates_maybe' ), 9 );
+
+		// Filter for block rendering.
+		add_filter( 'render_block_data', array( $this, 'filter_image_block_pre_render' ), 10, 2 );
 
 	}
 }

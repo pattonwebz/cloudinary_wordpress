@@ -1,35 +1,37 @@
 /* global window wp */
 
 import { __ } from '@wordpress/i18n';
+import { withSelect } from '@wordpress/data';
+import { cloneElement } from '@wordpress/element';
 import { ToggleControl, PanelBody } from '@wordpress/components';
-import { InspectorControls } from '@wordpress/block-editor';
-import { cloneElement, createElement } from '@wordpress/element';
 
 const Video = {
 	_init: function() {
-
-		if ( typeof CLD_VIDEO_PLAYER !== 'undefined' ) {
-			// Gutenberg Video Settings
-			wp.hooks.addFilter(
-				'blocks.registerBlockType',
-				'Cloudinary/Media/Video',
-				function( settings, name ) {
-					if ( name === 'core/video' ) {
-
-						if ( 'off' !== CLD_VIDEO_PLAYER.video_autoplay_mode ) {
-							settings.attributes.autoplay.default = true;
-						}
-						if ( 'on' === CLD_VIDEO_PLAYER.video_loop ) {
-							settings.attributes.loop.default = true;
-						}
-						if ( 'off' === CLD_VIDEO_PLAYER.video_controls ) {
-							settings.attributes.controls.default = false;
-						}
-					}
-					return settings;
-				}
-			);
+		if ( typeof CLD_VIDEO_PLAYER === 'undefined' ) {
+			return;
 		}
+
+		// Gutenberg Video Settings
+		wp.hooks.addFilter(
+			'blocks.registerBlockType',
+			'Cloudinary/Media/Video',
+			function( settings, name ) {
+				if ( name === 'core/video' ) {
+					if ( 'off' !== CLD_VIDEO_PLAYER.video_autoplay_mode ) {
+						settings.attributes.autoplay.default = true;
+					}
+
+					if ( 'on' === CLD_VIDEO_PLAYER.video_loop ) {
+						settings.attributes.loop.default = true;
+					}
+
+					if ( 'off' === CLD_VIDEO_PLAYER.video_controls ) {
+						settings.attributes.controls.default = false;
+					}
+				}
+				return settings;
+			}
+		);
 	},
 };
 
@@ -44,16 +46,20 @@ let cldAddToggle = function( settings, name ) {
 		if ( !settings.attributes ) {
 			settings.attributes = {};
 		}
+
 		settings.attributes.overwrite_transformations = {
 			type: 'boolean',
 		};
+
 		settings.attributes.transformations = {
 			type: 'boolean',
 		};
 
 	}
+
 	return settings;
 };
+
 wp.hooks.addFilter( 'blocks.registerBlockType', 'cloudinary/addAttributes', cldAddToggle );
 
 /**
@@ -64,11 +70,8 @@ wp.hooks.addFilter( 'blocks.registerBlockType', 'cloudinary/addAttributes', cldA
  * @return {Component} Element.
  */
 const TransformationsToggle = ( props ) => {
-
 	const {attributes: {overwrite_transformations, transformations}, setAttributes} = props;
-	if ( !transformations ) {
-		return null;
-	}
+
 	return (
 		<PanelBody title={__( 'Transformations', 'cloudinary' )}>
 			<ToggleControl
@@ -82,37 +85,14 @@ const TransformationsToggle = ( props ) => {
 	);
 };
 
-const cldFilterBlocksEdit = ( BlockEdit ) => {
-
-	const EnhancedBlockEdit = function( props ) {
-		const {name} = props;
-
-		let inspectorControls;
-		if ( 'core/image' === name || 'core/video' === name ) {
-			inspectorControls = cldImageInspectorControls( props );
-		}
-		return (
-			<>
-				{inspectorControls}
-				<BlockEdit {...props} />
-			</>
-		);
-
-	};
-
-	return EnhancedBlockEdit;
-};
-const cldImageInspectorControls = ( props ) => {
-	const {attributes: {id}, setAttributes, isSelected} = props;
-
-	if ( !isSelected || !id ) {
-		return null;
-	}
-	let media = wp.data.select( 'core' ).getMedia( id );
+let ImageInspectorControls = ( props ) => {
+	const {setAttributes, media} = props;
+	const {InspectorControls} = wp.editor;
 
 	if ( media && media.transformations ) {
 		setAttributes( {transformations: true} );
 	}
+
 	return (
 		<InspectorControls>
 			<TransformationsToggle {...props} />
@@ -120,24 +100,23 @@ const cldImageInspectorControls = ( props ) => {
 	);
 };
 
-wp.hooks.addFilter( 'editor.BlockEdit', 'cloudinary/filterEdit', cldFilterBlocksEdit, 20 );
+ImageInspectorControls = withSelect( ( select, ownProps ) => ( {
+	...ownProps,
+	media: ownProps.attributes.id ? select( 'core' ).getMedia( ownProps.attributes.id ) : null
+} ))( ImageInspectorControls );
 
-const cldfilterBlocksSave = ( element, blockType, attributes ) => {
+const cldFilterBlocksEdit = ( BlockEdit ) => {
+	return ( props ) => {
+		const {name} = props;
+		const shouldDisplayInspector = 'core/image' === name || 'core/video' === name;
 
-	if ( 'core/image' === blockType.name && attributes.overwrite_transformations ) {
-
-		let children = cloneElement( element.props.children );
-		let classname = children.props.children[ 0 ].props.className ? children.props.children[ 0 ].props.className : '';
-		let child = cloneElement( children.props.children[ 0 ], {className: classname + ' cld-overwrite'} );
-		let neChildren = cloneElement( children, {children: [ child, false ]} );
-		return cloneElement( element, {children: neChildren} );
-
+		return (
+			<>
+				{shouldDisplayInspector ? <ImageInspectorControls {...props} /> : null}
+				<BlockEdit {...props} />
+			</>
+		);
 	}
-	if ( 'core/video' === blockType.name && attributes.overwrite_transformations ) {
-		let children = cloneElement( element.props.children[ 0 ], {className: ' cld-overwrite'} );
-		return cloneElement( element, {children: children} );
-	}
-
-	return element;
 };
-wp.hooks.addFilter( 'blocks.getSaveElement', 'cloudinary/filterSave', cldfilterBlocksSave );
+
+wp.hooks.addFilter( 'editor.BlockEdit', 'cloudinary/filterEdit', cldFilterBlocksEdit, 20 );

@@ -67,13 +67,15 @@ class Global_Transformations {
 				return ! empty( $field['contextual'] );
 			}
 		);
-		$video_fields           = array_filter(
+
+		$video_fields = array_filter(
 			$settings['pages']['global_transformation']['tabs']['global_video_transformations']['fields'],
 			function ( $field ) {
 				return ! empty( $field['contextual'] );
 			}
 		);
-		$this->fields           = array_merge( $image_fields, $video_fields );
+
+		$this->fields = array_merge( $image_fields, $video_fields );
 
 		$this->setup_hooks();
 	}
@@ -306,18 +308,19 @@ class Global_Transformations {
 		if ( ! empty( $items ) ) {
 			$items = array_map(
 				function ( $item ) {
-					if ( ! is_numeric( $item ) ) {
-						// Get the id.
-						if ( false !== strpos( $item, ':' ) ) {
-							$parts = explode( ':', $item );
-							$term  = get_term_by( 'slug', $parts[1], $parts[0] );
-						} else {
-							// Something went wrong, and value was not an int and didn't contain a tax:slug string.
-							return null;
+					// Get the id.
+					if ( false !== strpos( $item, ':' ) ) {
+						$parts = explode( ':', $item );
+						$term  = get_term_by( 'id', $parts[1], $parts[0] );
+
+						if ( ! $term ) {
+							$term = get_term_by( 'term_taxonomy_id', $parts[1], $parts[0] );
 						}
 					} else {
-						$term = get_term( $item );
+						// Something went wrong, and value was not an int and didn't contain a tax:slug string.
+						return null;
 					}
+
 					// Return if term is valid.
 					if ( $term instanceof \WP_Term ) {
 						return array(
@@ -330,20 +333,15 @@ class Global_Transformations {
 				},
 				$items
 			);
-			$terms = array_filter(
-				$items
-			);
+			$terms = array_filter( $items );
 		} else {
 			$taxonomies    = get_object_taxonomies( get_post_type( $post_id ) );
 			$current_terms = wp_get_object_terms( $post_id, $taxonomies );
 			if ( ! empty( $current_terms ) ) {
 				$terms = array_map(
 					function ( $term ) {
+						$value = $term->taxonomy . ':' . $term->term_id;
 
-						$value = $term->term_id;
-						if ( false === is_taxonomy_hierarchical( $term->taxonomy ) ) {
-							$value = $term->taxonomy . ':' . $term->name;
-						}
 						$item = array(
 							'term'  => $term,
 							'value' => $value,
@@ -386,12 +384,13 @@ class Global_Transformations {
 	 * @return string
 	 */
 	private function init_taxonomy_manager( $post ) {
+		wp_enqueue_script( 'wp-api' );
+
 		$out   = array();
 		$out[] = '<div class="cld-tax-order">';
 		$out[] = '<ul class="cld-tax-order-list" id="cld-tax-items">';
 		$out[] = '<li class="cld-tax-order-list-item no-items">' . esc_html__( 'No terms added', 'cloudinary' ) . '</li>';
 		$terms = $this->get_terms( $post->ID );
-		// Process Terms.
 		if ( ! empty( $terms ) ) {
 			foreach ( (array) $terms as $item ) {
 				$out[] = $this->make_term_sort_item( $item['value'], $item['term']->name );
@@ -412,7 +411,7 @@ class Global_Transformations {
 	 * @param int $post_id The post ID.
 	 */
 	public function save_taxonomy_ordering( $post_id ) {
-		$args           = array(
+		$args = array(
 			'cld_tax_order'  => array(
 				'filter' => FILTER_SANITIZE_STRING,
 				'flags'  => FILTER_REQUIRE_ARRAY,
@@ -421,9 +420,32 @@ class Global_Transformations {
 				'filter' => FILTER_SANITIZE_STRING,
 			),
 		);
+
 		$taxonomy_order = filter_input_array( INPUT_POST, $args );
+
 		if ( ! empty( $taxonomy_order['cld_tax_order'] ) ) {
-			update_post_meta( $post_id, self::META_ORDER_KEY . '_terms', $taxonomy_order['cld_tax_order'] );
+			// Map to ID's where needed.
+			$order = array_map(
+				function ( $line ) {
+					$parts = explode( ':', $line );
+					if ( ! empty( $parts[1] ) && ! is_numeric( $parts[1] ) ) {
+						// Tag based, find term ID.
+						$line = null;
+						$term = get_term_by( 'name', $parts[1], $parts[0] );
+						if ( ! empty( $term ) ) {
+							$line = $term->taxonomy . ':' . $term->term_id;
+						}
+					} elseif ( empty( $parts[1] ) ) {
+						// strange '0' based section, remove to be safe.
+						$line = null;
+					}
+
+					return $line;
+				},
+				$taxonomy_order['cld_tax_order']
+			);
+			$order = array_filter( $order );
+			update_post_meta( $post_id, self::META_ORDER_KEY . '_terms', $order );
 		} else {
 			delete_post_meta( $post_id, self::META_ORDER_KEY . '_terms' );
 		}
@@ -452,6 +474,6 @@ class Global_Transformations {
 
 		// Add ordering metaboxes.
 		add_action( 'add_meta_boxes', array( $this, 'taxonomy_ordering' ), 10, 2 );
-		add_action( 'save_post', array( $this, 'save_taxonomy_ordering' ), 10, 4 );
+		add_action( 'save_post', array( $this, 'save_taxonomy_ordering' ), 10, 1 );
 	}
 }
