@@ -1,6 +1,6 @@
 === Cloudinary – Dynamic Image and Video Management ===
 Contributors: Cloudinary, XWP, Automattic
-Tags: image, images, media, gallery, photo, photos, picture, pictures, thumbnail, upload, admin, administration, api, cms, dashboard, editor, flickr, integration, manage, mobile, page, pages, post, social-media
+Tags: images, videos, DAM, optimizations, CDN, media, gallery, photo, photos, picture, pictures, thumbnail, upload, admin, administration, api, cms, dashboard, editor, integration, manage, mobile, social-media
 Requires at least: 4.7
 Tested up to: 5.3.2
 Requires PHP: 5.6
