@@ -97,15 +97,15 @@ The plugin will automatically sync all of your WordPress media to your Cloudinar
 You can read the plugin [documentation] (https://cloudinary.com/documentation/wordpress_integration?utm_source=wp&utm_medium=wpmarketplace&utm_campaign=wpmarketplace)
 
 == Screenshots ==
-1. Screenshot1.png
-2. Screenshot2.png
-3. Screenshot3.png
-4. Screenshot4.png
-5. Screenshot5.png
-6. Screenshot6.png
-7. Screenshot7.png
-8. Screenshot8.png
-9. Screenshot9.png
+1. Streamline Your Creative Workflow
+2. Media Editor
+3. Media Library
+4. Easy Generation of Asset Derivatives
+5. Automatically Deliver Responsive Images
+6. Global Image Transformation Settings
+7. Global Video Transformation Settings
+8. Folder and Syncing Settings
+9. Easily Configure Your Account
 
 == Changelog ==
 = 2.0.0 (31 Mar 2020) =
