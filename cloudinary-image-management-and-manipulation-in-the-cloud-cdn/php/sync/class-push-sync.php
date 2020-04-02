@@ -578,6 +578,14 @@ class Push_Sync {
 				$meta                                  = wp_get_attachment_metadata( $attachment->ID, true );
 				$meta[ Sync::META_KEYS['cloudinary'] ] = $meta_data;
 				wp_update_attachment_metadata( $attachment->ID, $meta );
+				// Search and update link references in content.
+				$content_search = new \WP_Query( array( 's' => 'wp-image-' . $attachment->ID, 'fields' => 'ids', 'posts_per_page' => 1000 ) );
+				if ( ! empty( $content_search->found_posts ) ) {
+					$content_posts = array_unique( $content_search->get_posts() ); // ensure post only gets updated once.
+					foreach ( $content_posts as $content_id ) {
+						wp_update_post( array( 'ID' => $content_id ) ); // Trigger an update, internal filters will filter out remote URLS.
+					}
+				}
 			}
 
 			$stats['processed'] += 1;

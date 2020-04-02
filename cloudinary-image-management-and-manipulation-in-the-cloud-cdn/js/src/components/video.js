@@ -71,11 +71,7 @@ wp.hooks.addFilter( 'blocks.registerBlockType', 'cloudinary/addAttributes', cldA
  */
 const TransformationsToggle = ( props ) => {
 	const {attributes: {overwrite_transformations, transformations}, setAttributes} = props;
-	
-	if ( ! transformations ) {
-		return null;
-  }
-  
+
 	return (
 		<PanelBody title={__( 'Transformations', 'cloudinary' )}>
 			<ToggleControl
@@ -92,7 +88,7 @@ const TransformationsToggle = ( props ) => {
 let ImageInspectorControls = ( props ) => {
 	const {setAttributes, media} = props;
 	const {InspectorControls} = wp.editor;
-	
+
 	if ( media && media.transformations ) {
 		setAttributes( {transformations: true} );
 	}
@@ -124,22 +120,3 @@ const cldFilterBlocksEdit = ( BlockEdit ) => {
 };
 
 wp.hooks.addFilter( 'editor.BlockEdit', 'cloudinary/filterEdit', cldFilterBlocksEdit, 20 );
-
-const cldfilterBlocksSave = ( element, blockType, attributes ) => {
-	if ( 'core/image' === blockType.name && attributes.overwrite_transformations ) {
-		let children = cloneElement( element.props.children );
-		let classname = children.props.children[ 0 ].props.className ? children.props.children[ 0 ].props.className : '';
-		let child = cloneElement( children.props.children[ 0 ], {className: classname + ' cld-overwrite'} );
-		let neChildren = cloneElement( children, {children: [ child, false ]} );
-		return cloneElement( element, {children: neChildren} );
-	}
-
-	if ( 'core/video' === blockType.name && attributes.overwrite_transformations ) {
-		let children = cloneElement( element.props.children[ 0 ], {className: ' cld-overwrite'} );
-		return cloneElement( element, {children} );
-	}
-
-	return element;
-};
-
-wp.hooks.addFilter( 'blocks.getSaveElement', 'cloudinary/filterSave', cldfilterBlocksSave );

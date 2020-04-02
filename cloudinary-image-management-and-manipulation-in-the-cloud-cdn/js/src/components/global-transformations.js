@@ -219,7 +219,7 @@ const Global_Transformations = {
 	},
 };
 
-export default Global_Transformations;
-
 // Init.
 Global_Transformations._init();
+
+export default Global_Transformations;

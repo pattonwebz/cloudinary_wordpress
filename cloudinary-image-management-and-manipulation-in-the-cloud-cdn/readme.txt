@@ -1,246 +1,115 @@
-=== Cloudinary - Image management and manipulation in the cloud + CDN ===
-Contributors: cloudinary
-Tags: image, images, media, gallery, photo, photos, picture, pictures, thumbnail, upload, admin, administration, api, cms, dashboard, editor, flickr, integration, manage, mobile, page, pages, post, social-media
-Requires at least: 3.0
-Tested up to: 5.1
+=== Cloudinary – Dynamic Image and Video Management ===
+Contributors: Cloudinary, XWP, Automattic
+Tags: images, videos, DAM, optimizations, CDN, media, gallery, photo, photos, picture, pictures, thumbnail, upload, admin, administration, api, cms, dashboard, editor, integration, manage, mobile, social-media
+Requires at least: 4.7
+Tested up to: 5.3.2
+Requires PHP: 5.6
 Stable tag: trunk
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Cloudinary supercharges your images! Upload images to the cloud, deliver optimized via a fast CDN. Perform smart resizing and apply effects.
+Cloudinary is the leading image, video, and rich media management solution that’s used by the world’s leading brands and innovative startups, now available as an easy plugin for WordPress.
 
 == Description ==
+Cloudinary makes automating your image, video, and rich media workflow easy, offering significant advantages over native WordPress capabilities. From upload to management to manipulation and optimization through delivery, all features are offered from within the plugin.
 
-**Cloudinary is your one stop shop for EVERY image related task.**
+Optimize your site performance and user experience with faster page load times, advanced auto-responsive delivery, and better visual experience. Automate quality and encoding settings, scale and crop images using AI to focus on the most important region, apply comprehensive transformations and effects, and deliver on any device in any resolution or pixel density.
 
-With Cloudinary, all your images are automatically uploaded, normalized, optimized and backed-up in the cloud instead of being hosted on your servers.
-
-With Cloudinary, you can stop messing around with image editors. Cloudinary can manipulate and transform your images online, on-the-fly, directly from your WordPress console. Enhance your images using every possible filter and effect you can think of. All manipulations are done in the cloud using super-powerful hardware, and all resulting images are cached, optimized (smushed and more) and delivered via a lightning fast content delivery network (CDN).
-
-Install Cloudinary now, get the most powerful image solution available today, and get your WordPress powered site to the next level.
+And with an embedded digital asset management platform offering full DAM capabilities, you won’t need to leave your WordPress environment. Take full advantage of advanced search, AI tagging, automation, collections, structured metadata, and an intuitive UI making it much easier to manage all of your media in WordPress.
 
 = Requirements =
 
-* While you don't need to install any image software on your server, you will need to register for a (free) [Cloudinary account](https://cloudinary.com/users/register/free) to use the plugin and start uploading images to the cloud.
-* Is your site gaining traction? Upgrade to one of our PRO accounts for higher usage limits with practically limitless scale.
+* All you need to get started is to register for a free [Cloudinary account](https://cloudinary.com/users/register/free?utm_source=wp&utm_medium=wpmarketplace&utm_campaign=wpmarketplace) to use the plugin and start uploading your media to the cloud.
+* As your site’s media management needs grow, you have the choice to easily upgrade to higher usage plans with practically limitless scale.
 
+= Highlights =
 
-= Overview =
-
-* Vast array of image manipulation capabilities.
-* Virtually limitless scale.
-* Lightning-fast image delivery.
-* Highly improved user experience & website performance.
-* Useful from small websites and blogs to large enterprise solutions.
-
-= Image Uploads =
-
-* Upload any image type: JPG, PNG, GIF, animated GIF, BMP, ICO, TIFF, PSD, WebP and even PDFs.
-* Upload directly from your desktop.
-* Upload a single image or multiple images with ease.
-* Remote fetching from public URLs
-
-= Image Manipulations =
-
-You can apply one or more transformations and manipulations on every image:
-
-* **Image formats** - easily convert image formats and modify image quality.
-* **Apply effects & filters** - sharpen, sepia, saturation, grayscale, black & white, hue, brightness, oil paint, pixelate, vignette, add borders.
-* **Overlays & Text** - add watermarks, add image overlay and underlay, add text to the image.
-* **Face detection** - face detection based cropping, thumbnail, multiple faces detection, pixelate faces.
-* **Rotates & flips** - Image rotation (90 degrees), arbitrary rotation, exif-based automatic rotation, vertical & horizontal flips,
-* **Shape alteration** - add rounded corners, crop to ellipses and circles.
-* **Resize & crop** - scale, fill, fit, pad, crop, limit, custom coordinates.
-* **PDF Processing** - extract pages, convert to images.
-
-= Image Storage =
-
-* All your images are stored in a cloud-based persistent storage.
-* Scales to Terabytes and more.
-* Highly available redundant storage.
-* All your photos are automatically backed-up, including revision tracking.
-
-= Image Delivery =
-
-* All your images are automatically delivered via a lightning-fast world-wide Content Delivery Network (CDN).
-* Images are smartly cached for performance optimization, using every best practice in the book.
-* Multiple CDN sub-domains (Domain Sharding).
-
-= Image Optimization =
-
-* Your images are automatically optimized. Their file size is reduced and they are delivered faster to your visitors.
-* Stripping meta data.
-* Converting formats.
-* Optimizing compression.
+* Automatically optimize and apply specified global transformations to pre-existing media upon plugin installation as well as all future uploads.
+* Search and browse your media with AI-powered tagging and attributes including file type, size, format, and many other parameters all within the media library.
+* Automatic responsive images for delivery on various devices in different resolutions.
+* Taxonomy level transformations allow users to set transformations by “category” or “tag” and apply these in real time.
+* Transcode, AI crop, apply filters, generate thumbnails, and more with our video transformation capabilities.
+* The most comprehensive array of image and video manipulation capabilities, powered by AI.
+* Ability to display videos using Cloudinary’s video player giving additional features such as bitrate limit, analytics, monetization, and more.
 
 = Simple Integration =
 
-* Upload and manage your images with Cloudinary directly from your WordPress interface.
-* Migrate all your locally hosted images to Cloudinary.
-* Move your existing posts' images to Cloudinary in a single click.
-* Easily restore your posts to use local images instead of Cloudinary.
-* Seamlessly use Cloudinary's processed images as WordPress featured images.
+* Upload and manage your assets with Cloudinary directly from your WordPress interface.
+* Migrate all your locally hosted assets to Cloudinary.
+* Move your existing posts’ images and videos to Cloudinary with a single click.
 
-= Insights and Reports =
-
-* Cloudinary offers a powerful online management console.
-* Browse all your images and transformations.
-* View comprehensive statistics and usage reports.
-* You can even automate your content management using a RESTful API.
 
 = About Cloudinary =
 
-Read more about the Cloudinary service:
+* [Our website](http://cloudinary.com?utm_source=wp&utm_medium=wpmarketplace&utm_campaign=wpmarketplace)
+* [Blog](http://cloudinary.com/blog?utm_source=wp&utm_medium=wpmarketplace&utm_campaign=wpmarketplace)
+* [Features overview](http://cloudinary.com/features?utm_source=wp&utm_medium=wpmarketplace&utm_campaign=wpmarketplace)
+* [DAM solution](https://cloudinary.com/solutions/digital_asset_management?utm_source=wp&utm_medium=wpmarketplace&utm_campaign=wpmarketplace)
+* [Detailed documentation](http://cloudinary.com/documentation?utm_source=wp&utm_medium=wpmarketplace&utm_campaign=wpmarketplace)
+* [Image transformations documentation](http://cloudinary.com/documentation/image_transformations?utm_source=wp&utm_medium=wpmarketplace&utm_campaign=wpmarketplace)
+* [Video transformations documentation](https://cloudinary.com/documentation/video_manipulation_and_delivery?utm_source=wp&utm_medium=wpmarketplace&utm_campaign=wpmarketplace)
+* [FAQ](http://cloudinary.com/faq?utm_source=wp&utm_medium=wpmarketplace&utm_campaign=wpmarketplace)
 
-* [Our website](http://cloudinary.com)
-* [Blog](http://cloudinary.com/blog)
-* [Features overview](http://cloudinary.com/features)
-* [Detailed documentation](http://cloudinary.com/documentation)
-* [Image transformations documentation](http://cloudinary.com/documentation/image_transformations)
-* [FAQ](http://cloudinary.com/faq)
-
-= Support =
-
-* [Support site](http://support.cloudinary.com/home)
-* [Knowledge Base](http://support.cloudinary.com/forums)
-* Support Email: [support@cloudinary.com](support@cloudinary.com)
-* [Contact page](http://cloudinary.com/contact)
-* Twitter: [@cloudinary](http://twitter.com/cloudinary)
-* [Facebook page](https://www.facebook.com/Cloudinary)
+= Contributors & Developers =
+“Cloudinary – Dynamic Image and Video Management” is an open source software. The following people have contributed to this plugin:
+[Cloudinary](https://profiles.wordpress.org/cloudinary/)
+[XWP](https://profiles.wordpress.org/xwp/)
+[Automattic](https://profiles.wordpress.org/automattic/)
 
 
-**Keywords**: image, images, photo, photos, picture, pictures, thumbnail, thumbnails, upload, batch, cdn, content delivery network, transform, manipulate, effects, scale, high availability, fast, format, sharpen, sepia, saturation, grayscale, b&w, hue, brightness, oil paint, pixelate, vignette,
-jpg, jpeg, png, gif, animated gif, pdf, face, faces, crop, resize, scale, fit, fill, pad, rotate, rotation, flip, corners, borders, exif, watermark, caption, overlay, underlay, text, embed, quality, smush.
 
 == Installation ==
+= Install from within wordpress =
+* Visit the plugins page within your dashboard and select `Add New`.
+* Search for `Cloudinary`.
+* Select `Cloudinary – Dynamic Image and Video Management` from the list.
+* Activate `Cloudinary` from your Plugins page.
+* Go to `Setting up` below.
 
-1. Search and install the plugin through the `Install Plugins` page of your WordPress dashboard. Alternatively, upload the `cloudinary` folder to the `/wp-content/plugins/` directory of your blog.
-1. Activate the Cloudinary plugin through the `Plugins` page of your WordPress dashboard.
-1. Configure the plugin by selecting `Cloudinary' on the left menu of your WordPress dashboard.
+= Install Cloudinary manually =
+* Upload the `Cloudinary` folder to the /wp-content/plugins/ directory.
+* Activate the `Cloudinary` plugin through the `Plugins` menu in WordPress.
+* Go to `Setting up` below.
+
+= Setting up =
+* Once the plugin is activated, go to the `Cloudinary` settings.
+* You’ll be prompted to “Add your Cloudinary URL”.
+* Enter your “Cloudinary environment variable URL”, the format should be cloudinary://{API_Key}:{API_Secret}@{Cloud_Name} and can be found in the "Account Details" section of the Cloudinary Console Dashboard, then click save.
+* After saving, additional settings tabs will be available.
+
+**Note**
+If you have two factor authentication configured for your account, you will need to open the Cloudinary Console and login before you can use the Cloudinary plugin.
+Your site is now setup to start using Cloudinary.
+
+
 
 == Frequently Asked Questions ==
+= Upgrade from v1=
 
-= How can I migrate existing posts to deliver images through Cloudinary? =
+Once installing the new version of the plugin, the plugin will automatically upgrade all of your assets to work with the new plugin.
+Upgrade is seamless and requires no action from your side.
 
-Go to WordPress standard media library (select '**Media**' from the left menu). Click '**Upload to Cloudinary**' for each media item you want to migrate to Cloudinary.
+= Does the plugin sync all of my media to Cloudinary? =
 
-The images will be uploaded to Cloudinary while the content of all associated posts and pages will be automatically updated to point to Cloudinary's CDN URLs.
+The plugin will automatically sync all of your WordPress media to your Cloudinary account and start delivering assets from Cloudinary.
 
-You can perform bulk migration of multiple posts by selecting multiple media items, selecting '**Upload to Cloudinary**' from the '**Bulk Actions**' menu and click '**Apply**'.
-
-Automatic post migration is supported since version 1.1.0 of the plugin.
-
-= How can I update my posts to use local files again? =
-
-In case that you decide to stop using Cloudinary's WordPress plugin, you can migrate your existing posts and pages to embed local image files instead of Cloudinary's cloud-based images.
-
-Go to WordPress standard media library (select '**Media**' from the left menu). Select multiple media items you wish to migrate then select '**Migrate away from Cloudinary**' from the '**Bulk Actions**' menu and click '**Apply**'.
-
-The selected images are automatically downloaded from Cloudinary to your local server. Associated posts are automatically updated to use local image files of Cloudinary's CDN URLs.
-
-Automatic migrate away is supported since version 1.1.0 of the plugin.
-
-We would appreciate it if you could let us know why you decided to stop using Cloudinary for your site.
-
-= Where can I find answers to additional common questions? =
-
-Check out our dynamic [knowledge base](http://support.cloudinary.com/forums/21855426-WordPress) for additional questions and articles.
+= Where can I find more info? =
+You can read the plugin [documentation](https://cloudinary.com/documentation/wordpress_integration?utm_source=wp&utm_medium=wpmarketplace&utm_campaign=wpmarketplace)
 
 == Screenshots ==
-
-1. **Cloud-based image gallery**
-2. **Drag & drop upload to the cloud**
-3. **Powerful live image manipulation**
-4. **Apply effects and face detection**
-5. **Insert into post and edit**
-6. **Simple setup after free sign-up**
-
-== Upgrade Notice ==
-
-N/A
+1. Streamline Your Creative Workflow
+2. Media Editor
+3. Media Library
+4. Easy Generation of Asset Derivatives
+5. Automatically Deliver Responsive Images
+6. Global Image Transformation Settings
+7. Global Video Transformation Settings
+8. Folder and Syncing Settings
+9. Easily Configure Your Account
 
 == Changelog ==
+= 2.0.0 (31 Mar 2020) =
+  * Release of a new major version of the plugin
 
-= 1.1.12 (11 Mar 2019) =
-  * Fix jQuery exception
-
-= 1.1.11 (3 Mar 2019) =
-  * Add CLI command for syncing media
-  * Fix `update_window_dimensions` to fire only when library is visible
-  * Fix illegal function call in PHP5.3
-
-= 1.1.10 (17 May 2018) =
- * Fix memory exhaustion in "Upload to Cloudinary" functionality
- * Fix "Cloudinary Upload/Insert" button compatibility and style
- * Fix `url` and `secure_url` inconsistency
- * Add handling of WP_Error
- * Add cloudinary_php v1.10.0 to WordPress plugin
-
-= 1.1.9 (26 Apr 2018) =
-* Fix "Cloudinary Upload/Insert" functionality
-
-= 1.1.8 (22 Apr 2018) =
-* Fix PHP errors( notices) in DEBUG mode.
-* Fix "tinyMCE is not defined" JS error when TinyMCE is not loaded.
-* Fix include path in cloudinary.php.
-
-= 1.1.7 (11 Dec 2017) =
-* Support https for bulk upload.
-* Fix for DEPRECATED Old style constructor.
-
-= 1.1.6 (6 Aug 2017) =
-* Confirm WordPress 4.8 support.
-* Replace old logos.
-* Fix "Edit with Cloudinaty" button for WP posts image edit.
-
-= 1.1.5 (14 Nov 2016) =
-* Fix Upload/Insert button.
-* Fix setting page on before set credentials.
-
-= 1.1.4 (4 Nov 2014) =
-* Support newer versions of PHP in file upload. Report user agent to Cloudinary.
-* Correctly locate path to ajax-loader.
-
-= 1.1.3 (18 Sep 2014) =
-* Fix display compatibility issue with WordPress 4.0.
-* Support earlier versions of PHP 5.2.
-
-= 1.1.2 (24 Dec 2013) =
-* Fix display compatibility issue with WordPress 3.8.
-
-= 1.1.1 (6 Nov 2013) =
-* Support WordPress sites that use relative URLs for images.
-
-= 1.1.0 (5 Aug 2013) =
-* Migrate existing posts: upload images to Cloudinary and automatically update associated posts and pages to point to Cloudinary CDN URLs.
-* Migrate away from Cloudinary: bulk image downloading from Cloudinary and automatic post updating to use local image files.
-* Better integration with WordPress featured images and image galleries.
-* Allow adding Cloudinary's images directly to WP's post gallery for setting as featured image and using for image galleries.
-
-= 1.0.8 (28 Mar 2013) =
-* Register images uploaded to Cloudinary from WordPress media library as media items so they can be used as featured images.
-
-= 1.0.7 (25 Mar 2013) =
-* Fix issue of Cloudinary settings not appearing with some themes activated.
-* Better error handling when verifying CLOUDINARY_URL.
-
-= 1.0.6 (22 Mar 2013) =
-* Register images with WordPress media to allow using them as featured images.
-* Allow uploading images from WP's media library that aren't recognized properly by local PHP code.
-* Add class prefix to elements in the settings page to avoid possible collisions.
-
-= 1.0.5 (17 Mar 2013) =
-* Allow administrator (and not only super admin) to manage Cloudinary settings.
-* Validation of CLOUDINARY_URL in Settings page.
-
-= 1.0.4 (16 Mar 2013) =
-* Fixes menu and settings in multisite mode.
-
-= 1.0.3 (15 Mar 2013) =
-* Fixes non saved settings issue.
-
-= 1.0.2 (7 Mar 2013) =
-* Minor fixes related to changing directory name.
-
-= 1.0.1 (27 Feb 2013) =
-* Fully tested version entering the plugin directory.
+== Upgrade Notice ==
+Enjoy a seamless upgrade to experience the completely new look and feel of our plugin. Boasting many new features including our digital asset management platform, video player offering advanced capabilities, auto-responsive images, automatic optimizations and transformations, and much more.

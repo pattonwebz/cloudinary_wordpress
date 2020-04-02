@@ -216,7 +216,7 @@ class Media implements Setup {
 
 		$meta_query = array(
 			array(
-				'key'     => md5( $sync_key ),
+				'key'     => '_' . md5( $sync_key ),
 				'compare' => 'EXISTS',
 			),
 		);
@@ -498,7 +498,7 @@ class Media implements Setup {
 			$default = array();
 			if ( 'video' === $type ) {
 				$default['quality'] = 'auto';
-				if ( isset( $global['video_limit_bitrate'] ) ) {
+				if ( isset( $global['video_limit_bitrate'] ) && 'on' === $global['video_limit_bitrate'] ) {
 					$default['bit_rate'] = $global['video_bitrate'] . 'k';
 				}
 			} else {
@@ -509,7 +509,7 @@ class Media implements Setup {
 					$default['quality'] = 'auto';
 				}
 			}
-			$default = array_filter( $default ); // Clear out empty settings.
+			$default                   = array_filter( $default ); // Clear out empty settings.
 			$new_transformations['qf'] = \Cloudinary\Connect\Api::generate_transformation_string( array( $default ), $type );
 			// Add freeform global transformations.
 			$freeform_type = $type . '_freeform';
@@ -892,7 +892,6 @@ class Media implements Setup {
 				'api_key'       => $this->credentials['api_key'],
 				'cms_type'      => 'wordpress',
 				'remove_header' => true,
-				'folder'        => array( 'path' => $this->cloudinary_folder ),
 				'integration'   => array(
 					'type'     => 'wordpress_plugin',
 					'platform' => 'WordPress ' . get_bloginfo( 'version' ),
@@ -900,6 +899,11 @@ class Media implements Setup {
 				),
 			),
 		);
+
+		// Set folder if needed.
+		if ( ! empty( $this->cloudinary_folder ) ) {
+			$params['mloptions']['folder'] = array( 'path' => $this->cloudinary_folder );
+		}
 
 		$params['mloptions']['insert_transformation'] = true;
 		$params['mloptions']['inline_container']      = '#cloudinary-dam';
@@ -942,7 +946,7 @@ class Media implements Setup {
 			update_post_meta( $attachment_id, Sync::META_KEYS['transformation'], $asset['transformations'] );
 		}
 		// create a trackable key in post meta.
-		update_post_meta( $attachment_id, md5( $sync_key ), true );
+		update_post_meta( $attachment_id, '_' . md5( $sync_key ), true );
 		// record a base to ensure primary isn't deleted.
 		update_post_meta( $attachment_id, '_' . md5( $public_id ), true );
 		// Capture the ALT Text.
@@ -1003,7 +1007,7 @@ class Media implements Setup {
 			}
 			$transformations = $this->get_transformations_from_string( $url );
 			if ( ! empty( $transformations ) ) {
-				$sync_key                .= wp_json_encode( $transformations );
+				$sync_key                 .= wp_json_encode( $transformations );
 				$asset['transformations'] = $transformations;
 			}
 			// Check Format and url extension.
@@ -1270,7 +1274,7 @@ class Media implements Setup {
 
 			$this->base_url               = $this->plugin->components['connect']->api->cloudinary_url( '/' );
 			$this->credentials            = $this->plugin->components['connect']->get_credentials();
-			$this->cloudinary_folder      = $this->plugin->config['settings']['sync_media']['cloudinary_folder'];
+			$this->cloudinary_folder      = $this->plugin->config['settings']['sync_media']['cloudinary_folder'] ? $this->plugin->config['settings']['sync_media']['cloudinary_folder'] : '';
 			$this->filter                 = new Filter( $this );
 			$this->upgrade                = new Upgrade( $this );
 			$this->global_transformations = new Global_Transformations( $this );
