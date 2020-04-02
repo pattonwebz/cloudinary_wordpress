@@ -94,7 +94,7 @@ class Download_Sync {
 		$is_pending = $this->plugin->components['media']->get_post_meta( $attachment_id, Sync::META_KEYS['pending'], true );
 		if ( ! empty( $is_pending ) ) {
 			// Dont delete if it's a downsync.
-			$this->plugin->components['media']->update_post_meta( $attachment_id, Sync::META_KEYS['sync_error'], __( 'Could not download asset', 'cloudinary' ) );
+			$this->plugin->components['media']->update_post_meta( $attachment_id, Sync::META_KEYS['sync_error'], $error );
 		} else {
 			// Delete attachment temp.
 			wp_delete_attachment( $attachment_id, true );
