@@ -59,11 +59,11 @@ class Upgrade {
 				// Has public ID, but still has cloudinary, check pending status.
 				$is_pending = $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['pending'], true );
 				$attempts   = (int) $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['attempts'], true );
-				$expire     = time() - 5;// * 60;
-				if ( ( empty( $is_pending ) || $is_pending < $expire ) && 10 >= $attempts ) {
+				if ( ( empty( $is_pending ) || $is_pending < time() - 5 * 60 ) && 10 > $attempts ) {
 					// Timeout.
 					$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['attempts'], $attempts + 1 );
 
+					// return proposed ID to allow front render.
 					return $this->convert_cloudinary_version( $attachment_id );
 				}
 				$cloudinary_id = $public_id;
