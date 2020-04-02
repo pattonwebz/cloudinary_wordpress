@@ -108,9 +108,6 @@ You can read the plugin [documentation](https://cloudinary.com/documentation/wor
 9. Easily Configure Your Account
 
 == Changelog ==
-= 2.0.1 (02 Apr 2020) =
-  * Fix an issue with v1 migrating 
-
 = 2.0.0 (31 Mar 2020) =
   * Release of a new major version of the plugin
 

@@ -48,7 +48,6 @@ class Sync implements Setup, Assets {
 		'transformation' => '_transformations',
 		'sync_error'     => '_sync_error',
 		'cloudinary'     => '_cloudinary_v2',
-		'attempts'       => '_sync_attempts',
 	);
 
 	/**
