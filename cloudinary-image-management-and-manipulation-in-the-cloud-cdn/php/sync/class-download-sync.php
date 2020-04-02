@@ -7,6 +7,8 @@
 
 namespace Cloudinary\Sync;
 
+use Cloudinary\Sync;
+
 /**
  * Class Download_Sync.
  *
@@ -88,9 +90,15 @@ class Download_Sync {
 	 */
 	public function handle_failed_download( $attachment_id, $error ) {
 		// @todo: Place a handler to catch the error for logging.
-		// Delete attachment temp.
-		wp_delete_attachment( $attachment_id, true );
 
+		$is_pending = $this->plugin->components['media']->get_post_meta( $attachment_id, Sync::META_KEYS['pending'], true );
+		if ( ! empty( $is_pending ) ) {
+			// Dont delete if it's a downsync.
+			delete_post_meta( $attachment_id, Sync::META_KEYS['pending'] );
+		} else {
+			// Delete attachment temp.
+			wp_delete_attachment( $attachment_id, true );
+		}
 		// Send error.
 		wp_send_json_error( $error );
 	}
@@ -180,6 +188,9 @@ class Download_Sync {
 			'success' => true,
 			'data'    => $attachment,
 		);
+
+		// Remove pending.
+		delete_post_meta( $attachment_id, Sync::META_KEYS['pending'] );
 
 		return rest_ensure_response( $response );
 	}

@@ -55,6 +55,20 @@ class Upgrade {
 			 */
 			if ( ! empty( $meta['cloudinary'] ) && empty( $public_id ) ) {
 				$cloudinary_id = $this->convert_cloudinary_version( $attachment_id );
+			} elseif ( ! empty( $meta['cloudinary'] ) ) {
+				// Has public ID, but still has cloudinary, check pending status.
+				$is_pending = $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['pending'], true );
+				$attempts   = (int) $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['attempts'], true );
+				$expire     = time() - 5;// * 60;
+				if ( ( empty( $is_pending ) || $is_pending < $expire ) && 10 >= $attempts ) {
+					// Timeout.
+					$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['attempts'], $attempts + 1 );
+
+					return $this->convert_cloudinary_version( $attachment_id );
+				}
+				$cloudinary_id = $public_id;
+			} else {
+				$cloudinary_id = $public_id;
 			}
 		}
 
@@ -105,6 +119,8 @@ class Upgrade {
 		$public_id = strstr( $public_id, '.' . $path['extension'], true );
 		// Save public ID.
 		$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['public_id'], $public_id );
+		// Set download started data.
+		$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['pending'], time() );
 
 		// Setup a call for a background sync.
 		$params = array(
@@ -125,7 +141,7 @@ class Upgrade {
 		add_filter( 'cloudinary_id', array( $this, 'check_cloudinary_version' ), 9, 2 ); // Priority 9, to take preference over prep_on_demand_upload.
 
 		// Add a redirection to the new plugin settings, from the old plugin.
-		if( is_admin() ) {
+		if ( is_admin() ) {
 			add_action( 'admin_menu', function () {
 				global $plugin_page;
 				if ( ! empty( $plugin_page ) && false !== strpos( $plugin_page, 'cloudinary-image-management-and-manipulation-in-the-cloud-cdn' ) ) {
