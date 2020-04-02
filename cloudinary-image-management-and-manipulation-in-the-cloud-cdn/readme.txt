@@ -60,24 +60,24 @@ And with an embedded digital asset management platform offering full DAM capabil
 
 == Installation ==
 = Install from within wordpress =
-* Visit the plugins page within your dashboard and select `Add New`
-* Search for `Cloudinary`
-* Select `Cloudinary – Dynamic Image and Video Management` from the list
-* Activate `Cloudinary` from your Plugins page
+* Visit the plugins page within your dashboard and select `Add New`.
+* Search for `Cloudinary`.
+* Select `Cloudinary – Dynamic Image and Video Management` from the list.
+* Activate `Cloudinary` from your Plugins page.
 * Go to `Setting up` below.
 
 = Install Cloudinary manually =
-* Upload the `Cloudinary` folder to the /wp-content/plugins/ directory
-* Activate the `Cloudinary` plugin through the `Plugins` menu in WordPress
-* Go to `Setting up` below
+* Upload the `Cloudinary` folder to the /wp-content/plugins/ directory.
+* Activate the `Cloudinary` plugin through the `Plugins` menu in WordPress.
+* Go to `Setting up` below.
 
 = Setting up =
 * Once the plugin is activated, go to the `Cloudinary` settings.
 * You’ll be prompted to “Add your Cloudinary URL”.
-* Enter your “Cloudinary environment variable URL”, the format should be cloudinary://{API_Key}:{API_Secret}@{Cloud_Name} and can be found in the \"Account Details\" section of the Cloudinary Console Dashboard, then click save.
+* Enter your “Cloudinary environment variable URL”, the format should be cloudinary://{API_Key}:{API_Secret}@{Cloud_Name} and can be found in the "Account Details" section of the Cloudinary Console Dashboard, then click save.
 * After saving, additional settings tabs will be available.
 
-** Note **
+**Note**
 If you have two factor authentication configured for your account, you will need to open the Cloudinary Console and login before you can use the Cloudinary plugin.
 Your site is now setup to start using Cloudinary.
 
@@ -94,7 +94,7 @@ Upgrade is seamless and requires no action from your side.
 The plugin will automatically sync all of your WordPress media to your Cloudinary account and start delivering assets from Cloudinary.
 
 = Where can I find more info? =
-You can read the plugin [documentation] (https://cloudinary.com/documentation/wordpress_integration?utm_source=wp&utm_medium=wpmarketplace&utm_campaign=wpmarketplace)
+You can read the plugin [documentation](https://cloudinary.com/documentation/wordpress_integration?utm_source=wp&utm_medium=wpmarketplace&utm_campaign=wpmarketplace)
 
 == Screenshots ==
 1. Streamline Your Creative Workflow
@@ -108,6 +108,9 @@ You can read the plugin [documentation] (https://cloudinary.com/documentation/wo
 9. Easily Configure Your Account
 
 == Changelog ==
+= 2.0.1 (02 Apr 2020) =
+  * Fix an issue with v1 migrating 
+
 = 2.0.0 (31 Mar 2020) =
   * Release of a new major version of the plugin
 
