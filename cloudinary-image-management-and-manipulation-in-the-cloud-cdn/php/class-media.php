@@ -571,7 +571,7 @@ class Media implements Setup {
 			'version'       => $this->get_post_meta( $attachment_id, Sync::META_KEYS['version'], true ),
 			'resource_type' => $resource_type,
 		);
-
+		
 		// Check size and correct if string or size.
 		if ( is_string( $size ) || ( is_array( $size ) && 3 === count( $size ) ) ) {
 			$intermediate = image_get_intermediate_size( $attachment_id, $size );
@@ -692,6 +692,11 @@ class Media implements Setup {
 		 * @return string|bool
 		 */
 		$cloudinary_id = apply_filters( 'cloudinary_id', $cloudinary_id, $attachment_id );
+
+		if ( empty( $cloudinary_id ) ) {
+			return false;
+		}
+
 		// Cache ID to prevent multiple lookups.
 		if ( false !== $cloudinary_id ) {
 			$this->cloudinary_ids[ $attachment_id ] = $cloudinary_id;
@@ -762,10 +767,11 @@ class Media implements Setup {
 		if ( false === $cloudinary_id ) {
 			return $sources; // Return WordPress default sources.
 		}
+		
 		// Get transformations from URL.
 		$transformations = $this->get_transformations_from_string( $image_src );
+		
 		// Use Cloudinary breakpoints for same ratio.
-
 		if ( 'on' === $this->plugin->config['settings']['global_transformations']['enable_breakpoints'] && wp_image_matches_ratio( $image_meta['width'], $image_meta['height'], $size_array[0], $size_array[1] ) ) {
 			$meta = $this->get_post_meta( $attachment_id, Sync::META_KEYS['breakpoints'], true );
 			if ( ! empty( $meta ) ) {
@@ -801,11 +807,11 @@ class Media implements Setup {
 					);
 				}
 				krsort( $sources, SORT_NUMERIC );
-
+				
 				return $sources;
 			}
 		}
-
+		
 		// Add the main size as the largest srcset src.
 		$crop = $this->get_crop_from_transformation( $transformations );
 		if ( ! empty( $crop ) ) {
