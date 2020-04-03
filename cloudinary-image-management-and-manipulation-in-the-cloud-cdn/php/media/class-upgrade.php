@@ -55,6 +55,9 @@ class Upgrade {
 			 */
 			if ( ! empty( $meta['cloudinary'] ) && empty( $public_id ) ) {
 				$cloudinary_id = $this->convert_cloudinary_version( $attachment_id );
+			} elseif ( ! empty( $public_id ) ) {
+				// Has public ID, but not  fully down synced.
+				$cloudinary_id = $public_id;
 			}
 		}
 
@@ -103,17 +106,6 @@ class Upgrade {
 		// Remove extension.
 		$path      = pathinfo( $public_id );
 		$public_id = strstr( $public_id, '.' . $path['extension'], true );
-		// Save public ID.
-		$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['public_id'], $public_id );
-
-		// Setup a call for a background sync.
-		$params = array(
-			'attachment_id'   => $attachment_id,
-			'src'             => $file,
-			'transformations' => $media->get_transformations_from_string( $file ),
-			'filename'        => basename( $file ),
-		);
-		$media->plugin->components['api']->background_request( 'asset', $params );
 
 		return $public_id;
 	}
@@ -122,10 +114,10 @@ class Upgrade {
 	 * Setup hooks for the filters.
 	 */
 	public function setup_hooks() {
-		add_filter( 'cloudinary_id', array( $this, 'check_cloudinary_version' ), 9, 2 ); // Priority 9, to take preference over prep_on_demand_upload.
+		add_filter( 'cloudinary_id', array( $this, 'check_cloudinary_version' ), 10, 2 ); // Priority 10, to allow prep_on_demand_upload.
 
 		// Add a redirection to the new plugin settings, from the old plugin.
-		if( is_admin() ) {
+		if ( is_admin() ) {
 			add_action( 'admin_menu', function () {
 				global $plugin_page;
 				if ( ! empty( $plugin_page ) && false !== strpos( $plugin_page, 'cloudinary-image-management-and-manipulation-in-the-cloud-cdn' ) ) {
