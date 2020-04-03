@@ -106,6 +106,7 @@ class Upgrade {
 		// Remove extension.
 		$path      = pathinfo( $public_id );
 		$public_id = strstr( $public_id, '.' . $path['extension'], true );
+		$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['public_id'], $public_id );
 
 		return $public_id;
 	}
