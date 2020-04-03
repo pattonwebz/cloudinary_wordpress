@@ -32,10 +32,10 @@ $struct = array(
 			'label'       => __( 'Video player', 'cloudinary' ),
 			'description' => __( 'Which video player to use on all videos.', 'cloudinary' ),
 			'type'        => 'select',
-			'default'     => 'cld',
+			'default'     => 'wp',
 			'choices'     => array(
-				'cld' => __( 'Cloudinary Player', 'cloudinary' ),
 				'wp'  => __( 'WordPress Player', 'cloudinary' ),
+				'cld' => __( 'Cloudinary Player', 'cloudinary' ),
 			),
 		),
 		'video_controls'      => array(
