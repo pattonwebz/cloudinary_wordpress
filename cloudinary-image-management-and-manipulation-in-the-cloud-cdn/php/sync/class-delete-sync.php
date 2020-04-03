@@ -95,7 +95,7 @@ class Delete_Sync {
 			}
 			// Next we need to check that the file is in the cloudinary folder.
 			$parts             = explode( '/', $public_id );
-			$cloudinary_folder = $this->plugin->config['settings']['general']['cloudinary_folder'];
+			$cloudinary_folder = $this->plugin->config['settings']['sync_media']['cloudinary_folder'] ? $this->plugin->config['settings']['sync_media']['cloudinary_folder'] : '';
 			if ( $cloudinary_folder === $parts[0] ) {
 				$type    = $this->plugin->components['sync']->managers['push']->get_resource_type( $post_id );
 				$options = array(
