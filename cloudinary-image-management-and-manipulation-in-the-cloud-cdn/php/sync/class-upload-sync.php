@@ -66,7 +66,7 @@ class Upload_Sync {
 		// Add action to upload.
 		add_action( 'add_attachment', array( $this, 'push_on_upload' ), 10 );
 		// Filter id for on-demand upload sync.
-		add_filter( 'cloudinary_id', array( $this, 'prep_on_demand_upload' ), 10, 2 );
+		add_filter( 'cloudinary_id', array( $this, 'prep_on_demand_upload' ), 9, 2 );
 		// Show sync status.
 		add_filter( 'cloudinary_media_status', array( $this, 'filter_status' ), 10, 2 );
 		// Hook for on demand upload push.
@@ -119,6 +119,13 @@ class Upload_Sync {
 				// Get the file size to make sure it can exist in cloudinary.
 				if ( file_exists( $file ) && filesize( $file ) < $this->plugin->components['connect']->usage[ $max_size ] ) {
 					$this->add_to_sync( $attachment_id );
+				} else {
+					// Check if the src is a url.
+					$file = get_post_meta( $attachment_id, '_wp_attached_file', true );
+					if ( $this->plugin->components['media']->is_cloudinary_url( $file ) ) {
+						// Download sync.
+						$this->add_to_sync( $attachment_id );
+					}
 				}
 			}
 		}

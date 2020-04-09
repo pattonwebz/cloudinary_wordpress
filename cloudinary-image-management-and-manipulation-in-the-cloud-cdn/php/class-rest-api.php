@@ -63,11 +63,12 @@ class REST_API {
 		// Setup a call for a background sync.
 		$params['nonce'] = wp_create_nonce( 'wp_rest' );
 		$args            = array(
-			'timeout'  => 1,
-			'blocking' => false,
-			'method'   => $method,
-			'headers'  => array(),
-			'body'     => $params,
+			'timeout'   => 1,
+			'blocking'  => false,
+			'sslverify' => false,
+			'method'    => $method,
+			'headers'   => array(),
+			'body'      => $params,
 		);
 		if ( is_user_logged_in() ) {
 			// Setup cookie.
@@ -75,7 +76,7 @@ class REST_API {
 			array_pop( $logged_cookie ); // remove the scheme.
 
 			// Add logged in cookie to request.
-			$args['cookies']               = array(
+			$args['cookies'] = array(
 				new \WP_Http_Cookie(
 					array(
 						'name'    => LOGGED_IN_COOKIE,
@@ -85,8 +86,9 @@ class REST_API {
 					$url
 				),
 			);
-			$args['headers']['X-WP-Nonce'] = $params['nonce'];
+
 		}
+		$args['headers']['X-WP-Nonce'] = $params['nonce'];
 
 		// Send request.
 		wp_safe_remote_request( $url, $args );
