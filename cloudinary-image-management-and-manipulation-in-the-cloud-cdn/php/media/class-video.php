@@ -369,29 +369,29 @@ class Video {
 			var cldVideos = <?php echo wp_json_encode( $cld_videos ); ?>;
 
 			for ( var videoInstance in cldVideos ) {
-			var cldConfig = cldVideos[ videoInstance ];
-			var cldId = 'cloudinary-video-' + videoInstance;
-			cld.videoPlayer( cldId, cldConfig );
+				var cldConfig = cldVideos[ videoInstance ];
+				var cldId = 'cloudinary-video-' + videoInstance;
+				cld.videoPlayer( cldId, cldConfig );
 			}
 
 			window.addEventListener( 'load', function() {
-			for ( var videoInstance in cldVideos ) {
-			var cldId = 'cloudinary-video-' + videoInstance;
-			var videoContainer = document.getElementById( cldId );
-			var videoElement = videoContainer.getElementsByTagName( 'video' );
+				for ( var videoInstance in cldVideos ) {
+					var cldId = 'cloudinary-video-' + videoInstance;
+					var videoContainer = document.getElementById( cldId );
+					var videoElement = videoContainer.getElementsByTagName( 'video' );
 
-			if ( videoElement.length === 1 ) {
-			videoElement = videoElement[0];
-
-
-			<?php if ( $this->config['video_freeform'] ): ?>
-				videoElement.src = videoElement.src.replace(
-				'upload/',
-				'upload/<?php echo esc_js( $this->config['video_freeform'] ) ?>/'
-				);
-			<?php endif ?>
-			}
-			}
+					if ( videoElement.length === 1 ) {
+						videoElement = videoElement[0];
+						videoElement.style.width = '100%';
+						
+						<?php if ( $this->config['video_freeform'] ): ?>
+							videoElement.src = videoElement.src.replace(
+							'upload/',
+							'upload/<?php echo esc_js( $this->config['video_freeform'] ) ?>/'
+							);
+						<?php endif ?>
+					}
+				}
 			} );
 			<?php
 			$script = ob_get_clean();
