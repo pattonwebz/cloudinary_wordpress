@@ -386,10 +386,12 @@ class Video {
 						videoElement.style.width = '100%';
 
 						<?php if ( $this->config['video_freeform'] ): ?>
-							videoElement.src = videoElement.src.replace(
-							'upload/',
-							'upload/<?php echo esc_js( $this->config['video_freeform'] ) ?>/'
-							);
+							if ( videoElement.src.indexOf( '<?php echo esc_js( $this->config['video_freeform'] ) ?>' ) === -1 ) {
+								videoElement.src = videoElement.src.replace(
+									'upload/',
+									'upload/<?php echo esc_js( $this->config['video_freeform'] ) ?>/'
+								);
+							}
 						<?php endif ?>
 					}
 				}
