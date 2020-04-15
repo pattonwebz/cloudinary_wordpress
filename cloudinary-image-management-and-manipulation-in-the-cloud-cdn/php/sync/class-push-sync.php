@@ -585,15 +585,14 @@ class Push_Sync {
 						// Remove records of breakpoints.
 						delete_post_meta( $attachment->ID, Sync::META_KEYS['breakpoints'] );
 					}
-					if ( empty( $upload['options']['responsive_breakpoints']['transformation'] ) ) {
-						// a transformation breakpoints only ever happens on a down sync.
-						$sync_key                     = md5( $upload['options']['public_id'] );
-						$meta_data[ $sync_key ]       = true;
-						$meta_data[ '_' . $sync_key ] = true;
-						update_post_meta( $attachment->ID, $sync_key, true );
-						// Add base ID.
-						update_post_meta( $attachment->ID, '_' . $sync_key, true );
-					}
+				}
+				if ( ! empty( $upload['options']['public_id'] ) ) {
+					// a transformation breakpoints only ever happens on a down sync.
+					$sync_key              = '_' . md5( $upload['options']['public_id'] );
+					$meta_data['sync_key'] = true;
+
+					// Add base ID.
+					update_post_meta( $attachment->ID, $sync_key, true );
 				}
 				$stats['success'][]                    = $attachment->post_title;
 				$meta                                  = wp_get_attachment_metadata( $attachment->ID, true );

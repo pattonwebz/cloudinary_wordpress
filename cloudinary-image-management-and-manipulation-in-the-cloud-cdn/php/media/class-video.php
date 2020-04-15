@@ -104,6 +104,7 @@ class Video {
 				if ( ! empty( $has_video ) || ! empty( $video_tags ) ) {
 					// Setup initial scripts.
 					wp_enqueue_style( 'cld-player' );
+					wp_enqueue_style( 'cld-player-local' );
 					wp_enqueue_script( 'cld-player' );
 
 					// Init cld script object.
@@ -383,7 +384,7 @@ class Video {
 					if ( videoElement.length === 1 ) {
 						videoElement = videoElement[0];
 						videoElement.style.width = '100%';
-						
+
 						<?php if ( $this->config['video_freeform'] ): ?>
 							if ( videoElement.src.indexOf( '<?php echo esc_js( $this->config['video_freeform'] ) ?>' ) === -1 ) {
 								videoElement.src = videoElement.src.replace(
@@ -416,8 +417,10 @@ class Video {
 	/**
 	 * Register assets for the player.
 	 */
-	public static function register_scripts_styles() {
+	public function register_scripts_styles() {
 		wp_register_style( 'cld-player', 'https://unpkg.com/cloudinary-video-player@' . self::PLAYER_VER . '/dist/cld-video-player.min.css', null, self::PLAYER_VER );
+		wp_register_style( 'cld-player-local', $this->media->plugin->dir_url . 'css/video.css', null, self::PLAYER_VER );
+
 		wp_register_script( 'cld-core', 'https://unpkg.com/cloudinary-core@' . self::CORE_VER . '/cloudinary-core-shrinkwrap.min.js', null, self::CORE_VER, true );
 		wp_register_script( 'cld-player', 'https://unpkg.com/cloudinary-video-player@' . self::PLAYER_VER . '/dist/cld-video-player.min.js', array( 'cld-core' ), self::PLAYER_VER, true );
 	}
@@ -429,13 +432,13 @@ class Video {
 		add_filter( 'wp_video_shortcode_override', array( $this, 'filter_video_shortcode' ), 10, 2 );
 		// only filter video tags in front end.
 		if ( ! is_admin() ) {
-			add_filter( 'the_content', array( $this, 'filter_video_tags' ), 10 );
+			add_filter( 'the_content', array( $this, 'filter_video_tags' ), 4 );
 		}
 		add_action( 'wp_print_styles', array( $this, 'init_player' ) );
 		add_action( 'wp_footer', array( $this, 'print_video_scripts' ) );
 
 		// Add inline scripts for gutenberg.
 		add_action( 'enqueue_block_editor_assets', array( $this, 'enqueue_block_assets' ) );
-		self::register_scripts_styles();
+		$this->register_scripts_styles();
 	}
 }
