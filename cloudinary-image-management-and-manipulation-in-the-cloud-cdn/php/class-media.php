@@ -1006,7 +1006,7 @@ class Media implements Setup {
 			}
 			$transformations = $this->get_transformations_from_string( $url );
 			if ( ! empty( $transformations ) ) {
-				$sync_key                 .= wp_json_encode( $transformations );
+				$sync_key                .= wp_json_encode( $transformations );
 				$asset['transformations'] = $transformations;
 			}
 			// Check Format and url extension.
@@ -1228,6 +1228,14 @@ class Media implements Setup {
 			$data = $this->build_cached_meta( $post_id, $key, $single );
 		}
 
+		// If public_id, ensure there's a sync_key saved.
+		if ( '_public_id' === $key && empty( $meta_data[ Sync::META_KEYS['cloudinary'] ]['_sync_key'] ) ) {
+
+			//$sync_key = '_' . md5( $data );
+			//$this->update_post_meta( $post_id, '_sync_key', $sync_key );
+			//update_post_meta( $post_id, $sync_key, true ); // Set sync_key.
+		}
+
 		return $data;
 	}
 
@@ -1252,9 +1260,9 @@ class Media implements Setup {
 	/**
 	 * Update cloudinary metadata.
 	 *
-	 * @param int    $post_id The attachment ID.
-	 * @param string $key     The meta key to get.
-	 * @param array  $data    $the meta data to update.
+	 * @param int          $post_id The attachment ID.
+	 * @param string       $key     The meta key to get.
+	 * @param string|array $data    $the meta data to update.
 	 */
 	public function update_post_meta( $post_id, $key, $data ) {
 		$meta_data = wp_get_attachment_metadata( $post_id, true );

@@ -383,7 +383,7 @@ class Video {
 					if ( videoElement.length === 1 ) {
 						videoElement = videoElement[0];
 						videoElement.style.width = '100%';
-						
+
 						<?php if ( $this->config['video_freeform'] ): ?>
 							videoElement.src = videoElement.src.replace(
 							'upload/',
@@ -427,7 +427,7 @@ class Video {
 		add_filter( 'wp_video_shortcode_override', array( $this, 'filter_video_shortcode' ), 10, 2 );
 		// only filter video tags in front end.
 		if ( ! is_admin() ) {
-			add_filter( 'the_content', array( $this, 'filter_video_tags' ), 10 );
+			add_filter( 'the_content', array( $this, 'filter_video_tags' ), 4 );
 		}
 		add_action( 'wp_print_styles', array( $this, 'init_player' ) );
 		add_action( 'wp_footer', array( $this, 'print_video_scripts' ) );
