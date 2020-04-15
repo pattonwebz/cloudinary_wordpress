@@ -199,13 +199,6 @@ class Upload_Queue {
 					'key'     => Sync::META_KEYS['public_id'],
 					'compare' => 'NOT EXISTS',
 				),
-				array(
-					'relation' => 'OR',
-					array(
-						'key'     => Sync::META_KEYS['signature'],
-						'compare' => 'NOT EXISTS',
-					),
-				),
 			),
 			'ignore_sticky_posts' => false,
 			'no_found_rows'       => true,

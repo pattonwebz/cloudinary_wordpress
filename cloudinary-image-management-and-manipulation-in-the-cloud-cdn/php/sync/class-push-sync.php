@@ -210,6 +210,7 @@ class Push_Sync {
 
 		// Check if there is a Cloudinary ID in case this was synced on-demand before being processed by the queue.
 		add_filter( 'cloudinary_on_demand_sync_enabled', '__return_false' ); // Disable the on-demand sync since we want the status.
+		add_filter( 'cloudinary_id', '__return_false' ); // Disable the on-demand sync since we want the status.
 		if ( false === $this->plugin->components['media']->cloudinary_id( $post_id ) ) {
 			$stat = $this->push_attachments( array( $post_id ) );
 			if ( ! empty( $stat['processed'] ) ) {
@@ -307,11 +308,12 @@ class Push_Sync {
 	/**
 	 * Prepare an attachment for upload.
 	 *
-	 * @param int|\WP_Post $post The attachment to prepare.
+	 * @param int|\WP_Post $post      The attachment to prepare.
+	 * @param bool         $down_sync Flag to determine if a missing file starts a downsync.
 	 *
 	 * @return array|\WP_Error
 	 */
-	public function prepare_upload( $post ) {
+	public function prepare_upload( $post, $down_sync = false ) {
 
 		if ( is_numeric( $post ) ) {
 			$post = get_post( $post );
@@ -331,9 +333,28 @@ class Push_Sync {
 			$file = get_attached_file( $post->ID );
 			if ( empty( $file ) ) {
 				return new \WP_Error( 'attachment_no_file', __( 'Attachment did not have a file.', 'cloudinary' ) );
+			} elseif ( ! file_exists( $file ) ) {
+				// May be an old upload type.
+				$src = get_post_meta( $post->ID, '_wp_attached_file', true );
+				if ( $this->plugin->components['media']->is_cloudinary_url( $src ) ) {
+					// Download first maybe.
+					if ( true === $down_sync ) {
+						$download = $this->plugin->components['sync']->managers['download']->down_sync( $post->ID );
+						if ( is_wp_error( $download ) ) {
+							update_post_meta( $post->ID, Sync::META_KEYS['sync_error'], $download->get_error_message() );
+
+							return new \WP_Error( 'attachment_download_error', $download->get_error_message() );
+						}
+						$file      = get_attached_file( $post->ID );
+						$file_size = filesize( $file );
+					} else {
+						$file_size = 0;
+					}
+				}
+			} else {
+				$file_size = filesize( $file );
 			}
 
-			$file_size     = filesize( $file );
 			$resource_type = $this->get_resource_type( $post );
 			$max_size      = ( 'image' === $resource_type ? 'max_image_size' : 'max_video_size' );
 
@@ -341,7 +362,7 @@ class Push_Sync {
 				$max_size_hr = size_format( $this->plugin->components['connect']->usage[ $max_size ] );
 				// translators: variable is file size.
 				$error = sprintf( __( 'File size exceeds the maximum of %s. This media asset will be served from WordPress.', 'cloudinary' ), $max_size_hr );
-				delete_post_meta( $post->ID, Sync::META_KEYS['pending'] ); // Remove Flag.
+				$this->plugin->components['media']->delete_post_meta( $post->ID, Sync::META_KEYS['pending'] ); // Remove Flag.
 
 				return new \WP_Error( 'upload_error', $error );
 			}
@@ -481,7 +502,7 @@ class Push_Sync {
 		// Go over each attachment.
 		foreach ( $attachments as $attachment ) {
 			$attachment = get_post( $attachment );
-			$upload     = $this->prepare_upload( $attachment->ID );
+			$upload     = $this->prepare_upload( $attachment->ID, true );
 
 			// Filter out any attachments with problematic options.
 			if ( is_wp_error( $upload ) ) {
@@ -555,8 +576,8 @@ class Push_Sync {
 				if ( ! empty( $result['version'] ) ) {
 					$meta_data[ Sync::META_KEYS['version'] ] = $result['version'];
 				}
-				delete_post_meta( $attachment->ID, Sync::META_KEYS['pending'] );
-				$this->plugin->components['media']->update_post_meta( $attachment->ID, Sync::META_KEYS['sync_error'], false );
+				$this->plugin->components['media']->delete_post_meta( $attachment->ID, Sync::META_KEYS['pending'] );
+				$this->plugin->components['media']->delete_post_meta( $attachment->ID, Sync::META_KEYS['sync_error'], false );
 				if ( ! empty( $this->plugin->config['settings']['global_transformations']['enable_breakpoints'] ) ) {
 					if ( ! empty( $result['responsive_breakpoints'] ) ) { // Images only.
 						$meta_data[ Sync::META_KEYS['breakpoints'] ] = $result['responsive_breakpoints'][0]['breakpoints'];
@@ -564,20 +585,20 @@ class Push_Sync {
 						// Remove records of breakpoints.
 						delete_post_meta( $attachment->ID, Sync::META_KEYS['breakpoints'] );
 					}
-					if ( empty( $upload['options']['responsive_breakpoints']['transformation'] ) ) {
-						// a transformation breakpoints only ever happens on a down sync.
-						$sync_key                     = md5( $upload['options']['public_id'] );
-						$meta_data[ $sync_key ]       = true;
-						$meta_data[ '_' . $sync_key ] = true;
-						update_post_meta( $attachment->ID, $sync_key, true );
-						// Add base ID.
-						update_post_meta( $attachment->ID, '_' . $sync_key, true );
-					}
+				}
+				if ( ! empty( $upload['options']['public_id'] ) ) {
+					// a transformation breakpoints only ever happens on a down sync.
+					$sync_key              = '_' . md5( $upload['options']['public_id'] );
+					$meta_data['sync_key'] = true;
+
+					// Add base ID.
+					update_post_meta( $attachment->ID, $sync_key, true );
 				}
 				$stats['success'][]                    = $attachment->post_title;
 				$meta                                  = wp_get_attachment_metadata( $attachment->ID, true );
 				$meta[ Sync::META_KEYS['cloudinary'] ] = $meta_data;
 				wp_update_attachment_metadata( $attachment->ID, $meta );
+				$this->plugin->components['media']->update_post_meta( $attachment->ID, Sync::META_KEYS['public_id'], $upload['options']['public_id'] );
 				// Search and update link references in content.
 				$content_search = new \WP_Query( array( 's' => 'wp-image-' . $attachment->ID, 'fields' => 'ids', 'posts_per_page' => 1000 ) );
 				if ( ! empty( $content_search->found_posts ) ) {

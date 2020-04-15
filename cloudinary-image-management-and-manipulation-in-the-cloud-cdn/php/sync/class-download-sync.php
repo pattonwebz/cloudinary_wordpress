@@ -7,6 +7,8 @@
 
 namespace Cloudinary\Sync;
 
+use Cloudinary\Sync;
+
 /**
  * Class Download_Sync.
  *
@@ -70,21 +72,16 @@ class Download_Sync {
 	public function rest_can_upload_files( \WP_REST_Request $request ) {
 
 		// This would have been from an ajax call. Therefore verify based on capability.
-		if ( is_user_logged_in() ) {
-			return current_user_can( 'upload_files' );
-		}
-
-		// If we get here, this is a background post, which will have a bg post nonce created.
-		$nonce = $request->get_param( 'nonce' );
-
-		return wp_verify_nonce( $nonce, 'wp_rest' );
+		return current_user_can( 'upload_files' );
 	}
 
 	/**
-	 * Handle a failed download by deleting teh temp attachment and returning the error in json.
+	 * Handle a failed download by deleting the temp attachment and returning the error in json.
 	 *
 	 * @param int    $attachment_id The attachment ID.
 	 * @param string $error         The error text to return.
+	 *
+	 * @return \WP_Error
 	 */
 	public function handle_failed_download( $attachment_id, $error ) {
 		// @todo: Place a handler to catch the error for logging.
@@ -109,6 +106,73 @@ class Download_Sync {
 		$file_name       = $request->get_param( 'filename' );
 		$transformations = (array) $request->get_param( 'transformations' );
 
+		$response = $this->download_asset( $attachment_id, $file_path, $file_name, $transformations );
+		if ( is_wp_error( $response ) ) {
+			$this->handle_failed_download( $attachment_id, $response->get_error_message() );
+		}
+
+		return rest_ensure_response( $response );
+	}
+
+	/**
+	 * Prepare and sync down an asset stored remotely.
+	 *
+	 * @param $attachment_id
+	 *
+	 * @return array|\WP_Error
+	 */
+	public function down_sync( $attachment_id ) {
+		$file  = get_post_meta( $attachment_id, '_wp_attached_file', true );
+		$path  = wp_parse_url( $file, PHP_URL_PATH );
+		$media = $this->plugin->components['media'];
+		$parts = explode( '/', $path );
+		$parts = array_map(
+			function ( $val ) use ( $media ) {
+				if ( empty( $val ) ) {
+					return false;
+				}
+				if ( $val === $media->credentials['cloud_name'] ) {
+					return false;
+				}
+				if ( in_array( $val, [ 'image', 'video', 'upload' ], true ) ) {
+					return false;
+				}
+				$transformation_maybe = $media->get_transformations_from_string( $val );
+				if ( ! empty( $transformation_maybe ) ) {
+					return false;
+				}
+				if ( substr( $val, 0, 1 ) === 'v' && is_numeric( substr( $val, 1 ) ) ) {
+					return false;
+				}
+
+				return $val;
+			},
+			$parts
+		);
+		// Build public_id.
+		$parts     = array_filter( $parts );
+		$public_id = implode( '/', $parts );
+		// Remove extension.
+		$path      = pathinfo( $public_id );
+		$public_id = strstr( $public_id, '.' . $path['extension'], true );
+		// Save public ID.
+		$media->update_post_meta( $attachment_id, Sync::META_KEYS['public_id'], $public_id );
+
+		return $this->download_asset( $attachment_id, $file, basename( $file ), $media->get_transformations_from_string( $file ) );
+	}
+
+	/**
+	 * Download an attachment source to the file system.
+	 *
+	 * @param int        $attachment_id The attachment ID.
+	 * @param string     $file_path     The path of the file.
+	 * @param string     $file_name     The filename.
+	 * @param array|null $transformations
+	 *
+	 * @return array|\WP_Error
+	 */
+	public function download_asset( $attachment_id, $file_path, $file_name, $transformations = null ) {
+
 		// Get the image and update the attachment.
 		require_once ABSPATH . WPINC . '/class-http.php';
 		require_once ABSPATH . 'wp-admin/includes/file.php';
@@ -120,8 +184,7 @@ class Download_Sync {
 			// Prime a file to stream to.
 			$upload = wp_upload_bits( $file_name, null, 'temp' );
 			if ( ! empty( $upload['error'] ) ) {
-				$this->handle_failed_download( $attachment_id, $upload['error'] );
-				wp_send_json_error( $upload['error'] );
+				return new \WP_Error( 'download_error', $upload['error'] );
 			}
 			// If the public_id of an asset includes a file extension, a derived item will have the extension duplicated, but not in the source URL.
 			// This creates a 404. So, instead, we get the actual file name, and use that over the file name that the source url has.
@@ -137,7 +200,7 @@ class Download_Sync {
 			);
 
 			if ( is_wp_error( $response ) ) {
-				$this->handle_failed_download( $attachment_id, $response->get_error_message() );
+				return $response;
 			}
 			if ( 200 !== $response['response']['code'] ) {
 				$header_error = wp_remote_retrieve_header( $response, 'x-cld-error' );
@@ -146,7 +209,8 @@ class Download_Sync {
 				} else {
 					$error = __( 'Could not download the Cloudinary asset.', 'cloudinary' );
 				}
-				$this->handle_failed_download( $attachment_id, $error );
+
+				return new \WP_Error( 'download_error', $error );
 			}
 
 			// Prepare the asset.
@@ -157,7 +221,7 @@ class Download_Sync {
 			wp_update_attachment_metadata( $attachment_id, $meta );
 
 		} catch ( \Exception $e ) {
-			$this->handle_failed_download( $attachment_id, $e->getMessage() );
+			return new \WP_Error( 'download_error', $e->getMessage() );
 		}
 
 		$attachment = wp_prepare_attachment_for_js( $attachment_id );
@@ -181,6 +245,6 @@ class Download_Sync {
 			'data'    => $attachment,
 		);
 
-		return rest_ensure_response( $response );
+		return $response;
 	}
 }

@@ -31,6 +31,6 @@ Stay tuned for updates, tips and tutorials: [Blog](http://cloudinary.com/blog), 
 
 ## License #######################################################################
 
-Released under the MIT license. 
+Released under the GPL license. 
 
 
