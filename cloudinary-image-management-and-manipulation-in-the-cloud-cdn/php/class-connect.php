@@ -10,7 +10,6 @@ namespace Cloudinary;
 use Cloudinary\Component\Config;
 use Cloudinary\Component\Notice;
 use Cloudinary\Component\Setup;
-use Cloudinary\Connect\API;
 
 /**
  * Cloudinary connection class.
@@ -302,25 +301,33 @@ class Connect implements Config, Setup, Notice {
 	 */
 	public function get_config() {
 		$signature = get_option( 'cloudinary_connection_signature', null );
-		if ( empty( $signature ) ) {
-			// Check if theres a previous version.
-			$version = get_option( 'cloudinary_version' );
-			if ( version_compare( $this->plugin->version, $version, '>' ) ) {
-				$data = array(
-					'cloudinary_url' => get_option( 'cloudinary_url' ),
-				);
-				$test = $this->test_connection( $data['cloudinary_url'] );
-				if ( 'connection_success' === $test['type'] ) {
-					$signature = md5( $data['cloudinary_url'] );
-
-					// remove filters as we've already verified it and 'add_settings_error()' isin't available yet.
-					remove_filter( 'pre_update_option_cloudinary_connect', array( $this, 'verify_connection' ) );
-					update_option( 'cloudinary_connect', $data );
-					update_option( 'cloudinary_connection_signature', $signature );
-					update_option( 'cloudinary_version', $this->plugin->version );
-					delete_option( 'cloudinary_settings_cache' ); // remove the cache.
-					$this->plugin->config['settings']['connect'] = $data; // Set the connection url for this round.
+		$version   = get_option( 'cloudinary_version' );
+		if ( empty( $signature ) || version_compare( $this->plugin->version, $version, '>' ) ) {
+			// Check if there's a previous version, or missing signature.
+			$cld_url = get_option( 'cloudinary_url', null );
+			if ( is_null( $cld_url ) ) {
+				// Post V1.
+				$data = get_option( 'cloudinary_connect', array() );
+				if ( ! isset( $data['cloudinary_url'] ) || empty( $data['cloudinary_url'] ) ) {
+					return null; // return null to indicate not valid.
 				}
+			} else {
+				// from V1 to V2.
+				$data = array(
+					'cloudinary_url' => $cld_url,
+				);
+			}
+			$test = $this->test_connection( $data['cloudinary_url'] );
+			if ( 'connection_success' === $test['type'] ) {
+				$signature = md5( $data['cloudinary_url'] );
+
+				// remove filters as we've already verified it and 'add_settings_error()' isin't available yet.
+				remove_filter( 'pre_update_option_cloudinary_connect', array( $this, 'verify_connection' ) );
+				update_option( 'cloudinary_connect', $data );
+				update_option( 'cloudinary_connection_signature', $signature );
+				update_option( 'cloudinary_version', $this->plugin->version );
+				delete_option( 'cloudinary_settings_cache' ); // remove the cache.
+				$this->plugin->config['settings']['connect'] = $data; // Set the connection url for this round.
 			}
 		}
 
