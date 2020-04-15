@@ -50,7 +50,7 @@
 				let field = $(this),
 					value = field.val();
 
-				let reg = new RegExp(/^(cloudinary:\/\/){1}(\d)*[:]{1}[^:@]*[@]{1}[^@]*$/g );
+				let reg = new RegExp(/^(?:CLOUDINARY_URL=)?(cloudinary:\/\/){1}(\d)*[:]{1}[^:@]*[@]{1}[^@]*$/g );
 				if( reg.test( value ) ){
 					field.addClass( 'settings-valid-field' );
 					field.removeClass( 'settings-invalid-field' );
