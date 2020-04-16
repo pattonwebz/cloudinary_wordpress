@@ -118,27 +118,43 @@ class Connect implements Config, Setup, Notice {
 	public function verify_connection( $data ) {
 		if ( empty( $data['cloudinary_url'] ) ) {
 			delete_option( 'cloudinary_connection_signature' );
-			add_settings_error( 'cloudinary_connect', 'connection_error', __( 'Connection to Cloudinary has been removed.', 'cloudinary' ), 'notice-warning' );
+
+			add_settings_error( 
+				'cloudinary_connect', 
+				'connection_error', 
+				__( 'Connection to Cloudinary has been removed.', 'cloudinary' ), 
+				'notice-warning' 
+			);
 
 			return $data;
 		}
+
+		$data['cloudinary_url'] = str_replace( 'CLOUDINARY_URL=', '', $data['cloudinary_url'] );
 		$current = $this->plugin->config['settings']['connect'];
+		
 		if ( $current['cloudinary_url'] === $data['cloudinary_url'] ) {
 			return $data;
 		}
 
-		if ( ! preg_match( '~^cloudinary://~', $data['cloudinary_url'] ) ) {
-			add_settings_error( 'cloudinary_connect', 'format_mismatch', __( 'The Environment variable URL must be in this format: cloudinary://API_Key:API_Secret@Cloud_Name', 'cloudinary' ), 'error' );
+		// Pattern match to ensure validity of the provided url
+		if ( ! preg_match( '~^(?:CLOUDINARY_URL=)?cloudinary://[0-9]+:[A-Za-z_0-9]+@[A-Za-z]+~', $data['cloudinary_url'] ) ) {
+			add_settings_error( 
+				'cloudinary_connect', 
+				'format_mismatch', 
+				__( 'The environment variable URL must be in this format: cloudinary://API_KEY:API_SECRET@CLOUD_NAME', 'cloudinary' ), 
+				'error' 
+			);
 
 			return $current;
 		}
 
 		$result = $this->test_connection( $data['cloudinary_url'] );
+
 		if ( ! empty( $result['message'] ) ) {
 			add_settings_error( 'cloudinary_connect', $result['type'], $result['message'], 'error' );
-
 			return $current;
 		}
+
 		add_settings_error( 'cloudinary_connect', 'connection_success', __( 'Successfully connected to Cloudinary.', 'cloudinary' ), 'updated' );
 		update_option( 'cloudinary_connection_signature', md5( $data['cloudinary_url'] ) );
 
@@ -169,9 +185,9 @@ class Connect implements Config, Setup, Notice {
 		if ( 4 > count( $valid ) ) {
 			$result['type']    = 'invalid_url';
 			$result['message'] = sprintf(
-			// translators: Placeholder refers to the expected URL format.
+				// translators: Placeholder refers to the expected URL format.
 				__( 'Incorrect Format. Expecting: %s', 'cloudinary' ),
-				'<code>cloudinary://API_Key:API_Secret@Cloud_Name</code>'
+				'<code>cloudinary://API_KEY:API_SECRET@CLOUD_NAME</code>'
 			);
 
 			return $result;
@@ -305,7 +321,7 @@ class Connect implements Config, Setup, Notice {
 		if ( empty( $signature ) || version_compare( $this->plugin->version, $version, '>' ) ) {
 			// Check if there's a previous version, or missing signature.
 			$cld_url = get_option( 'cloudinary_url', null );
-			if ( is_null( $cld_url ) ) {
+			if ( null === $cld_url ) {
 				// Post V1.
 				$data = get_option( 'cloudinary_connect', array() );
 				if ( ! isset( $data['cloudinary_url'] ) || empty( $data['cloudinary_url'] ) ) {
@@ -317,7 +333,10 @@ class Connect implements Config, Setup, Notice {
 					'cloudinary_url' => $cld_url,
 				);
 			}
+
+			$data['cloudinary_url'] = str_replace( 'CLOUDINARY_URL=', '', $data['cloudinary_url'] );
 			$test = $this->test_connection( $data['cloudinary_url'] );
+
 			if ( 'connection_success' === $test['type'] ) {
 				$signature = md5( $data['cloudinary_url'] );
 

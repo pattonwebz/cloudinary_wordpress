@@ -15,7 +15,7 @@ $struct = array(
 	'fields'      => array(
 		'cloudinary_url' => array(
 			'label'       => __( 'Environment variable URL', 'cloudinary' ),
-			'placeholder' => 'cloudinary://API_Key:API_Secret@Cloud_Name',
+			'placeholder' => 'cloudinary://API_KEY:API_SECRET@CLOUD_NAME',
 			'required'    => true,
 			'suffix'      => '<button type="submit" class="button button-primary"><span class="dashicons dashicons-admin-plugins"></span> ' . __( 'Save connection', 'cloudinary' ) . '</button>',
 		),
