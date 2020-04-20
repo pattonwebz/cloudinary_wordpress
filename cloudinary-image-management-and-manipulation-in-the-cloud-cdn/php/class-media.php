@@ -1072,8 +1072,8 @@ class Media implements Setup {
 		if ( 'cld_status' === $column_name ) {
 			if ( $this->is_media( $attachment_id ) ) {
 				$status = array(
-					'state' => 'success',
-					'note'  => esc_html__( 'Synced', 'cloudinary' ),
+					'state' => 'inactive',
+					'note'  => esc_html__( 'Not Synced', 'cloudinary' ),
 				);
 				if ( false === $this->cloudinary_id( $attachment_id ) ) {
 					// If false, lets check why by seeing if the file size is too large.
@@ -1085,6 +1085,11 @@ class Media implements Setup {
 						$status['note']  = sprintf( __( 'File size exceeds the maximum of %s. This media asset will be served from WordPress.', 'cloudinary' ), $max_size_hr );
 						$status['state'] = 'error';
 					}
+				} else {
+					$status = array(
+						'state' => 'success',
+						'note'  => esc_html__( 'Synced', 'cloudinary' ),
+					);
 				}
 				// filter status.
 				$status = apply_filters( 'cloudinary_media_status', $status, $attachment_id );
