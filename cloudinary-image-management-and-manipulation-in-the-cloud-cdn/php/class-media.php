@@ -735,14 +735,15 @@ class Media implements Setup {
 	 * @param string $url             Url to convert.
 	 * @param int    $attachment_id   Attachment ID.
 	 * @param array  $transformations Optional transformations.
+	 * @param bool   $breakpoint      Flag url is a breakpoint URL to stop re-applying default transformations.
 	 *
 	 * @return string Converted URL.
 	 */
-	public function convert_url( $url, $attachment_id, $transformations = array() ) {
+	public function convert_url( $url, $attachment_id, $transformations = array(), $breakpoint = true ) {
 
 		$size = $this->get_crop( $url, $attachment_id );
 
-		return $this->cloudinary_url( $attachment_id, $size, $transformations, null, true );
+		return $this->cloudinary_url( $attachment_id, $size, $transformations, null, $breakpoint );
 	}
 
 	/**
@@ -820,7 +821,7 @@ class Media implements Setup {
 		// Use current sources, but convert the URLS.
 		foreach ( $sources as &$source ) {
 			if ( ! $this->is_cloudinary_url( $source['url'] ) ) {
-				$source['url'] = $this->convert_url( $source['url'], $attachment_id, $transformations );
+				$source['url'] = $this->convert_url( $source['url'], $attachment_id, $transformations, false );
 			}
 		}
 
