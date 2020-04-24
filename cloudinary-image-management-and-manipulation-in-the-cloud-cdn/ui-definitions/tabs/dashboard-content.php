@@ -6,7 +6,7 @@
  */
 
 $video_url = ''; // Left blank for when we get the final video URL.
-
+$usage     = $this->plugin->components['connect']->usage;
 ?>
 <div class="settings-tab-section-fields-dashboard">
 	<div class="settings-tab-section-fields-dashboard-description">
@@ -26,6 +26,27 @@ $video_url = ''; // Left blank for when we get the final video URL.
 		<?php else : ?>
 			<div class="settings-tab-section-fields-dashboard-success expanded">
 				<span class="dashicons dashicons-yes"></span> <?php esc_html_e( 'Connected to Cloudinary', 'cloudinary' ); ?>
+			</div>
+			<hr>
+			<div class="cloudinary-stats">
+				<strong><?php esc_html_e( $usage['plan'] ); ?></strong> |
+					<span class="cloudinary-stat" title="<?php esc_attr_e( 'Storage', 'cloudinary' ); ?>">
+					<span class="dashicons dashicons-cloud"></span> <?php esc_html_e( size_format( $usage['storage']['limit'] ) ); ?>
+					<span class="cloudinary-percent"> <?php esc_html_e( $usage['storage']['used_percent'] . '%' ); ?></span> |
+				</span>
+					<span class="cloudinary-stat" title="<?php esc_attr_e( 'Transformations', 'cloudinary' ); ?>">
+					<span class="dashicons dashicons-image-filter"></span> <?php esc_html_e( number_format_i18n( $usage['transformations']['limit'] ) ); ?>
+					<span class="cloudinary-percent success"> <?php esc_html_e( $usage['transformations']['used_percent'] . '%' ); ?></span> |
+				</span>
+					<span class="cloudinary-stat" title="<?php esc_attr_e( 'Bandwidth', 'cloudinary' ); ?>">
+					<span class="dashicons dashicons-dashboard"></span> <?php esc_html_e( size_format( $usage['bandwidth']['limit'] ) ); ?>
+					<span class="cloudinary-percent success"> <?php esc_html_e( $usage['bandwidth']['used_percent'] . '%' ); ?></span>
+				</span>
+			</div>
+			<hr>
+			<div class="cloudinary-stats">
+				<a href="https://cloudinary.com/console/lui/upgrade_options" class="button button-primary" target="_blank"><?php esc_html_e( 'Upgrade Plan', 'cloudinary' ); ?></a>
+				<a href="https://cloudinary.com/console" class="button" target="_blank"><?php esc_html_e( 'Cloudinary Dashboard', 'cloudinary' ); ?></a>
 			</div>
 		<?php endif; ?>
 	</div>
@@ -59,8 +80,8 @@ $video_url = ''; // Left blank for when we get the final video URL.
 </div>
 <?php if ( ! empty( $video_url ) ) : ?>
 	<script type="application/javascript">
-		document.addEventListener( 'DOMContentLoaded', function() {
-			samplePlayer.source( <?php echo esc_url( $video_url ); ?> );
-		} );
+        document.addEventListener( 'DOMContentLoaded', function() {
+            samplePlayer.source( <?php echo esc_url( $video_url ); ?> );
+        } );
 	</script>
 <?php endif; ?>

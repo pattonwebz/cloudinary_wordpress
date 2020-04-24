@@ -62,6 +62,13 @@ class Connect implements Config, Setup, Notice {
 	public $handle;
 
 	/**
+	 * Holder of general notices.
+	 *
+	 * @var array
+	 */
+	protected $notices = array();
+
+	/**
 	 * Initiate the plugin resources.
 	 *
 	 * @param \Cloudinary\Plugin $plugin Instance of the plugin.
@@ -119,30 +126,30 @@ class Connect implements Config, Setup, Notice {
 		if ( empty( $data['cloudinary_url'] ) ) {
 			delete_option( 'cloudinary_connection_signature' );
 
-			add_settings_error( 
-				'cloudinary_connect', 
-				'connection_error', 
-				__( 'Connection to Cloudinary has been removed.', 'cloudinary' ), 
-				'notice-warning' 
+			add_settings_error(
+				'cloudinary_connect',
+				'connection_error',
+				__( 'Connection to Cloudinary has been removed.', 'cloudinary' ),
+				'notice-warning'
 			);
 
 			return $data;
 		}
 
 		$data['cloudinary_url'] = str_replace( 'CLOUDINARY_URL=', '', $data['cloudinary_url'] );
-		$current = $this->plugin->config['settings']['connect'];
-		
+		$current                = $this->plugin->config['settings']['connect'];
+
 		if ( $current['cloudinary_url'] === $data['cloudinary_url'] ) {
 			return $data;
 		}
 
 		// Pattern match to ensure validity of the provided url
 		if ( ! preg_match( '~^(?:CLOUDINARY_URL=)?cloudinary://[0-9]+:[A-Za-z_0-9]+@[A-Za-z]+~', $data['cloudinary_url'] ) ) {
-			add_settings_error( 
-				'cloudinary_connect', 
-				'format_mismatch', 
-				__( 'The environment variable URL must be in this format: cloudinary://API_KEY:API_SECRET@CLOUD_NAME', 'cloudinary' ), 
-				'error' 
+			add_settings_error(
+				'cloudinary_connect',
+				'format_mismatch',
+				__( 'The environment variable URL must be in this format: cloudinary://API_KEY:API_SECRET@CLOUD_NAME', 'cloudinary' ),
+				'error'
 			);
 
 			return $current;
@@ -152,6 +159,7 @@ class Connect implements Config, Setup, Notice {
 
 		if ( ! empty( $result['message'] ) ) {
 			add_settings_error( 'cloudinary_connect', $result['type'], $result['message'], 'error' );
+
 			return $current;
 		}
 
@@ -304,7 +312,6 @@ class Connect implements Config, Setup, Notice {
 				}
 			}
 			$this->usage = $stats;
-
 		}
 	}
 
@@ -335,7 +342,7 @@ class Connect implements Config, Setup, Notice {
 			}
 
 			$data['cloudinary_url'] = str_replace( 'CLOUDINARY_URL=', '', $data['cloudinary_url'] );
-			$test = $this->test_connection( $data['cloudinary_url'] );
+			$test                   = $this->test_connection( $data['cloudinary_url'] );
 
 			if ( 'connection_success' === $test['type'] ) {
 				$signature = md5( $data['cloudinary_url'] );
@@ -354,15 +361,60 @@ class Connect implements Config, Setup, Notice {
 	}
 
 	/**
+	 * Set usage notices if limits are towards higher end.
+	 */
+	public function usage_notices() {
+		if ( ! empty( $this->usage ) ) {
+			foreach ( $this->usage as $stat => $values ) {
+				if ( ! is_array( $values ) || ! isset( $values['used_percent'] ) || $values['used_percent'] <= 0 ) {
+					continue;
+				}
+				if ( $values['used_percent'] >= 1 ) {
+					$link      = null;
+					$link_text = null;
+					if ( 90 <= $values['used_percent'] ) {
+						// 90% used - show error.
+						$level     = 'error';
+						$link      = 'https://cloudinary.com/console/lui/upgrade_options';
+						$link_text = __( 'Upgrade Plan' );
+					} elseif ( 80 <= $values['used_percent'] ) {
+						$level = 'warning';
+					} elseif ( 70 <= $values['used_percent'] ) {
+						$level = 'neutral';
+					} else {
+						continue;
+					}
+					// translators: Placeholders are URLS and percentage values.
+					$message         = sprintf(
+						__(
+							'<span class="dashicons dashicons-cloudinary"></span> Cloudinary Quota: %1$s at %2$s <a href="%3$s" target="_blank">%4$s</a>',
+							'cloudinary'
+						),
+						ucwords( $stat ),
+						$values['used_percent'] . '%',
+						$link,
+						$link_text
+					);
+					$this->notices[] = array(
+						'message'     => $message,
+						'type'        => $level,
+						'dismissible' => false,
+					);
+				}
+			}
+		}
+	}
+
+	/**
 	 * Get admin notices.
 	 */
 	public function get_notices() {
-		$screen  = get_current_screen();
-		$notices = array();
+		$this->usage_notices();
+		$screen = get_current_screen();
 		if ( empty( $this->plugin->config['connect'] ) ) {
 			if ( is_object( $screen ) && in_array( $screen->id, $this->plugin->components['settings']->handles, true ) ) {
-				$link      = '<a href="' . esc_url( admin_url( 'admin.php?page=cld_connect' ) ) . '">' . __( 'Connect', 'cloudinary' ) . '</a> ';
-				$notices[] = array(
+				$link            = '<a href="' . esc_url( admin_url( 'admin.php?page=cld_connect' ) ) . '">' . __( 'Connect', 'cloudinary' ) . '</a> ';
+				$this->notices[] = array(
 					'message'     => $link . __( 'your Cloudinary account with WordPress to get started.', 'cloudinary' ),
 					'type'        => 'error',
 					'dismissible' => true,
@@ -370,7 +422,7 @@ class Connect implements Config, Setup, Notice {
 			}
 		}
 
-		return $notices;
+		return $this->notices;
 	}
 
 }
