@@ -542,16 +542,16 @@ class Media implements Setup {
 	/**
 	 * Generate a Cloudinary URL based on attachment ID and required size.
 	 *
-	 * @param int          $attachment_id   The id of the attachment.
-	 * @param array|string $size            The wp size to set for the URL.
-	 * @param array        $transformations Set of transformations to apply to this url.
-	 * @param string       $cloudinary_id   Optional forced cloudinary ID.
-	 * @param bool         $breakpoint      Flag url is a breakpoint URL to stop re-applying default transformations.
-	 * @param bool         $clean           Flag to present a clean url (With out a WP size variable.
+	 * @param int          $attachment_id             The id of the attachment.
+	 * @param array|string $size                      The wp size to set for the URL.
+	 * @param array        $transformations           Set of transformations to apply to this url.
+	 * @param string       $cloudinary_id             Optional forced cloudinary ID.
+	 * @param bool         $overwrite_transformations Flag url is a breakpoint URL to stop re-applying default transformations.
+	 * @param bool         $clean                     Flag to present a clean url (With out a WP size variable.
 	 *
 	 * @return string The converted URL.
 	 */
-	public function cloudinary_url( $attachment_id, $size = array(), $transformations = array(), $cloudinary_id = null, $breakpoint = false, $clean = false ) {
+	public function cloudinary_url( $attachment_id, $size = array(), $transformations = array(), $cloudinary_id = null, $overwrite_transformations = false, $clean = false ) {
 
 		if ( empty( $cloudinary_id ) ) {
 			$cloudinary_id = $this->cloudinary_id( $attachment_id );
@@ -587,7 +587,7 @@ class Media implements Setup {
 		 */
 		$pre_args['transformation'] = apply_filters( 'cloudinary_transformations', $transformations, $attachment_id );
 		// Defaults are only to be added on front, main images ( not breakpoints, since these are adapted down), and videos.
-		if ( ( ! defined( 'REST_REQUEST' ) || false === REST_REQUEST ) && ! is_admin() && false === $breakpoint ) {
+		if ( ( ! defined( 'REST_REQUEST' ) || false === REST_REQUEST ) && ! is_admin() && false === $overwrite_transformations ) {
 			$pre_args['transformation'] = $this->apply_default_transformations( $pre_args['transformation'], $resource_type );
 		}
 
@@ -732,18 +732,21 @@ class Media implements Setup {
 	/**
 	 * Convert an attachment URL to a Cloudinary one.
 	 *
-	 * @param string $url             Url to convert.
-	 * @param int    $attachment_id   Attachment ID.
-	 * @param array  $transformations Optional transformations.
-	 * @param bool   $breakpoint      Flag url is a breakpoint URL to stop re-applying default transformations.
+	 * @param string $url                       Url to convert.
+	 * @param int    $attachment_id             Attachment ID.
+	 * @param array  $transformations           Optional transformations.
+	 * @param bool   $overwrite_transformations Flag url as having an overwrite transformation.
 	 *
 	 * @return string Converted URL.
 	 */
-	public function convert_url( $url, $attachment_id, $transformations = array(), $breakpoint = true ) {
+	public function convert_url( $url, $attachment_id, $transformations = array(), $overwrite_transformations = true ) {
 
+		if ( $this->is_cloudinary_url( $url ) ) {
+			return $url; // Already is a cloudinary URL, just return.
+		}
 		$size = $this->get_crop( $url, $attachment_id );
 
-		return $this->cloudinary_url( $attachment_id, $size, $transformations, null, $breakpoint );
+		return $this->cloudinary_url( $attachment_id, $size, $transformations, null, $overwrite_transformations, true );
 	}
 
 	/**
@@ -821,7 +824,7 @@ class Media implements Setup {
 		// Use current sources, but convert the URLS.
 		foreach ( $sources as &$source ) {
 			if ( ! $this->is_cloudinary_url( $source['url'] ) ) {
-				$source['url'] = $this->convert_url( $source['url'], $attachment_id, $transformations, false );
+				$source['url'] = $this->convert_url( $source['url'], $attachment_id, $transformations, true ); // Overwrite transformations applied, since the $transformations includes globals from the primary URL.
 			}
 		}
 
