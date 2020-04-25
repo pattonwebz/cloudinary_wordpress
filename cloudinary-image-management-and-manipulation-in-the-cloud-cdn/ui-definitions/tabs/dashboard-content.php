@@ -28,6 +28,16 @@ if ( isset( $usage['credits'] ) ) {
 	);
 }
 
+$manage_text = sprintf(
+	// translators: Placeholders are URLS.
+	__(
+		'Manage <a href="%1$s">Image</a> or <a href="%2$s">Video</a> Settings.',
+		'cloudinary'
+	),
+	'admin.php?page=cld_global_transformation',
+	'admin.php?page=cld_global_transformation&tab=global_video_transformations'
+);
+
 ?>
 <div class="settings-tab-section-fields-dashboard">
 	<div class="settings-tab-section-fields-dashboard-description">
@@ -79,25 +89,14 @@ if ( isset( $usage['credits'] ) ) {
 		<?php endif; ?>
 	</div>
 	<div class="settings-tab-section-fields-dashboard-content">
-		<?php
-		$manage_text = sprintf(
-		// translators: Placeholders are URLS.
-			__(
-				'Manage <a href="%1$s">Image</a> or <a href="%2$s">Video</a> Settings.',
-				'cloudinary'
-			),
-			'admin.php?page=cld_global_transformation',
-			'admin.php?page=cld_global_transformation&tab=global_video_transformations'
-		);
-
-		// Video Player for dashboard.
-		$player   = array();
-		$player[] = 'var cld = cloudinary.Cloudinary.new({ cloud_name: \'demo\' });';
-		$player[] = 'var samplePlayer = cld.videoPlayer(\'dashboard-player\', { fluid : true } );';
-		wp_add_inline_script( 'cld-player', implode( $player ) );
-
-		?>
 		<?php if ( ! empty( $video_url ) ) : ?>
+			<?php
+			// Video Player for dashboard.
+			$player   = array();
+			$player[] = 'var cld = cloudinary.Cloudinary.new({ cloud_name: \'demo\' });';
+			$player[] = 'var samplePlayer = cld.videoPlayer(\'dashboard-player\', { fluid : true } );';
+			wp_add_inline_script( 'cld-player', implode( $player ) );
+			?>
 			<video id="dashboard-player" controls class="cld-video-player cld-fluid"></video>
 		<?php endif; ?>
 		<h3><?php esc_html_e( 'More Actions', 'cloudinary' ); ?></h3>
