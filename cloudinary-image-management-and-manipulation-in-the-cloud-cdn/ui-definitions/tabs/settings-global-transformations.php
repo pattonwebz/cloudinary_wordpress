@@ -19,9 +19,10 @@ $struct = array(
 			'label' => __( 'Responsive Image Settings', 'cloudinary' ),
 		),
 		'enable_breakpoints' => array(
-			'label'  => __( 'Enable Breakpoints', 'cloudinary' ),
-			'suffix' => __( 'Enable breakpoint generation on upload.', 'cloudinary' ),
-			'type'   => 'checkbox',
+			'label'   => __( 'Enable Breakpoints', 'cloudinary' ),
+			'suffix'  => __( 'Enable breakpoint generation on upload.', 'cloudinary' ),
+			'type'    => 'checkbox',
+			'default' => 'off',
 		),
 		'breakpoints'        => array(
 			'label'             => __( 'Max breakpoints', 'cloudinary' ),
