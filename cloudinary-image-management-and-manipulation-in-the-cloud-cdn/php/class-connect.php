@@ -69,6 +69,19 @@ class Connect implements Config, Setup, Notice {
 	protected $notices = array();
 
 	/**
+	 * Holds the meta keys for connect meta to maintain consistency.
+	 */
+	const META_KEYS = array(
+		'usage'      => '_cloudinary_usage',
+		'last_usage' => '_cloudinary_last_usage',
+		'signature'  => 'cloudinary_connection_signature',
+		'version'    => 'cloudinary_version',
+		'url'        => 'cloudinary_url',
+		'connect'    => 'cloudinary_connect',
+		'cache'      => 'cloudinary_settings_cache',
+	);
+
+	/**
 	 * Initiate the plugin resources.
 	 *
 	 * @param \Cloudinary\Plugin $plugin Instance of the plugin.
@@ -124,7 +137,7 @@ class Connect implements Config, Setup, Notice {
 	 */
 	public function verify_connection( $data ) {
 		if ( empty( $data['cloudinary_url'] ) ) {
-			delete_option( 'cloudinary_connection_signature' );
+			delete_option( self::META_KEYS['signature'] );
 
 			add_settings_error(
 				'cloudinary_connect',
@@ -164,7 +177,7 @@ class Connect implements Config, Setup, Notice {
 		}
 
 		add_settings_error( 'cloudinary_connect', 'connection_success', __( 'Successfully connected to Cloudinary.', 'cloudinary' ), 'updated' );
-		update_option( 'cloudinary_connection_signature', md5( $data['cloudinary_url'] ) );
+		update_option( self::META_KEYS['signature'], md5( $data['cloudinary_url'] ) );
 
 		return $data;
 	}
@@ -221,11 +234,14 @@ class Connect implements Config, Setup, Notice {
 		}
 
 		$this->config_from_url( $url );
-		$test = new Connect\Api( $this, $this->plugin->version );
-		$test = $test->ping();
-		if ( is_wp_error( $test ) ) {
+		$test        = new Connect\Api( $this, $this->plugin->version );
+		$test_result = $test->ping();
+		if ( is_wp_error( $test_result ) ) {
 			$result['type']    = 'connection_error';
-			$result['message'] = ucwords( str_replace( '_', ' ', $test->get_error_message() ) );
+			$result['message'] = ucwords( str_replace( '_', ' ', $test_result->get_error_message() ) );
+		} else {
+			$this->api = $test;
+			$this->usage_stats( true );
 		}
 
 		return $result;
@@ -297,22 +313,34 @@ class Connect implements Config, Setup, Notice {
 		// Get the cloudinary url from plugin config.
 		$config = $this->plugin->config['settings']['connect'];
 		if ( ! empty( $config['cloudinary_url'] ) ) {
-
 			$this->config_from_url( $config['cloudinary_url'] );
-
 			$this->api = new Connect\Api( $this, $this->plugin->version );
-			$stats     = get_transient( '_cloudinary_usage' );
-			if ( empty( $stats ) ) {
-				// Get users plan.
-				$stats = $this->plugin->components['connect']->api->usage();
-				if ( ! is_wp_error( $stats ) && ! empty( $stats['media_limits'] ) ) {
-					$stats['max_image_size'] = $stats['media_limits']['image_max_size_bytes'];
-					$stats['max_video_size'] = $stats['media_limits']['video_max_size_bytes'];
-					set_transient( '_cloudinary_usage', $stats, HOUR_IN_SECONDS );
-				}
-			}
-			$this->usage = $stats;
+			$this->usage_stats( true );
 		}
+	}
+
+	/**
+	 * Set the usage stats from the Cloudinary API.
+	 *
+	 * @param bool $refresh Flag to force a refresh.
+	 */
+	public function usage_stats( $refresh = false ) {
+		$stats = get_transient( self::META_KEYS['usage'] );
+		if ( empty( $stats ) || true === $refresh ) {
+			// Get users plan.
+			$stats = $this->api->usage();
+			if ( ! is_wp_error( $stats ) && ! empty( $stats['media_limits'] ) ) {
+				$stats['max_image_size'] = $stats['media_limits']['image_max_size_bytes'];
+				$stats['max_video_size'] = $stats['media_limits']['video_max_size_bytes'];
+				set_transient( self::META_KEYS['usage'], $stats, HOUR_IN_SECONDS );
+				update_option( self::META_KEYS['last_usage'], $stats );// Save the last successful call to prevent crashing.
+			} else {
+				// Handle error by logging and fetching the last success.
+				// @todo : log issue.
+				$stats = get_option( self::META_KEYS['last_usage'] );
+			}
+		}
+		$this->usage = $stats;
 	}
 
 	/**
@@ -323,14 +351,14 @@ class Connect implements Config, Setup, Notice {
 	 * @return array The array of the config options stored.
 	 */
 	public function get_config() {
-		$signature = get_option( 'cloudinary_connection_signature', null );
-		$version   = get_option( 'cloudinary_version' );
+		$signature = get_option( self::META_KEYS['signature'], null );
+		$version   = get_option( self::META_KEYS['version'] );
 		if ( empty( $signature ) || version_compare( $this->plugin->version, $version, '>' ) ) {
 			// Check if there's a previous version, or missing signature.
-			$cld_url = get_option( 'cloudinary_url', null );
+			$cld_url = get_option( self::META_KEYS['url'], null );
 			if ( null === $cld_url ) {
 				// Post V1.
-				$data = get_option( 'cloudinary_connect', array() );
+				$data = get_option( self::META_KEYS['connect'], array() );
 				if ( ! isset( $data['cloudinary_url'] ) || empty( $data['cloudinary_url'] ) ) {
 					return null; // return null to indicate not valid.
 				}
@@ -349,10 +377,10 @@ class Connect implements Config, Setup, Notice {
 
 				// remove filters as we've already verified it and 'add_settings_error()' isin't available yet.
 				remove_filter( 'pre_update_option_cloudinary_connect', array( $this, 'verify_connection' ) );
-				update_option( 'cloudinary_connect', $data );
-				update_option( 'cloudinary_connection_signature', $signature );
-				update_option( 'cloudinary_version', $this->plugin->version );
-				delete_option( 'cloudinary_settings_cache' ); // remove the cache.
+				update_option( self::META_KEYS['connect'], $data );
+				update_option( self::META_KEYS['signature'], $signature );
+				update_option( self::META_KEYS['version'], $this->plugin->version );
+				delete_option( self::META_KEYS['cache'] ); // remove the cache.
 				$this->plugin->config['settings']['connect'] = $data; // Set the connection url for this round.
 			}
 		}
@@ -365,42 +393,46 @@ class Connect implements Config, Setup, Notice {
 	 */
 	public function usage_notices() {
 		if ( ! empty( $this->usage ) ) {
+			$usage_type = 'used_percent';
+			if ( isset( $this->usage['credits'] ) ) {
+				$usage_type = 'credits_usage';
+			}
 			foreach ( $this->usage as $stat => $values ) {
-				if ( ! is_array( $values ) || ! isset( $values['used_percent'] ) || $values['used_percent'] <= 0 ) {
+
+				if ( ! is_array( $values ) || ! isset( $values[ $usage_type ] ) || 0 > $values[ $usage_type ] ) {
 					continue;
 				}
-				if ( $values['used_percent'] >= 1 ) {
-					$link      = null;
-					$link_text = null;
-					if ( 90 <= $values['used_percent'] ) {
-						// 90% used - show error.
-						$level     = 'error';
-						$link      = 'https://cloudinary.com/console/lui/upgrade_options';
-						$link_text = __( 'Upgrade Plan' );
-					} elseif ( 80 <= $values['used_percent'] ) {
-						$level = 'warning';
-					} elseif ( 70 <= $values['used_percent'] ) {
-						$level = 'neutral';
-					} else {
-						continue;
-					}
-					// translators: Placeholders are URLS and percentage values.
-					$message         = sprintf(
-						__(
-							'<span class="dashicons dashicons-cloudinary"></span> Cloudinary Quota: %1$s at %2$s <a href="%3$s" target="_blank">%4$s</a>',
-							'cloudinary'
-						),
-						ucwords( $stat ),
-						$values['used_percent'] . '%',
-						$link,
-						$link_text
-					);
-					$this->notices[] = array(
-						'message'     => $message,
-						'type'        => $level,
-						'dismissible' => false,
-					);
+
+				$link      = null;
+				$link_text = null;
+				if ( 90 <= $values[ $usage_type ] ) {
+					// 90% used - show error.
+					$level     = 'error';
+					$link      = 'https://cloudinary.com/console/lui/upgrade_options';
+					$link_text = __( 'Upgrade Plan' );
+				} elseif ( 80 <= $values[ $usage_type ] ) {
+					$level = 'warning';
+				} elseif ( 70 <= $values[ $usage_type ] ) {
+					$level = 'neutral';
+				} else {
+					continue;
 				}
+				// translators: Placeholders are URLS and percentage values.
+				$message         = sprintf(
+					__(
+						'<span class="dashicons dashicons-cloudinary"></span> Cloudinary Quota: %1$s at %2$s <a href="%3$s" target="_blank">%4$s</a>',
+						'cloudinary'
+					),
+					ucwords( $stat ),
+					$values[ $usage_type ] . '%',
+					$link,
+					$link_text
+				);
+				$this->notices[] = array(
+					'message'     => $message,
+					'type'        => $level,
+					'dismissible' => false,
+				);
 			}
 		}
 	}

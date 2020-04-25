@@ -7,6 +7,27 @@
 
 $video_url = ''; // Left blank for when we get the final video URL.
 $usage     = $this->plugin->components['connect']->usage;
+// Different account version have usage limits.
+if ( isset( $usage['credits'] ) ) {
+	// New credit system.
+	$usage['credits']         = array(
+		'limit'        => $usage['credits']['limit'],
+		'used_percent' => $usage['credits']['used_percent'],
+	);
+	$usage['storage']         = array(
+		'limit'        => $usage['storage']['usage'],
+		'used_percent' => $usage['storage']['credits_usage'],
+	);
+	$usage['transformations'] = array(
+		'limit'        => $usage['transformations']['usage'],
+		'used_percent' => $usage['transformations']['credits_usage'],
+	);
+	$usage['bandwidth']       = array(
+		'limit'        => $usage['bandwidth']['usage'],
+		'used_percent' => $usage['bandwidth']['credits_usage'],
+	);
+}
+
 ?>
 <div class="settings-tab-section-fields-dashboard">
 	<div class="settings-tab-section-fields-dashboard-description">
@@ -30,15 +51,22 @@ $usage     = $this->plugin->components['connect']->usage;
 			<hr>
 			<div class="cloudinary-stats">
 				<strong><?php esc_html_e( $usage['plan'] ); ?></strong> |
-					<span class="cloudinary-stat" title="<?php esc_attr_e( 'Storage', 'cloudinary' ); ?>">
+				<?php if ( isset( $usage['credits'] ) ) : ?>
+					<span class="cloudinary-stat" title="<?php esc_attr_e( 'Credits', 'cloudinary' ); ?>">
+					<span class="dashicons dashicons-marker"></span> <?php esc_html_e( number_format_i18n( $usage['credits']['limit'] ) ); ?>
+					<span class="cloudinary-percent"> <?php esc_html_e( $usage['credits']['used_percent'] . '%' ); ?></span> |
+				</span>
+				<?php endif; ?>
+
+				<span class="cloudinary-stat" title="<?php esc_attr_e( 'Storage', 'cloudinary' ); ?>">
 					<span class="dashicons dashicons-cloud"></span> <?php esc_html_e( size_format( $usage['storage']['limit'] ) ); ?>
 					<span class="cloudinary-percent"> <?php esc_html_e( $usage['storage']['used_percent'] . '%' ); ?></span> |
 				</span>
-					<span class="cloudinary-stat" title="<?php esc_attr_e( 'Transformations', 'cloudinary' ); ?>">
+				<span class="cloudinary-stat" title="<?php esc_attr_e( 'Transformations', 'cloudinary' ); ?>">
 					<span class="dashicons dashicons-image-filter"></span> <?php esc_html_e( number_format_i18n( $usage['transformations']['limit'] ) ); ?>
 					<span class="cloudinary-percent success"> <?php esc_html_e( $usage['transformations']['used_percent'] . '%' ); ?></span> |
 				</span>
-					<span class="cloudinary-stat" title="<?php esc_attr_e( 'Bandwidth', 'cloudinary' ); ?>">
+				<span class="cloudinary-stat" title="<?php esc_attr_e( 'Bandwidth', 'cloudinary' ); ?>">
 					<span class="dashicons dashicons-dashboard"></span> <?php esc_html_e( size_format( $usage['bandwidth']['limit'] ) ); ?>
 					<span class="cloudinary-percent success"> <?php esc_html_e( $usage['bandwidth']['used_percent'] . '%' ); ?></span>
 				</span>
@@ -53,7 +81,7 @@ $usage     = $this->plugin->components['connect']->usage;
 	<div class="settings-tab-section-fields-dashboard-content">
 		<?php
 		$manage_text = sprintf(
-			// translators: Placeholders are URLS.
+		// translators: Placeholders are URLS.
 			__(
 				'Manage <a href="%1$s">Image</a> or <a href="%2$s">Video</a> Settings.',
 				'cloudinary'
