@@ -70,5 +70,19 @@
 		max-width : 300px;
 		display   : none;
 	}
+
+	&-status {
+		&-disabled {
+			color : $color-red;
+		}
+
+		&-enabled {
+			color : $color-green;
+		}
+
+		&-button.button {
+			vertical-align : baseline;
+		}
+	}
 }
 

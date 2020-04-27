@@ -241,7 +241,7 @@ class Video {
 		$instance = $this->queue_video_config( $attr['id'], $attr[ $video['fileformat'] ], $video['fileformat'], $args );
 
 		// Replace with video tag.
-		return '<video id="cloudinary-video-' . esc_attr( $instance ) . '"' . $size . '></video>';
+		return '<video class="cld-fluid" id="cloudinary-video-' . esc_attr( $instance ) . '"' . $size . '></video>';
 	}
 
 	/**
@@ -424,13 +424,47 @@ class Video {
 	}
 
 	/**
+	 * Filter a video block to add the class for cld-overriding.
+	 *
+	 * @param array $block        The current block structure.
+	 * @param array $source_block The source, unfiltered block structure.
+	 *
+	 * @return array
+	 */
+	public function filter_video_block_pre_render( $block, $source_block ) {
+
+		if ( 'core/video' === $source_block['blockName'] ) {
+			$classes = 'cld-fluid';
+			if ( ! empty( $source_block['attrs']['overwrite_transformations'] ) ) {
+				$classes .= ' cld-overwrite';
+			}
+			foreach ( $block['innerContent'] as &$content ) {
+
+				$video_tags = $this->media->filter->get_media_tags( $content );
+				foreach ( $video_tags as $tag ) {
+					if ( false !== strpos( $tag, 'class="' ) ) {
+						$content = str_replace( 'class="', 'class="' . $classes . ' ', $content );
+					} else {
+						$content = str_replace( '<video ', '<video class="' . $classes . '" ', $content );
+					}
+
+				}
+			}
+		}
+
+		return $block;
+	}
+
+	/**
 	 * Setup hooks for the filters.
 	 */
 	public function setup_hooks() {
 		add_filter( 'wp_video_shortcode_override', array( $this, 'filter_video_shortcode' ), 10, 2 );
 		// only filter video tags in front end.
 		if ( ! is_admin() ) {
-			add_filter( 'the_content', array( $this, 'filter_video_tags' ), 4 );
+			add_filter( 'the_content', array( $this, 'filter_video_tags' ) );
+			// Filter for block rendering.
+			add_filter( 'render_block_data', array( $this, 'filter_video_block_pre_render' ), 10, 2 );
 		}
 		add_action( 'wp_print_styles', array( $this, 'init_player' ) );
 		add_action( 'wp_footer', array( $this, 'print_video_scripts' ) );

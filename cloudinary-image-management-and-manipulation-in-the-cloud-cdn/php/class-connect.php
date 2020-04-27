@@ -119,30 +119,30 @@ class Connect implements Config, Setup, Notice {
 		if ( empty( $data['cloudinary_url'] ) ) {
 			delete_option( 'cloudinary_connection_signature' );
 
-			add_settings_error( 
-				'cloudinary_connect', 
-				'connection_error', 
-				__( 'Connection to Cloudinary has been removed.', 'cloudinary' ), 
-				'notice-warning' 
+			add_settings_error(
+				'cloudinary_connect',
+				'connection_error',
+				__( 'Connection to Cloudinary has been removed.', 'cloudinary' ),
+				'notice-warning'
 			);
 
 			return $data;
 		}
 
 		$data['cloudinary_url'] = str_replace( 'CLOUDINARY_URL=', '', $data['cloudinary_url'] );
-		$current = $this->plugin->config['settings']['connect'];
-		
+		$current                = $this->plugin->config['settings']['connect'];
+
 		if ( $current['cloudinary_url'] === $data['cloudinary_url'] ) {
 			return $data;
 		}
 
 		// Pattern match to ensure validity of the provided url
 		if ( ! preg_match( '~^(?:CLOUDINARY_URL=)?cloudinary://[0-9]+:[A-Za-z_0-9]+@[A-Za-z]+~', $data['cloudinary_url'] ) ) {
-			add_settings_error( 
-				'cloudinary_connect', 
-				'format_mismatch', 
-				__( 'The environment variable URL must be in this format: cloudinary://API_KEY:API_SECRET@CLOUD_NAME', 'cloudinary' ), 
-				'error' 
+			add_settings_error(
+				'cloudinary_connect',
+				'format_mismatch',
+				__( 'The environment variable URL must be in this format: cloudinary://API_KEY:API_SECRET@CLOUD_NAME', 'cloudinary' ),
+				'error'
 			);
 
 			return $current;
@@ -152,6 +152,7 @@ class Connect implements Config, Setup, Notice {
 
 		if ( ! empty( $result['message'] ) ) {
 			add_settings_error( 'cloudinary_connect', $result['type'], $result['message'], 'error' );
+
 			return $current;
 		}
 
@@ -318,6 +319,7 @@ class Connect implements Config, Setup, Notice {
 	public function get_config() {
 		$signature = get_option( 'cloudinary_connection_signature', null );
 		$version   = get_option( 'cloudinary_version' );
+
 		if ( empty( $signature ) || version_compare( $this->plugin->version, $version, '>' ) ) {
 			// Check if there's a previous version, or missing signature.
 			$cld_url = get_option( 'cloudinary_url', null );
@@ -332,10 +334,21 @@ class Connect implements Config, Setup, Notice {
 				$data = array(
 					'cloudinary_url' => $cld_url,
 				);
+				// Set auto sync off.
+				$sync = get_option( 'cloudinary_sync_media' );
+				if ( empty( $sync ) ) {
+					$sync = array(
+						'auto_sync'         => '',
+						'cloudinary_folder' => '',
+					);
+				}
+				$sync['auto_sync'] = 'off';
+				update_option( 'cloudinary_sync_media', $sync );
+				delete_option( 'cloudinary_settings_cache' ); // remove the cache.
 			}
 
 			$data['cloudinary_url'] = str_replace( 'CLOUDINARY_URL=', '', $data['cloudinary_url'] );
-			$test = $this->test_connection( $data['cloudinary_url'] );
+			$test                   = $this->test_connection( $data['cloudinary_url'] );
 
 			if ( 'connection_success' === $test['type'] ) {
 				$signature = md5( $data['cloudinary_url'] );
