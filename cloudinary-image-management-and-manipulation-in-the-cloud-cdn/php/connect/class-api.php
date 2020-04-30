@@ -186,6 +186,9 @@ class Api {
 		$transformations      = array_map(
 			function ( $item ) use ( $transformation_index ) {
 				$transform = array();
+				if ( is_string ( $item ) ) {
+					return $item;
+				}
 				foreach ( $item as $type => $value ) { // phpcs:ignore
 					$key = array_search( $type, $transformation_index, true );
 					if ( 'wpsize' === $type ) {
@@ -241,7 +244,7 @@ class Api {
 			$url_parts[] = self::generate_transformation_string( $args['transformation'] );
 		}
 		// Add size.
-		if ( ! empty( $size ) ) {
+		if ( ! empty( $size ) && is_array( $size ) ) {
 			if ( true === $clean ) {
 				$size['clean'] = true;
 			}
