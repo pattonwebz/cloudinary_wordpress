@@ -395,6 +395,17 @@ class Connect implements Config, Setup, Notice {
 				$data = array(
 					'cloudinary_url' => $cld_url,
 				);
+				// Set auto sync off.
+				$sync = get_option( 'cloudinary_sync_media' );
+				if ( empty( $sync ) ) {
+					$sync = array(
+						'auto_sync'         => '',
+						'cloudinary_folder' => '',
+					);
+				}
+				$sync['auto_sync'] = 'off';
+				update_option( 'cloudinary_sync_media', $sync );
+				delete_option( 'cloudinary_settings_cache' ); // remove the cache.
 			}
 
 			$data['cloudinary_url'] = str_replace( 'CLOUDINARY_URL=', '', $data['cloudinary_url'] );

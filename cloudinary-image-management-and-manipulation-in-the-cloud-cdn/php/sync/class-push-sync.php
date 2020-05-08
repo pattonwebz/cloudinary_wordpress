@@ -330,7 +330,8 @@ class Push_Sync {
 			}
 
 			// First check if this has a file and it can be uploaded.
-			$file = get_attached_file( $post->ID );
+			$file      = get_attached_file( $post->ID );
+			$file_size = 0;
 			if ( empty( $file ) ) {
 				return new \WP_Error( 'attachment_no_file', __( 'Attachment did not have a file.', 'cloudinary' ) );
 			} elseif ( ! file_exists( $file ) ) {
@@ -347,8 +348,6 @@ class Push_Sync {
 						}
 						$file      = get_attached_file( $post->ID );
 						$file_size = filesize( $file );
-					} else {
-						$file_size = 0;
 					}
 				}
 			} else {

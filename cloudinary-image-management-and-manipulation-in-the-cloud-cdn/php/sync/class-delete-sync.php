@@ -58,7 +58,9 @@ class Delete_Sync {
 			list( $request_cap, , $post_id ) = $args;
 
 			if ( 'delete_post' === $request_cap && ! empty( $all_caps['delete_posts'] ) && 'attachment' === get_post_type( $post_id ) ) {
-				if ( ! $this->plugin->components['sync']->is_synced( $post_id ) ) {
+
+				// Check if is pending.
+				if ( ! $this->plugin->components['sync']->is_synced( $post_id ) && $this->plugin->components['sync']->managers['upload']->is_pending( $post_id ) ) {
 					// Check for errors.
 					$has_error = $this->plugin->components['media']->get_post_meta( $post_id, Sync::META_KEYS['sync_error'], true );
 					if ( empty( $has_error ) ) {
