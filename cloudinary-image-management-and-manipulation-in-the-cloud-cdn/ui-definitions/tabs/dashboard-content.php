@@ -5,28 +5,8 @@
  * @package Cloudinary
  */
 
-$video_url = ''; // Left blank for when we get the final video URL.
-$usage     = $this->plugin->components['connect']->usage;
-// Different account version have usage limits.
-if ( isset( $usage['credits'] ) ) {
-	// New credit system.
-	$usage['credits']         = array(
-		'limit'        => $usage['credits']['limit'],
-		'used_percent' => $usage['credits']['used_percent'],
-	);
-	$usage['storage']         = array(
-		'limit'        => $usage['storage']['usage'],
-		'used_percent' => $usage['storage']['credits_usage'],
-	);
-	$usage['transformations'] = array(
-		'limit'        => $usage['transformations']['usage'],
-		'used_percent' => $usage['transformations']['credits_usage'],
-	);
-	$usage['bandwidth']       = array(
-		'limit'        => $usage['bandwidth']['usage'],
-		'used_percent' => $usage['bandwidth']['credits_usage'],
-	);
-}
+$video_url  = ''; // Left blank for when we get the final video URL.
+$connection = $this->plugin->components['connect'];
 
 $manage_text = sprintf(
 	// translators: Placeholders are URLS.
@@ -60,25 +40,25 @@ $manage_text = sprintf(
 			</div>
 			<hr>
 			<div class="cloudinary-stats">
-				<strong><?php esc_html_e( $usage['plan'] ); ?></strong> |
-				<?php if ( isset( $usage['credits'] ) ) : ?>
+				<strong><?php esc_html_e( $connection->get_usage_stat( 'plan' ) ); ?></strong> |
+				<?php if ( false !== $connection->get_usage_stat( 'credits', 'limit' ) ) : ?>
 					<span class="cloudinary-stat" title="<?php esc_attr_e( 'Credits', 'cloudinary' ); ?>">
-					<span class="dashicons dashicons-marker"></span> <?php esc_html_e( number_format_i18n( $usage['credits']['limit'] ) ); ?>
-					<span class="cloudinary-percent"> <?php esc_html_e( $usage['credits']['used_percent'] . '%' ); ?></span> |
+					<span class="dashicons dashicons-marker"></span> <?php esc_html_e( number_format_i18n( $connection->get_usage_stat( 'credits', 'limit' ) ) ); ?>
+					<span class="cloudinary-percent"> <?php esc_html_e( $connection->get_usage_stat( 'credits', 'used_percent' ) . '%' ); ?></span> |
 				</span>
 				<?php endif; ?>
 
 				<span class="cloudinary-stat" title="<?php esc_attr_e( 'Storage', 'cloudinary' ); ?>">
-					<span class="dashicons dashicons-cloud"></span> <?php esc_html_e( size_format( $usage['storage']['limit'] ) ); ?>
-					<span class="cloudinary-percent"> <?php esc_html_e( $usage['storage']['used_percent'] . '%' ); ?></span> |
+					<span class="dashicons dashicons-cloud"></span> <?php esc_html_e( size_format( $connection->get_usage_stat( 'storage', 'limit' ) ) ); ?>
+					<span class="cloudinary-percent"> <?php esc_html_e( $connection->get_usage_stat( 'storage', 'used_percent' ) . '%' ); ?></span> |
 				</span>
 				<span class="cloudinary-stat" title="<?php esc_attr_e( 'Transformations', 'cloudinary' ); ?>">
-					<span class="dashicons dashicons-image-filter"></span> <?php esc_html_e( number_format_i18n( $usage['transformations']['limit'] ) ); ?>
-					<span class="cloudinary-percent success"> <?php esc_html_e( $usage['transformations']['used_percent'] . '%' ); ?></span> |
+					<span class="dashicons dashicons-image-filter"></span> <?php esc_html_e( number_format_i18n( $connection->get_usage_stat( 'transformations', 'limit' ) ) ); ?>
+					<span class="cloudinary-percent success"> <?php esc_html_e( $connection->get_usage_stat( 'transformations', 'used_percent' ) . '%' ); ?></span> |
 				</span>
 				<span class="cloudinary-stat" title="<?php esc_attr_e( 'Bandwidth', 'cloudinary' ); ?>">
-					<span class="dashicons dashicons-dashboard"></span> <?php esc_html_e( size_format( $usage['bandwidth']['limit'] ) ); ?>
-					<span class="cloudinary-percent success"> <?php esc_html_e( $usage['bandwidth']['used_percent'] . '%' ); ?></span>
+					<span class="dashicons dashicons-dashboard"></span> <?php esc_html_e( size_format( $connection->get_usage_stat( 'bandwidth', 'limit' ) ) ); ?>
+					<span class="cloudinary-percent success"> <?php esc_html_e( $connection->get_usage_stat( 'bandwidth', 'used_percent' ) . '%' ); ?></span>
 				</span>
 			</div>
 			<hr>

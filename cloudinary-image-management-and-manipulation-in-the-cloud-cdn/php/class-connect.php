@@ -344,6 +344,34 @@ class Connect implements Config, Setup, Notice {
 	}
 
 	/**
+	 * Get a usage stat for display.
+	 *
+	 * @param string      $type The type of stat to get.
+	 * @param string|null $stat The stat to get.
+	 *
+	 * @return bool|string
+	 */
+	public function get_usage_stat( $type, $stat = null ) {
+		$value = false;
+		if ( isset( $this->usage[ $type ] ) ) {
+			if ( is_string( $this->usage[ $type ] ) ) {
+				$value = $this->usage[ $type ];
+			} elseif ( is_array( $this->usage[ $type ] ) && isset( $this->usage[ $type ][ $stat ] ) ) {
+				$value = $this->usage[ $type ][ $stat ];
+			} elseif ( is_array( $this->usage[ $type ] ) ) {
+
+				if ( 'limit' === $stat && isset( $this->usage[ $type ]['usage'] ) ) {
+					$value = $this->usage[ $type ]['usage'];
+				} elseif ( 'used_percent' === $stat && isset( $this->usage[ $type ]['credits_usage'] ) ) {
+					$value = $this->usage[ $type ]['credits_usage'];
+				}
+			}
+		}
+
+		return $value;
+	}
+
+	/**
 	 * Gets the config of a connection.
 	 *
 	 * @since  0.1
