@@ -37,7 +37,7 @@ class Upload_Queue {
 	 *
 	 * @var     bool
 	 */
-	private $running = null;
+	private $running = false;
 
 	/**
 	 * Upload_Queue constructor.
@@ -127,7 +127,7 @@ class Upload_Queue {
 	 * @return bool
 	 */
 	public function is_running() {
-		if ( null === $this->running ) {
+		if ( false === $this->running ) {
 			$queue         = $this->get_queue();
 			$this->running = empty( $queue['started'] ) ? false : true;
 		}
