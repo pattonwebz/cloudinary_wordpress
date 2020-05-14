@@ -4,11 +4,10 @@ const Sync = {
 	progress: document.getElementById( 'progress-wrapper' ),
 	submitButton: document.getElementById( 'submit' ),
 	stopButton: document.getElementById( 'stop-sync' ),
-	progressCount: document.getElementById( 'sync-progress' ),
-	barSyncCount: document.getElementById( 'sync-total' ),
 	completed: document.getElementById( 'completed-notice' ),
 	show: 'inline-block',
 	hide: 'none',
+	isRunning: false,
 	getStatus: function getStatus() {
 		var self = this,
 			resourceType = [],
@@ -22,8 +21,9 @@ const Sync = {
 				request.setRequestHeader( 'X-WP-Nonce', cloudinaryApi.nonce );
 			},
 		} ).done( function( data ) {
-			if ( data.done < data.total ) {
-				setTimeout( Sync.getStatus, 2000 );
+			Sync.isRunning = data.is_running;
+			if ( Sync.isRunning ) {
+				setTimeout( Sync.getStatus, 10000 );
 			}
 			Sync._updateUI( data );
 		} );
@@ -31,6 +31,8 @@ const Sync = {
 	stopSync: function stopSync() {
 		var self = this,
 			url = cloudinaryApi.restUrl + 'cloudinary/v1/sync';
+
+		Sync.isRunning = false;
 
 		wp.ajax.send( {
 			url: url,
@@ -48,11 +50,16 @@ const Sync = {
 		var self = this,
 			url = cloudinaryApi.restUrl + 'cloudinary/v1/sync';
 
+		Sync.isRunning = true;
+		Sync.progress.style.display = Sync.show;
+
 		wp.ajax.send( {
 			url: url,
 			beforeSend: function( request ) {
 				request.setRequestHeader( 'X-WP-Nonce', cloudinaryApi.nonce );
 			},
+		} ).done( function ( data ) {
+			setTimeout( Sync.getStatus, 10000 );
 		} );
 	},
 	_updateUI: function _updateUI( data ) {
@@ -75,13 +82,14 @@ const Sync = {
 			this.stopButton.style.display = this.hide;
 		}
 
-		if ( data.percent < 100 ) {
-			this.barSyncCount.innerText = data.total;
-			this.progressCount.innerText = data.done;
+		if ( data.percent === 100 ) {
+			this.completed.style.display = this.show;
+		}
+
+		if ( this.isRunning ) {
 			this.progress.style.display = this.show;
 		}
 		else {
-			this.completed.style.display = this.show;
 			this.progress.style.display = this.hide;
 		}
 	},
