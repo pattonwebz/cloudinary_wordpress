@@ -26,7 +26,10 @@ if ( ! $this->plugin->components['sync']->managers['queue']->is_running() ) {
 			<span class="dashicons dashicons-update-alt"></span> <?php esc_html_e( 'Sync all media to Cloudinary', 'cloudinary' ); ?>
 		</button>
 		<span id="progress-wrapper" class="sync-media-progress">
-			<span class="progress-text"><span id="sync-progress"></span> / <span id="sync-total"></span></span><?php esc_html_e( 'Currently Synced', 'cloudinary' ); ?>
+			<span class="progress-text">
+				<img src="<?php echo esc_url( CLDN_URL . '/css/loading.svg'); ?>" alt="<?php esc_attr_e( 'Syncing…', 'cloudinary' ); ?>">
+				<?php esc_html_e( 'Syncing…', 'cloudinary' ); ?>
+			</span>
 		</span>
 		<div class="settings-tab-section-card completed" id="completed-notice">
 			<div class="settings-tab-section-fields-dashboard-success">
