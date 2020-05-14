@@ -175,6 +175,8 @@ class Upload_Queue {
 			$this->stop_queue();
 		}
 
+		$return['is_running'] = $this->is_running();
+
 		return $return;
 	}
 
