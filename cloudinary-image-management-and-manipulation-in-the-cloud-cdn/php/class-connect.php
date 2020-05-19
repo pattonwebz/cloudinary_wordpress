@@ -315,7 +315,7 @@ class Connect implements Config, Setup, Notice {
 		if ( ! empty( $config['cloudinary_url'] ) ) {
 			$this->config_from_url( $config['cloudinary_url'] );
 			$this->api = new Connect\Api( $this, $this->plugin->version );
-			$this->usage_stats( true );
+			$this->usage_stats();
 		}
 	}
 
@@ -448,18 +448,20 @@ class Connect implements Config, Setup, Notice {
 					// 90% used - show error.
 					$level     = 'error';
 					$link      = 'https://cloudinary.com/console/lui/upgrade_options';
-					$link_text = __( 'Upgrade Plan' );
+					$link_text = __( 'upgrade your account', 'cloudinary' );
 				} elseif ( 80 <= $values[ $usage_type ] ) {
 					$level = 'warning';
+					$link_text = __( 'upgrade your account', 'cloudinary' );
 				} elseif ( 70 <= $values[ $usage_type ] ) {
 					$level = 'neutral';
+					$link_text = __( 'upgrade your account', 'cloudinary' );
 				} else {
 					continue;
 				}
 				// translators: Placeholders are URLS and percentage values.
 				$message         = sprintf(
 					__(
-						'<span class="dashicons dashicons-cloudinary"></span> Cloudinary Quota: %1$s at %2$s <a href="%3$s" target="_blank">%4$s</a>',
+						'<span class="dashicons dashicons-cloudinary"></span> You are %2$s of the way through your monthly quota for %1$s on your Cloudinary account. If you exceed your quota, the Cloudinary plugin will be deactivated until your next billing cycle and your media assets will be served from your WordPress Media Library. You may wish to <a href="%3$s" target="_blank">%4$s</a> and increase your quota to ensure you maintain full functionality.',
 						'cloudinary'
 					),
 					ucwords( $stat ),
