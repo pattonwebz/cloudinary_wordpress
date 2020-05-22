@@ -5,15 +5,15 @@
 	const disableAutoplayOff = function() {
 		const player = jQuery( '#field-video_player' ).val();
 		const showControls = jQuery( '#field-video_controls' ).prop( 'checked' );
+		const offSelection = jQuery( '#field-video_autoplay_mode option[value="off"]' );
 
-		if ( player === 'cld' && showControls ) {
-			jQuery( '#field-video_autoplay_mode option[value="off"]' )
-				.attr( 'disabled', 'disabled' )
-				.prop( 'disabled', 'disabled' );
+		if ( player === 'cld' && ! showControls ) {
+			offSelection.prop( 'disabled', true );
+			if ( offSelection.prop( 'selected' ) ) {
+				offSelection.next().prop( 'selected', true );
+			}
 		} else {
-			jQuery( '#field-video_autoplay_mode option[value="off"]' )
-				.removeAttr( 'disabled' )
-				.prop( 'disabled', false );
+			offSelection.prop( 'disabled', false );
 		}
 	}
 
