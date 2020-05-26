@@ -41,6 +41,13 @@ class Push_Sync {
 	private $sync_types;
 
 	/**
+	 * Holds the ID of the last attachment synced.
+	 *
+	 * @var int
+	 */
+	protected $post_id;
+
+	/**
 	 * Push_Sync constructor.
 	 *
 	 * @param \Cloudinary\Plugin $plugin Global instance of the main plugin.
@@ -200,19 +207,33 @@ class Push_Sync {
 		if ( ! $this->plugin->components['sync']->managers['queue']->is_running() ) { // Check it wasn't stopped.
 			return $this->rest_get_queue_status();
 		}
-		$post_id = $this->plugin->components['sync']->managers['queue']->get_post();
+
+		$this->post_id = $this->plugin->components['sync']->managers['queue']->get_post();
+
 		// No post, end of queue.
-		if ( empty( $post_id ) ) {
+		if ( empty( $this->post_id ) ) {
 			$this->plugin->components['sync']->managers['queue']->stop_queue();
 
 			return $this->rest_get_queue_status();
 		}
 
+		add_action( 'shutdown', array( $this, 'resume_queue' ) );
+
+		return $this->rest_get_queue_status();
+	}
+
+	/**
+	 * Resume the bulk sync.
+	 *
+	 * @return bool|\WP_REST_Response
+	 */
+	public function resume_queue() {
 		// Check if there is a Cloudinary ID in case this was synced on-demand before being processed by the queue.
 		add_filter( 'cloudinary_on_demand_sync_enabled', '__return_false' ); // Disable the on-demand sync since we want the status.
 		add_filter( 'cloudinary_id', '__return_false' ); // Disable the on-demand sync since we want the status.
-		if ( false === $this->plugin->components['media']->cloudinary_id( $post_id ) ) {
-			$stat = $this->push_attachments( array( $post_id ) );
+
+		if ( false === $this->plugin->components['media']->cloudinary_id( $this->post_id ) ) {
+			$stat = $this->push_attachments( array( $this->post_id ) );
 			if ( ! empty( $stat['processed'] ) ) {
 				$result = 'done';
 			} else {
@@ -226,8 +247,7 @@ class Push_Sync {
 			$result = 'done';
 		}
 
-		return $this->call_thread( $post_id, $result );
-
+		return $this->call_thread( $this->post_id, $result );
 	}
 
 	/**
@@ -246,7 +266,8 @@ class Push_Sync {
 			$params['last_id']     = $last_id;
 			$params['last_result'] = $last_result;
 		}
-		// Setup background call to cintinue the queue.
+
+		// Setup background call to continue the queue.
 		$this->plugin->components['api']->background_request( 'process', $params );
 
 		return $this->rest_get_queue_status();
