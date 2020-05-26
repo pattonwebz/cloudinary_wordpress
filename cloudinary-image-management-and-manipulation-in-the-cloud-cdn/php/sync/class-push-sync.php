@@ -358,7 +358,7 @@ class Push_Sync {
 			$resource_type = $this->get_resource_type( $post );
 			$max_size      = ( 'image' === $resource_type ? 'max_image_size' : 'max_video_size' );
 
-			if ( $file_size > $this->plugin->components['connect']->usage[ $max_size ] ) {
+			if ( ! empty( $this->plugin->components['connect']->usage[ $max_size ] ) && $file_size > $this->plugin->components['connect']->usage[ $max_size ] ) {
 				$max_size_hr = size_format( $this->plugin->components['connect']->usage[ $max_size ] );
 				// translators: variable is file size.
 				$error = sprintf( __( 'File size exceeds the maximum of %s. This media asset will be served from WordPress.', 'cloudinary' ), $max_size_hr );
