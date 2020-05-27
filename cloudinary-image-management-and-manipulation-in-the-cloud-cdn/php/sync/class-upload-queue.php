@@ -291,8 +291,7 @@ class Upload_Queue {
 		$now   = current_time( 'timestamp' );
 		$queue = $this->get_queue();
 
-
-		if ( $now - $queue['last_update'] > $this->cron_start_offset ) {
+		if ( $now - $queue['last_update'] > $this->cron_start_offset && $this->is_running() ) {
 			$this->plugin->components['api']->background_request( 'process', array() );
 		}
 
