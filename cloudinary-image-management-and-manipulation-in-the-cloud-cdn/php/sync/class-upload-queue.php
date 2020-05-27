@@ -61,8 +61,8 @@ class Upload_Queue {
 	public function __construct( \Cloudinary\Plugin $plugin ) {
 		$this->plugin = $plugin;
 
-		$this->cron_frequency    = apply_filters( 'cloudinary_cron_frequency', 600 );
-		$this->cron_start_offset = apply_filters( 'cloudinary_cron_start_offset', 60 );
+		$this->cron_frequency    = apply_filters( 'cloudinary_cron_frequency', 10 * MINUTE_IN_SECONDS );
+		$this->cron_start_offset = apply_filters( 'cloudinary_cron_start_offset', MINUTE_IN_SECONDS );
 
 		$this->load_hooks();
 	}
