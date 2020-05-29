@@ -37,7 +37,7 @@ class Upload_Queue {
 	 *
 	 * @var     bool
 	 */
-	private $running = null;
+	private $running = false;
 
 	/**
 	 * The cron frequency to ensure that the queue is progressing.
@@ -156,7 +156,7 @@ class Upload_Queue {
 	 * @return bool
 	 */
 	public function is_running() {
-		if ( null === $this->running ) {
+		if ( false === $this->running ) {
 			$queue         = $this->get_queue();
 			$this->running = empty( $queue['started'] ) ? false : true;
 		}
@@ -203,6 +203,8 @@ class Upload_Queue {
 		if ( 100 === $return['percent'] ) {
 			$this->stop_queue();
 		}
+
+		$return['is_running'] = $this->is_running();
 
 		return $return;
 	}
