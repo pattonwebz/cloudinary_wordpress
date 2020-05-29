@@ -672,6 +672,45 @@ class Filter {
 	}
 
 	/**
+	 * Attempt to set the width and height for SVGs.
+	 *
+	 * @param array|false  $image         The image details.
+	 * @param int          $attachment_id The attachment ID.
+	 * @param string|int[] $size          The requested image size.
+	 *
+	 * @return array|false
+	 */
+	public function filter_svg_image_size( $image, $attachment_id, $size ) {
+		if ( is_array( $image ) && preg_match('/\.svg$/i', $image[0] ) && $image[1] <= 1 ) {
+			$image[1] = $image[2] = null;
+
+			if ( is_array( $size ) ) {
+				$image[1] = $size[0];
+				$image[2] = $size[1];
+			} elseif ( false !== ( $xml = simplexml_load_file( $image[0] ) ) ) {
+				$attr     = $xml->attributes();
+				$viewbox  = explode( ' ', $attr->viewBox );
+
+				// Get width
+				if ( isset( $attr->width ) && preg_match( '/\d+/', $attr->width, $value ) ) {
+					$image[1] = (int) $value[0];
+				} elseif ( 4 === count( $viewbox ) ) {
+					$image[1] = (int) $viewbox[2];
+				}
+
+				// Get height
+				if ( isset( $attr->height ) && preg_match( '/\d+/', $attr->height, $value ) ) {
+					$image[2] = (int) $value[0];
+				} elseif ( 4 === count( $viewbox ) ) {
+					$image[2] = (int) $viewbox[3];
+				}
+			}
+		}
+
+		return $image;
+	}
+
+	/**
 	 * Setup hooks for the filters.
 	 */
 	public function setup_hooks() {
@@ -709,5 +748,7 @@ class Filter {
 		// Filter for block rendering.
 		add_filter( 'render_block_data', array( $this, 'filter_image_block_pre_render' ), 10, 2 );
 
+		// Try to get SVGs size.
+		add_filter( 'wp_get_attachment_image_src', array( $this, 'filter_svg_image_size' ), 10, 3 );
 	}
 }
