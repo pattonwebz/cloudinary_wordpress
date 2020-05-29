@@ -39,7 +39,6 @@ const cldCore = {
 	...sharedConfig,
 	entry: {
 		'cloudinary': './js/src/main.js',
-		'video': './css/src/video.scss',
 	},
 	output: {
 		path: path.resolve( process.cwd(), 'js' ),

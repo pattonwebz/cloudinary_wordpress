@@ -574,9 +574,10 @@ class Media implements Setup {
 		// Check size and correct if string or size.
 		if ( is_string( $size ) || ( is_array( $size ) && 3 === count( $size ) ) ) {
 			$intermediate = image_get_intermediate_size( $attachment_id, $size );
-			if ( is_array( $intermediate ) ) {
-				$size = $this->get_crop( $intermediate['url'], $attachment_id );
+			if ( ! is_array( $intermediate ) ) {
+				return false;
 			}
+			$size = $this->get_crop( $intermediate['url'], $attachment_id );
 		}
 
 		/**
@@ -1084,9 +1085,9 @@ class Media implements Setup {
 				if ( false === $this->cloudinary_id( $attachment_id ) ) {
 					// If false, lets check why by seeing if the file size is too large.
 					$file     = get_attached_file( $attachment_id ); // Get the file size to make sure it can exist in cloudinary.
-					$max_size = ( wp_attachment_is_image( $attachment_id ) ? 'max_image_size' : 'max_video_size' );
-					if ( file_exists( $file ) && filesize( $file ) > $this->plugin->components['connect']->usage[ $max_size ] ) {
-						$max_size_hr = size_format( $this->plugin->components['connect']->usage[ $max_size ] );
+					$max_size = ( wp_attachment_is_image( $attachment_id ) ? 'image_max_size_bytes' : 'video_max_size_bytes' );
+					if ( file_exists( $file ) && filesize( $file ) > $this->plugin->components['connect']->usage['media_limits'][ $max_size ] ) {
+						$max_size_hr = size_format( $this->plugin->components['connect']->usage['media_limits'][ $max_size ] );
 						// translators: variable is file size.
 						$status['note']  = sprintf( __( 'File size exceeds the maximum of %s. This media asset will be served from WordPress.', 'cloudinary' ), $max_size_hr );
 						$status['state'] = 'error';

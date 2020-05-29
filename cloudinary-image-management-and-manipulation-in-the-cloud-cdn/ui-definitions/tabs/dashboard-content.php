@@ -5,7 +5,18 @@
  * @package Cloudinary
  */
 
-$video_url = ''; // Left blank for when we get the final video URL.
+$video_url  = ''; // Left blank for when we get the final video URL.
+$connection = $this->plugin->components['connect'];
+
+$manage_text = sprintf(
+	// translators: Placeholders are URLS.
+	__(
+		'Manage <a href="%1$s">Image</a> or <a href="%2$s">Video</a> Settings.',
+		'cloudinary'
+	),
+	'admin.php?page=cld_global_transformation',
+	'admin.php?page=cld_global_transformation&tab=global_video_transformations'
+);
 
 ?>
 <div class="settings-tab-section-fields-dashboard">
@@ -27,28 +38,45 @@ $video_url = ''; // Left blank for when we get the final video URL.
 			<div class="settings-tab-section-fields-dashboard-success expanded">
 				<span class="dashicons dashicons-yes"></span> <?php esc_html_e( 'Connected to Cloudinary', 'cloudinary' ); ?>
 			</div>
+			<hr>
+			<div class="cloudinary-stats">
+				<strong><?php esc_html_e( $connection->get_usage_stat( 'plan' ) ); ?></strong> |
+				<?php if ( false !== $connection->get_usage_stat( 'credits', 'limit' ) ) : ?>
+					<span class="cloudinary-stat" title="<?php esc_attr_e( 'Credits', 'cloudinary' ); ?>">
+					<span class="dashicons dashicons-marker"></span> <?php esc_html_e( number_format_i18n( $connection->get_usage_stat( 'credits', 'limit' ) ) ); ?>
+					<span class="cloudinary-percent"> <?php esc_html_e( $connection->get_usage_stat( 'credits', 'used_percent' ) . '%' ); ?></span> |
+				</span>
+				<?php endif; ?>
+
+				<span class="cloudinary-stat" title="<?php esc_attr_e( 'Storage', 'cloudinary' ); ?>">
+					<span class="dashicons dashicons-cloud"></span> <?php esc_html_e( size_format( $connection->get_usage_stat( 'storage', 'limit' ) ) ); ?>
+					<span class="cloudinary-percent"> <?php esc_html_e( $connection->get_usage_stat( 'storage', 'used_percent' ) . '%' ); ?></span> |
+				</span>
+				<span class="cloudinary-stat" title="<?php esc_attr_e( 'Transformations', 'cloudinary' ); ?>">
+					<span class="dashicons dashicons-image-filter"></span> <?php esc_html_e( number_format_i18n( $connection->get_usage_stat( 'transformations', 'limit' ) ) ); ?>
+					<span class="cloudinary-percent success"> <?php esc_html_e( $connection->get_usage_stat( 'transformations', 'used_percent' ) . '%' ); ?></span> |
+				</span>
+				<span class="cloudinary-stat" title="<?php esc_attr_e( 'Bandwidth', 'cloudinary' ); ?>">
+					<span class="dashicons dashicons-dashboard"></span> <?php esc_html_e( size_format( $connection->get_usage_stat( 'bandwidth', 'limit' ) ) ); ?>
+					<span class="cloudinary-percent success"> <?php esc_html_e( $connection->get_usage_stat( 'bandwidth', 'used_percent' ) . '%' ); ?></span>
+				</span>
+			</div>
+			<hr>
+			<div class="cloudinary-stats">
+				<a href="https://cloudinary.com/console/lui/upgrade_options" class="button button-primary" target="_blank"><?php esc_html_e( 'Upgrade Plan', 'cloudinary' ); ?></a>
+				<a href="https://cloudinary.com/console" class="button" target="_blank"><?php esc_html_e( 'Cloudinary Dashboard', 'cloudinary' ); ?></a>
+			</div>
 		<?php endif; ?>
 	</div>
 	<div class="settings-tab-section-fields-dashboard-content">
-		<?php
-		$manage_text = sprintf(
-			// translators: Placeholders are URLS.
-			__(
-				'Manage <a href="%1$s">Image</a> or <a href="%2$s">Video</a> Settings.',
-				'cloudinary'
-			),
-			'admin.php?page=cld_global_transformation',
-			'admin.php?page=cld_global_transformation&tab=global_video_transformations'
-		);
-
-		// Video Player for dashboard.
-		$player   = array();
-		$player[] = 'var cld = cloudinary.Cloudinary.new({ cloud_name: \'demo\' });';
-		$player[] = 'var samplePlayer = cld.videoPlayer(\'dashboard-player\', { fluid : true } );';
-		wp_add_inline_script( 'cld-player', implode( $player ) );
-
-		?>
 		<?php if ( ! empty( $video_url ) ) : ?>
+			<?php
+			// Video Player for dashboard.
+			$player   = array();
+			$player[] = 'var cld = cloudinary.Cloudinary.new({ cloud_name: \'demo\' });';
+			$player[] = 'var samplePlayer = cld.videoPlayer(\'dashboard-player\', { fluid : true } );';
+			wp_add_inline_script( 'cld-player', implode( $player ) );
+			?>
 			<video id="dashboard-player" controls class="cld-video-player cld-fluid"></video>
 		<?php endif; ?>
 		<h3><?php esc_html_e( 'More Actions', 'cloudinary' ); ?></h3>
@@ -59,8 +87,8 @@ $video_url = ''; // Left blank for when we get the final video URL.
 </div>
 <?php if ( ! empty( $video_url ) ) : ?>
 	<script type="application/javascript">
-		document.addEventListener( 'DOMContentLoaded', function() {
-			samplePlayer.source( <?php echo esc_url( $video_url ); ?> );
-		} );
+        document.addEventListener( 'DOMContentLoaded', function() {
+            samplePlayer.source( <?php echo esc_url( $video_url ); ?> );
+        } );
 	</script>
 <?php endif; ?>
