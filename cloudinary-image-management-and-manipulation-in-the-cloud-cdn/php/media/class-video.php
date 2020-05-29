@@ -104,6 +104,7 @@ class Video {
 				if ( ! empty( $has_video ) || ! empty( $video_tags ) ) {
 					// Setup initial scripts.
 					wp_enqueue_style( 'cld-player' );
+					wp_enqueue_style( 'cld-player-local', $this->media->plugin->dir_url . 'css/video.css', null, self::PLAYER_VER );
 					wp_enqueue_script( 'cld-player' );
 
 					// Init cld script object.
@@ -240,7 +241,7 @@ class Video {
 		$instance = $this->queue_video_config( $attr['id'], $attr[ $video['fileformat'] ], $video['fileformat'], $args );
 
 		// Replace with video tag.
-		return '<video id="cloudinary-video-' . esc_attr( $instance ) . '"' . $size . '></video>';
+		return '<video class="cld-fluid" id="cloudinary-video-' . esc_attr( $instance ) . '"' . $size . '></video>';
 	}
 
 	/**
@@ -369,29 +370,31 @@ class Video {
 			var cldVideos = <?php echo wp_json_encode( $cld_videos ); ?>;
 
 			for ( var videoInstance in cldVideos ) {
-			var cldConfig = cldVideos[ videoInstance ];
-			var cldId = 'cloudinary-video-' + videoInstance;
-			cld.videoPlayer( cldId, cldConfig );
+				var cldConfig = cldVideos[ videoInstance ];
+				var cldId = 'cloudinary-video-' + videoInstance;
+				cld.videoPlayer( cldId, cldConfig );
 			}
 
 			window.addEventListener( 'load', function() {
-			for ( var videoInstance in cldVideos ) {
-			var cldId = 'cloudinary-video-' + videoInstance;
-			var videoContainer = document.getElementById( cldId );
-			var videoElement = videoContainer.getElementsByTagName( 'video' );
+				for ( var videoInstance in cldVideos ) {
+					var cldId = 'cloudinary-video-' + videoInstance;
+					var videoContainer = document.getElementById( cldId );
+					var videoElement = videoContainer.getElementsByTagName( 'video' );
 
-			if ( videoElement.length === 1 ) {
-			videoElement = videoElement[0];
+					if ( videoElement.length === 1 ) {
+						videoElement = videoElement[0];
+						videoElement.style.width = '100%';
 
-
-			<?php if ( $this->config['video_freeform'] ): ?>
-				videoElement.src = videoElement.src.replace(
-				'upload/',
-				'upload/<?php echo esc_js( $this->config['video_freeform'] ) ?>/'
-				);
-			<?php endif ?>
-			}
-			}
+						<?php if ( $this->config['video_freeform'] ): ?>
+							if ( videoElement.src.indexOf( '<?php echo esc_js( $this->config['video_freeform'] ) ?>' ) === -1 ) {
+								videoElement.src = videoElement.src.replace(
+									'upload/',
+									'upload/<?php echo esc_js( $this->config['video_freeform'] ) ?>/'
+								);
+							}
+						<?php endif ?>
+					}
+				}
 			} );
 			<?php
 			$script = ob_get_clean();
@@ -421,19 +424,53 @@ class Video {
 	}
 
 	/**
+	 * Filter a video block to add the class for cld-overriding.
+	 *
+	 * @param array $block        The current block structure.
+	 * @param array $source_block The source, unfiltered block structure.
+	 *
+	 * @return array
+	 */
+	public function filter_video_block_pre_render( $block, $source_block ) {
+
+		if ( 'core/video' === $source_block['blockName'] ) {
+			$classes = 'cld-fluid';
+			if ( ! empty( $source_block['attrs']['overwrite_transformations'] ) ) {
+				$classes .= ' cld-overwrite';
+			}
+			foreach ( $block['innerContent'] as &$content ) {
+
+				$video_tags = $this->media->filter->get_media_tags( $content );
+				foreach ( $video_tags as $tag ) {
+					if ( false !== strpos( $tag, 'class="' ) ) {
+						$content = str_replace( 'class="', 'class="' . $classes . ' ', $content );
+					} else {
+						$content = str_replace( '<video ', '<video class="' . $classes . '" ', $content );
+					}
+
+				}
+			}
+		}
+
+		return $block;
+	}
+
+	/**
 	 * Setup hooks for the filters.
 	 */
 	public function setup_hooks() {
 		add_filter( 'wp_video_shortcode_override', array( $this, 'filter_video_shortcode' ), 10, 2 );
 		// only filter video tags in front end.
 		if ( ! is_admin() ) {
-			add_filter( 'the_content', array( $this, 'filter_video_tags' ), 10 );
+			add_filter( 'the_content', array( $this, 'filter_video_tags' ) );
+			// Filter for block rendering.
+			add_filter( 'render_block_data', array( $this, 'filter_video_block_pre_render' ), 10, 2 );
 		}
 		add_action( 'wp_print_styles', array( $this, 'init_player' ) );
 		add_action( 'wp_footer', array( $this, 'print_video_scripts' ) );
 
 		// Add inline scripts for gutenberg.
 		add_action( 'enqueue_block_editor_assets', array( $this, 'enqueue_block_assets' ) );
-		self::register_scripts_styles();
+		$this->register_scripts_styles();
 	}
 }

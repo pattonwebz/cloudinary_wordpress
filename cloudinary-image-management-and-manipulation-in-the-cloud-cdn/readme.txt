@@ -2,7 +2,7 @@
 Contributors: Cloudinary, XWP, Automattic
 Tags: images, videos, DAM, optimizations, CDN, media, gallery, photo, photos, picture, pictures, thumbnail, upload, admin, administration, api, cms, dashboard, editor, integration, manage, mobile, social-media
 Requires at least: 4.7
-Tested up to: 5.3.2
+Tested up to: 5.4
 Requires PHP: 5.6
 Stable tag: trunk
 License: GPLv2

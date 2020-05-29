@@ -41,6 +41,13 @@ class Push_Sync {
 	private $sync_types;
 
 	/**
+	 * Holds the ID of the last attachment synced.
+	 *
+	 * @var int
+	 */
+	protected $post_id;
+
+	/**
 	 * Push_Sync constructor.
 	 *
 	 * @param \Cloudinary\Plugin $plugin Global instance of the main plugin.
@@ -200,19 +207,33 @@ class Push_Sync {
 		if ( ! $this->plugin->components['sync']->managers['queue']->is_running() ) { // Check it wasn't stopped.
 			return $this->rest_get_queue_status();
 		}
-		$post_id = $this->plugin->components['sync']->managers['queue']->get_post();
+
+		$this->post_id = $this->plugin->components['sync']->managers['queue']->get_post();
+
 		// No post, end of queue.
-		if ( empty( $post_id ) ) {
+		if ( empty( $this->post_id ) ) {
 			$this->plugin->components['sync']->managers['queue']->stop_queue();
 
 			return $this->rest_get_queue_status();
 		}
 
+		add_action( 'shutdown', array( $this, 'resume_queue' ) );
+
+		return $this->rest_get_queue_status();
+	}
+
+	/**
+	 * Resume the bulk sync.
+	 *
+	 * @return bool|\WP_REST_Response
+	 */
+	public function resume_queue() {
 		// Check if there is a Cloudinary ID in case this was synced on-demand before being processed by the queue.
 		add_filter( 'cloudinary_on_demand_sync_enabled', '__return_false' ); // Disable the on-demand sync since we want the status.
 		add_filter( 'cloudinary_id', '__return_false' ); // Disable the on-demand sync since we want the status.
-		if ( false === $this->plugin->components['media']->cloudinary_id( $post_id ) ) {
-			$stat = $this->push_attachments( array( $post_id ) );
+
+		if ( false === $this->plugin->components['media']->cloudinary_id( $this->post_id ) ) {
+			$stat = $this->push_attachments( array( $this->post_id ) );
 			if ( ! empty( $stat['processed'] ) ) {
 				$result = 'done';
 			} else {
@@ -226,8 +247,7 @@ class Push_Sync {
 			$result = 'done';
 		}
 
-		return $this->call_thread( $post_id, $result );
-
+		return $this->call_thread( $this->post_id, $result );
 	}
 
 	/**
@@ -246,7 +266,8 @@ class Push_Sync {
 			$params['last_id']     = $last_id;
 			$params['last_result'] = $last_result;
 		}
-		// Setup background call to cintinue the queue.
+
+		// Setup background call to continue the queue.
 		$this->plugin->components['api']->background_request( 'process', $params );
 
 		return $this->rest_get_queue_status();
@@ -330,7 +351,8 @@ class Push_Sync {
 			}
 
 			// First check if this has a file and it can be uploaded.
-			$file = get_attached_file( $post->ID );
+			$file      = get_attached_file( $post->ID );
+			$file_size = 0;
 			if ( empty( $file ) ) {
 				return new \WP_Error( 'attachment_no_file', __( 'Attachment did not have a file.', 'cloudinary' ) );
 			} elseif ( ! file_exists( $file ) ) {
@@ -347,8 +369,6 @@ class Push_Sync {
 						}
 						$file      = get_attached_file( $post->ID );
 						$file_size = filesize( $file );
-					} else {
-						$file_size = 0;
 					}
 				}
 			} else {
@@ -356,10 +376,11 @@ class Push_Sync {
 			}
 
 			$resource_type = $this->get_resource_type( $post );
-			$max_size      = ( 'image' === $resource_type ? 'max_image_size' : 'max_video_size' );
+			$max_size      = ( 'image' === $resource_type ? 'image_max_size_bytes' : 'video_max_size_bytes' );
 
 			if ( ! empty( $this->plugin->components['connect']->usage[ $max_size ] ) && $file_size > $this->plugin->components['connect']->usage[ $max_size ] ) {
 				$max_size_hr = size_format( $this->plugin->components['connect']->usage[ $max_size ] );
+
 				// translators: variable is file size.
 				$error = sprintf( __( 'File size exceeds the maximum of %s. This media asset will be served from WordPress.', 'cloudinary' ), $max_size_hr );
 				$this->plugin->components['media']->delete_post_meta( $post->ID, Sync::META_KEYS['pending'] ); // Remove Flag.
@@ -585,15 +606,14 @@ class Push_Sync {
 						// Remove records of breakpoints.
 						delete_post_meta( $attachment->ID, Sync::META_KEYS['breakpoints'] );
 					}
-					if ( empty( $upload['options']['responsive_breakpoints']['transformation'] ) ) {
-						// a transformation breakpoints only ever happens on a down sync.
-						$sync_key                     = md5( $upload['options']['public_id'] );
-						$meta_data[ $sync_key ]       = true;
-						$meta_data[ '_' . $sync_key ] = true;
-						update_post_meta( $attachment->ID, $sync_key, true );
-						// Add base ID.
-						update_post_meta( $attachment->ID, '_' . $sync_key, true );
-					}
+				}
+				if ( ! empty( $upload['options']['public_id'] ) ) {
+					// a transformation breakpoints only ever happens on a down sync.
+					$sync_key              = '_' . md5( $upload['options']['public_id'] );
+					$meta_data['sync_key'] = true;
+
+					// Add base ID.
+					update_post_meta( $attachment->ID, $sync_key, true );
 				}
 				$stats['success'][]                    = $attachment->post_title;
 				$meta                                  = wp_get_attachment_metadata( $attachment->ID, true );
