@@ -40,12 +40,40 @@ class Upload_Queue {
 	private $running = null;
 
 	/**
+	 * The cron frequency to ensure that the queue is progressing.
+	 *
+	 * @var int
+	 */
+	protected $cron_frequency;
+
+	/**
+	 * The cron offset since the last update.
+	 *
+	 * @var int
+	 */
+	protected $cron_start_offset;
+
+	/**
 	 * Upload_Queue constructor.
 	 *
 	 * @param \Cloudinary\Plugin $plugin The plugin.
 	 */
 	public function __construct( \Cloudinary\Plugin $plugin ) {
 		$this->plugin = $plugin;
+
+		$this->cron_frequency    = apply_filters( 'cloudinary_cron_frequency', 10 * MINUTE_IN_SECONDS );
+		$this->cron_start_offset = apply_filters( 'cloudinary_cron_start_offset', MINUTE_IN_SECONDS );
+
+		$this->load_hooks();
+	}
+
+	/**
+	 * Load the Upload Queue hooks.
+	 *
+	 * @return void
+	 */
+	public function load_hooks() {
+		add_action( 'cloudinary_resume_queue', array( $this, 'maybe_resume_queue' ) );
 	}
 
 	/**
@@ -85,6 +113,7 @@ class Upload_Queue {
 			if ( ! empty( $queue['pending'] ) ) {
 				$id                    = array_shift( $queue['pending'] );
 				$queue['processing'][] = $id;
+				$queue['last_update']  = current_time( 'timestamp' );
 				$this->set_queue( $queue );
 			}
 		}
@@ -209,7 +238,6 @@ class Upload_Queue {
 		// Transform attachments.
 		$return = array(
 			'pending'    => array(),
-			'large'      => array(),
 			'done'       => array(),
 			'processing' => array(),
 			'error'      => array(),
@@ -233,17 +261,40 @@ class Upload_Queue {
 			$this->set_queue( $queue );
 		}
 		$this->running = false;
+
+		wp_clear_scheduled_hook( 'cloudinary_resume_queue' );
 	}
 
-
 	/**
-	 * Startthe queue by setting the started flag.
+	 * Start the queue by setting the started flag.
+	 *
+	 * @return void
 	 */
 	public function start_queue() {
 		$queue            = $this->get_queue();
-		$queue['started'] = current_time( 'timestamp' );
+		$queue['started'] = $queue['last_update'] = current_time( 'timestamp' );
 		$this->set_queue( $queue );
 		$this->running = true;
+
+		if ( ! wp_next_scheduled( 'cloudinary_resume_queue' ) ) {
+			wp_schedule_single_event( time() + $this->cron_frequency, 'cloudinary_resume_queue' );
+		}
 	}
 
+	/**
+	 * Maybe resume the queue.
+	 * This is a fallback mechanism to resume the queue when it stops unexpectedly.
+	 *
+	 * @return void
+	 */
+	public function maybe_resume_queue() {
+		$now   = current_time( 'timestamp' );
+		$queue = $this->get_queue();
+
+		if ( $now - $queue['last_update'] > $this->cron_start_offset && $this->is_running() ) {
+			$this->plugin->components['api']->background_request( 'process', array() );
+		}
+
+		wp_schedule_single_event( $now + $this->cron_frequency, 'cloudinary_resume_queue' );
+	}
 }
