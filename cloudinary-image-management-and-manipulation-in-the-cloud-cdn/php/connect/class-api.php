@@ -240,9 +240,11 @@ class Api {
 			'https:/',
 			$this->url( $args['resource_type'], 'upload' ),
 		);
+
 		if ( ! empty( $args['transformation'] ) ) {
 			$url_parts[] = self::generate_transformation_string( $args['transformation'] );
 		}
+
 		// Add size.
 		if ( ! empty( $size ) && is_array( $size ) ) {
 			if ( true === $clean ) {
@@ -258,7 +260,15 @@ class Api {
 		// Clear out empty parts.
 		$url_parts = array_filter( $url_parts );
 
-		return implode( '/', $url_parts );
+		$final_url = implode( '/', $url_parts );
+
+		// Determine if we're dealing with a fetched 
+		// ...or uploaded image and update the URL accordingly.
+		if ( 1 < substr_count( $final_url, 'http' ) ) {
+			$final_url = str_replace( '/upload/', '/fetch/', $final_url );
+		}
+
+		return $final_url;
 	}
 
 	/**
