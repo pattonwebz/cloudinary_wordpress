@@ -574,10 +574,9 @@ class Media implements Setup {
 		// Check size and correct if string or size.
 		if ( is_string( $size ) || ( is_array( $size ) && 3 === count( $size ) ) ) {
 			$intermediate = image_get_intermediate_size( $attachment_id, $size );
-			if ( ! is_array( $intermediate ) ) {
-				return false;
+			if ( is_array( $intermediate ) ) {
+				$size = $this->get_crop( $intermediate['url'], $attachment_id );
 			}
-			$size = $this->get_crop( $intermediate['url'], $attachment_id );
 		}
 
 		/**
