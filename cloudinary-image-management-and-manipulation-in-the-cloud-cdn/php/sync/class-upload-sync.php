@@ -202,7 +202,7 @@ class Upload_Sync {
 		if ( $attachment_id && false === $cloudinary_id ) {
 			// Check that this has not already been prepared for upload.
 			if ( ! $this->is_pending( $attachment_id ) && apply_filters( 'cloudinary_on_demand_sync_enabled', $this->enabled ) ) {
-				$max_size = ( wp_attachment_is_image( $attachment_id ) ? 'image_max_size_bytes' : 'video_max_size_bytes' );
+				$max_size = ( wp_attachment_is_image( $attachment_id ) ? 'max_image_size' : 'max_video_size' );
 				$file     = get_attached_file( $attachment_id );
 				// Get the file size to make sure it can exist in cloudinary.
 				if ( ! empty( $this->plugin->components['connect']->usage[ $max_size ] ) && file_exists( $file ) && filesize( $file ) < $this->plugin->components['connect']->usage[ $max_size ] ) {
