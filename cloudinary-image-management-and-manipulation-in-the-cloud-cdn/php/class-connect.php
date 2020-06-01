@@ -10,7 +10,6 @@ namespace Cloudinary;
 use Cloudinary\Component\Config;
 use Cloudinary\Component\Notice;
 use Cloudinary\Component\Setup;
-use Cloudinary\Connect\API;
 
 /**
  * Cloudinary connection class.
@@ -61,6 +60,26 @@ class Connect implements Config, Setup, Notice {
 	 * @var string
 	 */
 	public $handle;
+
+	/**
+	 * Holder of general notices.
+	 *
+	 * @var array
+	 */
+	protected $notices = array();
+
+	/**
+	 * Holds the meta keys for connect meta to maintain consistency.
+	 */
+	const META_KEYS = array(
+		'usage'      => '_cloudinary_usage',
+		'last_usage' => '_cloudinary_last_usage',
+		'signature'  => 'cloudinary_connection_signature',
+		'version'    => 'cloudinary_version',
+		'url'        => 'cloudinary_url',
+		'connect'    => 'cloudinary_connect',
+		'cache'      => 'cloudinary_settings_cache',
+	);
 
 	/**
 	 * Initiate the plugin resources.
@@ -118,30 +137,47 @@ class Connect implements Config, Setup, Notice {
 	 */
 	public function verify_connection( $data ) {
 		if ( empty( $data['cloudinary_url'] ) ) {
-			delete_option( 'cloudinary_connection_signature' );
-			add_settings_error( 'cloudinary_connect', 'connection_error', __( 'Connection to Cloudinary has been removed.', 'cloudinary' ), 'notice-warning' );
+			delete_option( self::META_KEYS['signature'] );
+
+			add_settings_error(
+				'cloudinary_connect',
+				'connection_error',
+				__( 'Connection to Cloudinary has been removed.', 'cloudinary' ),
+				'notice-warning'
+			);
 
 			return $data;
 		}
-		$current = $this->plugin->config['settings']['connect'];
+
+		$data['cloudinary_url'] = str_replace( 'CLOUDINARY_URL=', '', $data['cloudinary_url'] );
+		$current                = $this->plugin->config['settings']['connect'];
+
 		if ( $current['cloudinary_url'] === $data['cloudinary_url'] ) {
 			return $data;
 		}
 
-		if ( ! preg_match( '~^cloudinary://~', $data['cloudinary_url'] ) ) {
-			add_settings_error( 'cloudinary_connect', 'format_mismatch', __( 'The Environment variable URL must be in this format: cloudinary://API_Key:API_Secret@Cloud_Name', 'cloudinary' ), 'error' );
+		// Pattern match to ensure validity of the provided url
+		if ( ! preg_match( '~^(?:CLOUDINARY_URL=)?cloudinary://[0-9]+:[A-Za-z_0-9]+@[A-Za-z]+~', $data['cloudinary_url'] ) ) {
+			add_settings_error(
+				'cloudinary_connect',
+				'format_mismatch',
+				__( 'The environment variable URL must be in this format: cloudinary://API_KEY:API_SECRET@CLOUD_NAME', 'cloudinary' ),
+				'error'
+			);
 
 			return $current;
 		}
 
 		$result = $this->test_connection( $data['cloudinary_url'] );
+
 		if ( ! empty( $result['message'] ) ) {
 			add_settings_error( 'cloudinary_connect', $result['type'], $result['message'], 'error' );
 
 			return $current;
 		}
+
 		add_settings_error( 'cloudinary_connect', 'connection_success', __( 'Successfully connected to Cloudinary.', 'cloudinary' ), 'updated' );
-		update_option( 'cloudinary_connection_signature', md5( $data['cloudinary_url'] ) );
+		update_option( self::META_KEYS['signature'], md5( $data['cloudinary_url'] ) );
 
 		return $data;
 	}
@@ -170,9 +206,9 @@ class Connect implements Config, Setup, Notice {
 		if ( 4 > count( $valid ) ) {
 			$result['type']    = 'invalid_url';
 			$result['message'] = sprintf(
-			// translators: Placeholder refers to the expected URL format.
+				// translators: Placeholder refers to the expected URL format.
 				__( 'Incorrect Format. Expecting: %s', 'cloudinary' ),
-				'<code>cloudinary://API_Key:API_Secret@Cloud_Name</code>'
+				'<code>cloudinary://API_KEY:API_SECRET@CLOUD_NAME</code>'
 			);
 
 			return $result;
@@ -198,11 +234,14 @@ class Connect implements Config, Setup, Notice {
 		}
 
 		$this->config_from_url( $url );
-		$test = new Connect\Api( $this, $this->plugin->version );
-		$test = $test->ping();
-		if ( is_wp_error( $test ) ) {
+		$test        = new Connect\Api( $this, $this->plugin->version );
+		$test_result = $test->ping();
+		if ( is_wp_error( $test_result ) ) {
 			$result['type']    = 'connection_error';
-			$result['message'] = ucwords( str_replace( '_', ' ', $test->get_error_message() ) );
+			$result['message'] = ucwords( str_replace( '_', ' ', $test_result->get_error_message() ) );
+		} else {
+			$this->api = $test;
+			$this->usage_stats( true );
 		}
 
 		return $result;
@@ -274,23 +313,62 @@ class Connect implements Config, Setup, Notice {
 		// Get the cloudinary url from plugin config.
 		$config = $this->plugin->config['settings']['connect'];
 		if ( ! empty( $config['cloudinary_url'] ) ) {
-
 			$this->config_from_url( $config['cloudinary_url'] );
-
 			$this->api = new Connect\Api( $this, $this->plugin->version );
-			$stats     = get_transient( '_cloudinary_usage' );
-			if ( empty( $stats ) ) {
-				// Get users plan.
-				$stats = $this->plugin->components['connect']->api->usage();
-				if ( ! is_wp_error( $stats ) && ! empty( $stats['media_limits'] ) ) {
-					$stats['max_image_size'] = $stats['media_limits']['image_max_size_bytes'];
-					$stats['max_video_size'] = $stats['media_limits']['video_max_size_bytes'];
-					set_transient( '_cloudinary_usage', $stats, HOUR_IN_SECONDS );
+			$this->usage_stats();
+		}
+	}
+
+	/**
+	 * Set the usage stats from the Cloudinary API.
+	 *
+	 * @param bool $refresh Flag to force a refresh.
+	 */
+	public function usage_stats( $refresh = false ) {
+		$stats = get_transient( self::META_KEYS['usage'] );
+		if ( empty( $stats ) || true === $refresh ) {
+			// Get users plan.
+			$stats = $this->api->usage();
+			if ( ! is_wp_error( $stats ) && ! empty( $stats['media_limits'] ) ) {
+				$stats['max_image_size'] = $stats['media_limits']['image_max_size_bytes'];
+				$stats['max_video_size'] = $stats['media_limits']['video_max_size_bytes'];
+				set_transient( self::META_KEYS['usage'], $stats, HOUR_IN_SECONDS );
+				update_option( self::META_KEYS['last_usage'], $stats );// Save the last successful call to prevent crashing.
+			} else {
+				// Handle error by logging and fetching the last success.
+				// @todo : log issue.
+				$stats = get_option( self::META_KEYS['last_usage'] );
+			}
+		}
+		$this->usage = $stats;
+	}
+
+	/**
+	 * Get a usage stat for display.
+	 *
+	 * @param string      $type The type of stat to get.
+	 * @param string|null $stat The stat to get.
+	 *
+	 * @return bool|string
+	 */
+	public function get_usage_stat( $type, $stat = null ) {
+		$value = false;
+		if ( isset( $this->usage[ $type ] ) ) {
+			if ( is_string( $this->usage[ $type ] ) ) {
+				$value = $this->usage[ $type ];
+			} elseif ( is_array( $this->usage[ $type ] ) && isset( $this->usage[ $type ][ $stat ] ) ) {
+				$value = $this->usage[ $type ][ $stat ];
+			} elseif ( is_array( $this->usage[ $type ] ) ) {
+
+				if ( 'limit' === $stat && isset( $this->usage[ $type ]['usage'] ) ) {
+					$value = $this->usage[ $type ]['usage'];
+				} elseif ( 'used_percent' === $stat && isset( $this->usage[ $type ]['credits_usage'] ) ) {
+					$value = $this->usage[ $type ]['credits_usage'];
 				}
 			}
-			$this->usage = $stats;
-
 		}
+
+		return $value;
 	}
 
 	/**
@@ -301,26 +379,48 @@ class Connect implements Config, Setup, Notice {
 	 * @return array The array of the config options stored.
 	 */
 	public function get_config() {
-		$signature = get_option( 'cloudinary_connection_signature', null );
-		if ( empty( $signature ) ) {
-			// Check if theres a previous version.
-			$version = get_option( 'cloudinary_version' );
-			if ( version_compare( $this->plugin->version, $version, '>' ) ) {
-				$data = array(
-					'cloudinary_url' => get_option( 'cloudinary_url' ),
-				);
-				$test = $this->test_connection( $data['cloudinary_url'] );
-				if ( 'connection_success' === $test['type'] ) {
-					$signature = md5( $data['cloudinary_url'] );
-
-					// remove filters as we've already verified it and 'add_settings_error()' isin't available yet.
-					remove_filter( 'pre_update_option_cloudinary_connect', array( $this, 'verify_connection' ) );
-					update_option( 'cloudinary_connect', $data );
-					update_option( 'cloudinary_connection_signature', $signature );
-					update_option( 'cloudinary_version', $this->plugin->version );
-					delete_option( 'cloudinary_settings_cache' ); // remove the cache.
-					$this->plugin->config['settings']['connect'] = $data; // Set the connection url for this round.
+		$signature = get_option( self::META_KEYS['signature'], null );
+		$version   = get_option( self::META_KEYS['version'] );
+		if ( empty( $signature ) || version_compare( $this->plugin->version, $version, '>' ) ) {
+			// Check if there's a previous version, or missing signature.
+			$cld_url = get_option( self::META_KEYS['url'], null );
+			if ( null === $cld_url ) {
+				// Post V1.
+				$data = get_option( self::META_KEYS['connect'], array() );
+				if ( ! isset( $data['cloudinary_url'] ) || empty( $data['cloudinary_url'] ) ) {
+					return null; // return null to indicate not valid.
 				}
+			} else {
+				// from V1 to V2.
+				$data = array(
+					'cloudinary_url' => $cld_url,
+				);
+				// Set auto sync off.
+				$sync = get_option( 'cloudinary_sync_media' );
+				if ( empty( $sync ) ) {
+					$sync = array(
+						'auto_sync'         => '',
+						'cloudinary_folder' => '',
+					);
+				}
+				$sync['auto_sync'] = 'off';
+				update_option( 'cloudinary_sync_media', $sync );
+				delete_option( 'cloudinary_settings_cache' ); // remove the cache.
+			}
+
+			$data['cloudinary_url'] = str_replace( 'CLOUDINARY_URL=', '', $data['cloudinary_url'] );
+			$test                   = $this->test_connection( $data['cloudinary_url'] );
+
+			if ( 'connection_success' === $test['type'] ) {
+				$signature = md5( $data['cloudinary_url'] );
+
+				// remove filters as we've already verified it and 'add_settings_error()' isin't available yet.
+				remove_filter( 'pre_update_option_cloudinary_connect', array( $this, 'verify_connection' ) );
+				update_option( self::META_KEYS['connect'], $data );
+				update_option( self::META_KEYS['signature'], $signature );
+				update_option( self::META_KEYS['version'], $this->plugin->version );
+				delete_option( self::META_KEYS['cache'] ); // remove the cache.
+				$this->plugin->config['settings']['connect'] = $data; // Set the connection url for this round.
 			}
 		}
 
@@ -328,15 +428,66 @@ class Connect implements Config, Setup, Notice {
 	}
 
 	/**
+	 * Set usage notices if limits are towards higher end.
+	 */
+	public function usage_notices() {
+		if ( ! empty( $this->usage ) ) {
+			$usage_type = 'used_percent';
+			if ( isset( $this->usage['credits'] ) ) {
+				$usage_type = 'credits_usage';
+			}
+			foreach ( $this->usage as $stat => $values ) {
+
+				if ( ! is_array( $values ) || ! isset( $values[ $usage_type ] ) || 0 > $values[ $usage_type ] ) {
+					continue;
+				}
+
+				$link      = null;
+				$link_text = null;
+				if ( 90 <= $values[ $usage_type ] ) {
+					// 90% used - show error.
+					$level     = 'error';
+					$link      = 'https://cloudinary.com/console/lui/upgrade_options';
+					$link_text = __( 'upgrade your account', 'cloudinary' );
+				} elseif ( 80 <= $values[ $usage_type ] ) {
+					$level = 'warning';
+					$link_text = __( 'upgrade your account', 'cloudinary' );
+				} elseif ( 70 <= $values[ $usage_type ] ) {
+					$level = 'neutral';
+					$link_text = __( 'upgrade your account', 'cloudinary' );
+				} else {
+					continue;
+				}
+				// translators: Placeholders are URLS and percentage values.
+				$message         = sprintf(
+					__(
+						'<span class="dashicons dashicons-cloudinary"></span> You are %2$s of the way through your monthly quota for %1$s on your Cloudinary account. If you exceed your quota, the Cloudinary plugin will be deactivated until your next billing cycle and your media assets will be served from your WordPress Media Library. You may wish to <a href="%3$s" target="_blank">%4$s</a> and increase your quota to ensure you maintain full functionality.',
+						'cloudinary'
+					),
+					ucwords( $stat ),
+					$values[ $usage_type ] . '%',
+					$link,
+					$link_text
+				);
+				$this->notices[] = array(
+					'message'     => $message,
+					'type'        => $level,
+					'dismissible' => false,
+				);
+			}
+		}
+	}
+
+	/**
 	 * Get admin notices.
 	 */
 	public function get_notices() {
-		$screen  = get_current_screen();
-		$notices = array();
+		$this->usage_notices();
+		$screen = get_current_screen();
 		if ( empty( $this->plugin->config['connect'] ) ) {
 			if ( is_object( $screen ) && in_array( $screen->id, $this->plugin->components['settings']->handles, true ) ) {
-				$link      = '<a href="' . esc_url( admin_url( 'admin.php?page=cld_connect' ) ) . '">' . __( 'Connect', 'cloudinary' ) . '</a> ';
-				$notices[] = array(
+				$link            = '<a href="' . esc_url( admin_url( 'admin.php?page=cld_connect' ) ) . '">' . __( 'Connect', 'cloudinary' ) . '</a> ';
+				$this->notices[] = array(
 					'message'     => $link . __( 'your Cloudinary account with WordPress to get started.', 'cloudinary' ),
 					'type'        => 'error',
 					'dismissible' => true,
@@ -344,7 +495,7 @@ class Connect implements Config, Setup, Notice {
 			}
 		}
 
-		return $notices;
+		return $this->notices;
 	}
 
 }

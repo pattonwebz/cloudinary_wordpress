@@ -53,7 +53,7 @@ class Upload_Sync {
 	 * @param bool               $enabled Is this feature enabled.
 	 * @param object             $pusher  An object that implements `push_attachments`. Default: null.
 	 */
-	public function __construct( \Cloudinary\Plugin $plugin, $enabled = true, $pusher = null ) {
+	public function __construct( \Cloudinary\Plugin $plugin, $enabled = false, $pusher = null ) {
 		$this->plugin  = $plugin;
 		$this->pusher  = $pusher;
 		$this->enabled = $enabled;
@@ -71,6 +71,94 @@ class Upload_Sync {
 		add_filter( 'cloudinary_media_status', array( $this, 'filter_status' ), 10, 2 );
 		// Hook for on demand upload push.
 		add_action( 'shutdown', array( $this, 'init_background_upload' ) );
+		// Hook into auto upload sync.
+		add_filter( 'cloudinary_on_demand_sync_enabled', array( $this, 'auto_sync_enabled' ) );
+		// Handle bulk and inline actions.
+		add_filter( 'handle_bulk_actions-upload', array( $this, 'handle_bulk_actions' ), 10, 3 );
+		// Add inline action.
+		add_filter( 'media_row_actions', array( $this, 'add_inline_action' ), 10, 2 );
+
+		// Add Bulk actions.
+		add_filter( 'bulk_actions-upload', function ( $actions ) {
+			$cloudinary_actions = array(
+				'cloudinary-push' => __( 'Push to Cloudinary', 'cloudinary' ),
+			);
+
+			return array_merge( $cloudinary_actions, $actions );
+		} );
+	}
+
+	/**
+	 * Add an inline action for manual sync.
+	 *
+	 * @param array    $actions All actions.
+	 * @param \WP_Post $post    The current post object.
+	 *
+	 * @return array
+	 */
+	function add_inline_action( $actions, $post ) {
+		if ( ! $this->plugin->components['sync']->is_synced( $post->ID ) ) {
+			if ( current_user_can( 'delete_post', $post->ID ) ) {
+				$action_url = add_query_arg(
+					array(
+						'action'   => 'cloudinary-push',
+						'media[]'  => $post->ID,
+						'_wpnonce' => wp_create_nonce( 'bulk-media' ),
+					),
+					'upload.php'
+				);
+
+				$actions['cloudinary-push'] = sprintf(
+					'<a href="%s" aria-label="%s">%s</a>',
+					$action_url,
+					/* translators: %s: Attachment title. */
+					esc_attr( sprintf( __( 'Push to Cloudinary &#8220;%s&#8221;' ), 'asd' ) ),
+					__( 'Push to Cloudinary', 'cloudinary' )
+				);
+			}
+		}
+
+		return $actions;
+	}
+
+	/**
+	 * Handles bulk actions for attachments.
+	 *
+	 * @param string $location The location to redirect after.
+	 * @param string $action   The action to handle.
+	 * @param array  $post_ids Post ID's to action.
+	 *
+	 * @return string
+	 */
+	public function handle_bulk_actions( $location, $action, $post_ids ) {
+
+		switch ( $action ) {
+			case 'cloudinary-push' :
+				foreach ( $post_ids as $post_id ) {
+					if ( ! $this->plugin->components['sync']->is_synced( $post_id ) ) {
+						$this->prep_upload( $post_id );
+					}
+				}
+				break;
+		}
+
+		return $location;
+
+	}
+
+	/**
+	 * Check if auto-sync is enabled.
+	 *
+	 * @param bool $enabled Flag to determine if autosync is enabled.
+	 *
+	 * @return bool
+	 */
+	public function auto_sync_enabled( $enabled ) {
+		if ( isset( $this->plugin->config['settings']['sync_media']['auto_sync'] ) && 'on' === $this->plugin->config['settings']['sync_media']['auto_sync'] ) {
+			$enabled = true;
+		}
+
+		return $enabled;
 	}
 
 	/**
@@ -117,7 +205,7 @@ class Upload_Sync {
 				$max_size = ( wp_attachment_is_image( $attachment_id ) ? 'max_image_size' : 'max_video_size' );
 				$file     = get_attached_file( $attachment_id );
 				// Get the file size to make sure it can exist in cloudinary.
-				if ( file_exists( $file ) && filesize( $file ) < $this->plugin->components['connect']->usage[ $max_size ] ) {
+				if ( ! empty( $this->plugin->components['connect']->usage[ $max_size ] ) && file_exists( $file ) && filesize( $file ) < $this->plugin->components['connect']->usage[ $max_size ] ) {
 					$this->add_to_sync( $attachment_id );
 				} else {
 					// Check if the src is a url.
@@ -131,6 +219,27 @@ class Upload_Sync {
 		}
 
 		return $cloudinary_id;
+	}
+
+	/**
+	 * Prep an attachment for upload.
+	 *
+	 * @param int $attachment_id The attachment ID to prep for upload.
+	 */
+	public function prep_upload( $attachment_id ) {
+		$max_size = ( wp_attachment_is_image( $attachment_id ) ? 'max_image_size' : 'max_video_size' );
+		$file     = get_attached_file( $attachment_id );
+		// Get the file size to make sure it can exist in cloudinary.
+		if ( file_exists( $file ) && filesize( $file ) < $this->plugin->components['connect']->usage[ $max_size ] ) {
+			$this->add_to_sync( $attachment_id );
+		} else {
+			// Check if the src is a url.
+			$file = get_post_meta( $attachment_id, '_wp_attached_file', true );
+			if ( $this->plugin->components['media']->is_cloudinary_url( $file ) ) {
+				// Download sync.
+				$this->add_to_sync( $attachment_id );
+			}
+		}
 	}
 
 	/**

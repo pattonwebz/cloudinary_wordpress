@@ -58,12 +58,15 @@ class Delete_Sync {
 			list( $request_cap, , $post_id ) = $args;
 
 			if ( 'delete_post' === $request_cap && ! empty( $all_caps['delete_posts'] ) && 'attachment' === get_post_type( $post_id ) ) {
-				if ( ! $this->plugin->components['sync']->is_synced( $post_id ) ) {
+
+				// Check if is pending.
+				if ( ! $this->plugin->components['sync']->is_synced( $post_id ) && $this->plugin->components['sync']->managers['upload']->is_pending( $post_id ) ) {
 					// Check for errors.
 					$has_error = $this->plugin->components['media']->get_post_meta( $post_id, Sync::META_KEYS['sync_error'], true );
 					if ( empty( $has_error ) ) {
 						$all_caps['delete_posts'] = false;
-						if ( filter_input( INPUT_GET, 'action', FILTER_DEFAULT ) ) {
+						$action = filter_input( INPUT_GET, 'action', FILTER_SANITIZE_STRING );
+						if ( ! empty( $action ) && '-1' !== $action ) {
 							wp_die( esc_html__( 'Sorry, you can’t delete an asset until it has fully synced with Cloudinary. Try again once syncing is complete.', 'cloudinary' ) );
 						}
 					}
