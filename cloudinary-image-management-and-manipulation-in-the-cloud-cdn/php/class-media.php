@@ -1239,14 +1239,6 @@ class Media implements Setup {
 			$data = $this->build_cached_meta( $post_id, $key, $single );
 		}
 
-		// If public_id, ensure there's a sync_key saved.
-		if ( '_public_id' === $key && empty( $meta_data[ Sync::META_KEYS['cloudinary'] ]['_sync_key'] ) ) {
-
-			//$sync_key = '_' . md5( $data );
-			//$this->update_post_meta( $post_id, '_sync_key', $sync_key );
-			//update_post_meta( $post_id, $sync_key, true ); // Set sync_key.
-		}
-
 		return $data;
 	}
 
