@@ -2,7 +2,7 @@
 Contributors: Cloudinary, XWP, Automattic
 Tags: images, videos, DAM, optimizations, CDN, media, gallery, photo, photos, picture, pictures, thumbnail, upload, admin, administration, api, cms, dashboard, editor, integration, manage, mobile, social-media
 Requires at least: 4.7
-Tested up to: 5.4
+Tested up to: 5.4.1
 Requires PHP: 5.6
 Stable tag: trunk
 License: GPLv2
@@ -108,14 +108,25 @@ You can read the plugin [documentation](https://cloudinary.com/documentation/wor
 9. Easily Configure Your Account
 
 == Changelog ==
+= 2.1.1 (01 Jun 2020) = 
+
+New features:
+
+  * We now provide several options for the WP<->Cloudinary sync, allowing you to better control your media:
+     - Bulk-sync - Will sync all assets with Cloudinary in a click-of-a-button.
+     - Auto-sync - Will sync new uploaded assets in an on-demand manner.
+     - Manual - Added a `push to Cloudinary` button to the Media Library bulk actions that allows syncing selected assets to Cloudinary.
+  * Global Transformations are now being applied to Featured Images.
+  * Added an `Account Status` to the dashboard tab, displaying the account usage, quota and metrics.
+
+Fixes and Improvements: 
+
+  * Improved the sync mechanism.
+  * General bug fixes and performance improvements.
+  * Improved error handling.
+
 = 2.0.3 (03 Apr 2020) =
   * Fix migration issue
-
-= 2.0.2 (03 Apr 2020) =
-  * Rollback last fix
-
-= 2.0.1 (02 Apr 2020) =
-  * Fix an issue with v1 migrating
 
 = 2.0.0 (31 Mar 2020) =
   * Release of a new major version of the plugin
