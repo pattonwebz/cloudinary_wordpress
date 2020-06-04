@@ -1021,7 +1021,7 @@ class Media implements Setup {
 			if ( $format !== $file_info['extension'] ) {
 				// Format transformation.
 				$this->set_transformation( $transformations, 'fetch_format', $file_info['extension'] );
-				$url = $file_info['dirname'] . '/' . $file_info['filename'] . '.' . $format;
+				$url = $file_info['dirname'] . '/' . $file_info['filename'] . '.' . $file_info['extension'];
 			}
 			// Try to find the Attachment ID in context meta data.
 			$attachment_id = $this->get_id_from_sync_key( $sync_key );

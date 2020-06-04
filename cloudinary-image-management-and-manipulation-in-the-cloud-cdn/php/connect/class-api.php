@@ -236,13 +236,19 @@ class Api {
 			$args['version'] = 'v1';
 		}
 
+		// Determine if we're dealing with a fetched 
+		// ...or uploaded image and update the URL accordingly.
+		$asset_endpoint = filter_var( $public_id, FILTER_VALIDATE_URL ) ? 'fetch' : 'upload';
+
 		$url_parts = array(
 			'https:/',
-			$this->url( $args['resource_type'], 'upload' ),
+			$this->url( $args['resource_type'], $asset_endpoint ),
 		);
+
 		if ( ! empty( $args['transformation'] ) ) {
 			$url_parts[] = self::generate_transformation_string( $args['transformation'] );
 		}
+
 		// Add size.
 		if ( ! empty( $size ) && is_array( $size ) ) {
 			if ( true === $clean ) {
@@ -252,7 +258,7 @@ class Api {
 		}
 
 		$url_parts[] = $args['version'];
-
+		
 		$url_parts[] = $public_id;
 
 		// Clear out empty parts.
