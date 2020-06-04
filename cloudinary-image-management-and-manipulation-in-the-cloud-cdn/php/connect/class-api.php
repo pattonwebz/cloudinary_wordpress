@@ -189,14 +189,17 @@ class Api {
 				if ( is_string ( $item ) ) {
 					return $item;
 				}
+
 				foreach ( $item as $type => $value ) { // phpcs:ignore
 					$key = array_search( $type, $transformation_index, true );
-					if ( 'wpsize' === $type ) {
+					if ( false !== strpos( $type, 'wpsize' ) ) {
 						if ( ! empty( $item['clean'] ) ) {
 							continue;
 						}
+
 						$value = '!' . $value . '!';
 					}
+
 					if ( false !== $key ) {
 						$transform[] = $key . '_' . $value;
 					}
@@ -258,7 +261,6 @@ class Api {
 		}
 
 		$url_parts[] = $args['version'];
-		
 		$url_parts[] = $public_id;
 
 		// Clear out empty parts.
