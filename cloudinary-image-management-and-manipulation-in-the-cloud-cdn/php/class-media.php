@@ -574,10 +574,9 @@ class Media implements Setup {
 		// Check size and correct if string or size.
 		if ( is_string( $size ) || ( is_array( $size ) && 3 === count( $size ) ) ) {
 			$intermediate = image_get_intermediate_size( $attachment_id, $size );
-			if ( ! is_array( $intermediate ) ) {
-				return false;
+			if ( is_array( $intermediate ) ) {
+				$size = $this->get_crop( $intermediate['url'], $attachment_id );
 			}
-			$size = $this->get_crop( $intermediate['url'], $attachment_id );
 		}
 
 		/**
@@ -1238,14 +1237,6 @@ class Media implements Setup {
 			$data = $meta_data[ Sync::META_KEYS['cloudinary'] ][ $key ];
 		} else {
 			$data = $this->build_cached_meta( $post_id, $key, $single );
-		}
-
-		// If public_id, ensure there's a sync_key saved.
-		if ( '_public_id' === $key && empty( $meta_data[ Sync::META_KEYS['cloudinary'] ]['_sync_key'] ) ) {
-
-			//$sync_key = '_' . md5( $data );
-			//$this->update_post_meta( $post_id, '_sync_key', $sync_key );
-			//update_post_meta( $post_id, $sync_key, true ); // Set sync_key.
 		}
 
 		return $data;

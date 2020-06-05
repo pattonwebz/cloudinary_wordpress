@@ -376,7 +376,7 @@ class Push_Sync {
 			}
 
 			$resource_type = $this->get_resource_type( $post );
-			$max_size      = ( 'image' === $resource_type ? 'image_max_size_bytes' : 'video_max_size_bytes' );
+			$max_size      = ( 'image' === $resource_type ? 'max_image_size' : 'max_video_size' );
 
 			if ( ! empty( $this->plugin->components['connect']->usage[ $max_size ] ) && $file_size > $this->plugin->components['connect']->usage[ $max_size ] ) {
 				$max_size_hr = size_format( $this->plugin->components['connect']->usage[ $max_size ] );
