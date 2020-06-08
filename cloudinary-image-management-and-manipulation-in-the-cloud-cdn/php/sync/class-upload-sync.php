@@ -97,23 +97,30 @@ class Upload_Sync {
 	 * @return array
 	 */
 	function add_inline_action( $actions, $post ) {
-		if ( ! $this->plugin->components['sync']->is_synced( $post->ID ) ) {
-			if ( current_user_can( 'delete_post', $post->ID ) ) {
-				$action_url = add_query_arg(
-					array(
-						'action'   => 'cloudinary-push',
-						'media[]'  => $post->ID,
-						'_wpnonce' => wp_create_nonce( 'bulk-media' ),
-					),
-					'upload.php'
-				);
-
+		if ( current_user_can( 'delete_post', $post->ID ) ) {
+			$action_url = add_query_arg(
+				array(
+					'action'   => 'cloudinary-push',
+					'media[]'  => $post->ID,
+					'_wpnonce' => wp_create_nonce( 'bulk-media' ),
+				),
+				'upload.php'
+			);
+			if ( ! $this->plugin->components['sync']->is_synced( $post->ID ) ) {
 				$actions['cloudinary-push'] = sprintf(
 					'<a href="%s" aria-label="%s">%s</a>',
 					$action_url,
 					/* translators: %s: Attachment title. */
 					esc_attr( sprintf( __( 'Push to Cloudinary &#8220;%s&#8221;' ), 'asd' ) ),
 					__( 'Push to Cloudinary', 'cloudinary' )
+				);
+			} else {
+				$actions['cloudinary-push'] = sprintf(
+					'<a href="%s" aria-label="%s">%s</a>',
+					$action_url,
+					/* translators: %s: Attachment title. */
+					esc_attr( sprintf( __( 'Push to Cloudinary &#8220;%s&#8221;' ), 'asd' ) ),
+					__( 'Re-sync to Cloudinary', 'cloudinary' )
 				);
 			}
 		}
@@ -135,9 +142,12 @@ class Upload_Sync {
 		switch ( $action ) {
 			case 'cloudinary-push' :
 				foreach ( $post_ids as $post_id ) {
-					if ( ! $this->plugin->components['sync']->is_synced( $post_id ) ) {
-						$this->prep_upload( $post_id );
-					}
+					delete_post_meta( $post_id, Sync::META_KEYS['sync_error'] );
+					delete_post_meta( $post_id, Sync::META_KEYS['public_id'] );
+					delete_post_meta( $post_id, Sync::META_KEYS['pending'] );
+					$file = get_attached_file( $post_id );
+					wp_generate_attachment_metadata( $post_id, $file );
+					$this->prep_upload( $post_id );
 				}
 				break;
 		}
