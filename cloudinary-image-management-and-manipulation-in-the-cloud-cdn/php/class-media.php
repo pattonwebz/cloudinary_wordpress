@@ -722,10 +722,17 @@ class Media implements Setup {
 
 		if ( false !== $cloudinary_id ) {
 			$this->in_downsize = true;
-			$image             = image_downsize( $attachment_id, $size );
+			$intermediate      = image_get_intermediate_size( $attachment_id, $size );
+			if ( is_array( $intermediate ) ) {
+				// Found an intermediate size.
+				$image = array(
+					$this->convert_url( $intermediate['url'], $attachment_id, array(), false ),
+					$intermediate['width'],
+					$intermediate['height'],
+					true,
+				);
+			}
 			$this->in_downsize = false;
-
-			$image[0] = $this->convert_url( $image[0], $attachment_id );
 		}
 
 		return $image;
