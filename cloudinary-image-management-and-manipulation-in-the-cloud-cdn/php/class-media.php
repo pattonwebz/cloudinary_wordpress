@@ -463,10 +463,10 @@ class Media implements Setup {
 	 * @return string Cloudinary URL.
 	 */
 	public function attachment_url( $url, $attachment_id ) {
-		if ( ! doing_action( 'wp_insert_post_data' ) && ! is_admin() ) {
+		if ( ! doing_action( 'wp_insert_post_data' ) && false === $this->in_downsize ) {
 			$cloudinary_id = $this->cloudinary_id( $attachment_id );
 			if ( false !== $cloudinary_id ) {
-				$url = $this->cloudinary_url( $attachment_id, $cloudinary_id );
+				$url = $this->cloudinary_url( $attachment_id );
 			}
 		}
 
