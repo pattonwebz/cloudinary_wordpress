@@ -108,6 +108,15 @@ You can read the plugin [documentation](https://cloudinary.com/documentation/wor
 9. Easily Configure Your Account
 
 == Changelog ==
+
+= 2.1.2 (09 Jun 2020) = 
+
+Fixes and Improvements: 
+
+  * Fixed cases where the image size were added to the URL.
+  * Added support to dashes ('-') in the connection string.
+  * Added an option to re-sync a single asset to Cloudinary.
+
 = 2.1.1 (01 Jun 2020) = 
 
 New features:
