@@ -58,9 +58,10 @@ class Push_Sync {
 		// Define the sync types and their option keys.
 		$sync_types       = array(
 			'file'        => 'upload',
+			'public_id'   => 'rename',
 			'breakpoints' => 'explicit',
 			'options'     => 'context',
-			'folder'      => 'upload',
+			'folder'      => 'rename',
 			'cloud_name'  => 'upload',
 		);
 		$this->sync_types = apply_filters( 'cloudinary_sync_types', $sync_types );
@@ -570,6 +571,13 @@ class Push_Sync {
 						$args['context'] = $upload['options']['context'];
 					}
 					$result = $this->plugin->components['connect']->api->explicit( $args );
+				} elseif ( 'rename' === $sync_type ) {
+					// Rename an asset.
+					$args   = array(
+						'from_public_id' => $this->plugin->components['media']->get_post_meta( $attachment->ID, Sync::META_KEYS['public_id'] ),
+						'to_public_id'   => $upload['public_id'],
+					);
+					$result = $this->plugin->components['connect']->api->{$upload['options']['resource_type']}( 'rename', 'POST', $args );
 				} else {
 					// dynamic sync type..
 					$result = $this->plugin->components['connect']->api->{$sync_type}( $upload['file'], $upload['options'] );
