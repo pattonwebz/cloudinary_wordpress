@@ -390,24 +390,16 @@ class Push_Sync {
 			}
 
 			// If it's got a public ID, then this is an explicit update.
+			$settings   = $this->plugin->config['settings'];
 			$public_id  = $post->{Sync::META_KEYS['public_id']}; // use the __get method on the \WP_Post to get post_meta.
-			$dirs       = wp_get_upload_dir();
-			$cld_folder = false;
-			$folder     = trailingslashit( $dirs['cloudinary_folder'] );
-			if ( '/' === $dirs['cloudinary_folder'] ) {
-				$folder = '';
-			}
+			$cld_folder = trailingslashit( $settings['sync_media']['cloudinary_folder'] );
 			if ( empty( $public_id ) ) {
 				$file_info = pathinfo( $file );
-				$public_id = $folder . $file_info['filename'];
+				$public_id = $file_info['filename'];
+			} else {
+				$public_id_parts = pathinfo( $public_id );
+				$public_id = $public_id_parts['basename'];
 			}
-
-			// Check if cloudinary folder is in public_id.
-			$parts = explode( '/', $public_id );
-			if ( untrailingslashit( $dirs['cloudinary_folder'] ) === $parts[0] ) {
-				$cld_folder = $dirs['cloudinary_folder'];
-			}
-
 
 			// Prepare upload options.
 			$options = array(
@@ -475,14 +467,19 @@ class Push_Sync {
 				$breakpoints['context'] = http_build_query( $breakpoints['context'], null, '|' );
 			}
 
+			// Stage folder to public_id.
+			$public_id = $cld_folder . $options['public_id'];
 			$return = array(
 				'file'        => $file,
 				'folder'      => $cld_folder,
+				'public_id'   => $public_id,
 				'breakpoints' => array(),
 				'options'     => $options,
 			);
+			$return['options']['public_id'] = $public_id;
 			if ( ! empty( $breakpoints ) ) {
 				$return['breakpoints'] = $breakpoints;
+				$return['breakpoints']['public_id'] = $public_id; // Stage public ID to folder for breakpoints.
 			}
 			$this->upload_options[ $post->ID ] = $return;
 
@@ -561,7 +558,7 @@ class Push_Sync {
 				if ( 'explicit' === $sync_type ) {
 					// Explicit update.
 					$args = array(
-						'public_id' => $upload['options']['public_id'],
+						'public_id' => $upload['public_id'],
 						'type'      => 'upload',
 					);
 					if ( ! empty( $upload['options']['responsive_breakpoints'] ) ) {
