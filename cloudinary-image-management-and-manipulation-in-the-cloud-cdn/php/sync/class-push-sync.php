@@ -304,7 +304,7 @@ class Push_Sync {
 
 		$type = 'upload';
 		// Check for explicit (has public_id, but no breakpoints).
-		$attachment_signature = $attachment->{Sync::META_KEYS['signature']};
+		$attachment_signature = $this->plugin->components['media']->get_post_meta( $attachment->ID, Sync::META_KEYS['signature'] );
 		if ( empty( $attachment_signature ) ) {
 			if ( ! empty( $attachment->{Sync::META_KEYS['public_id']} ) ) {
 				// Has a public id but no signature, explicit update to complete download.
