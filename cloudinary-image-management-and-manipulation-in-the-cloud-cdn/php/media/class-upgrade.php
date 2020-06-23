@@ -46,7 +46,10 @@ class Upgrade {
 	public function check_cloudinary_version( $cloudinary_id, $attachment_id ) {
 		if ( false === $cloudinary_id ) {
 			// Backwards compat.
-			$meta      = wp_get_attachment_metadata( $attachment_id );
+			$meta = wp_get_attachment_metadata( $attachment_id );
+			if ( ! empty( $meta[ Sync::META_KEYS['cloudinary'] ] ) ) {
+				return $cloudinary_id; // Current version.
+			}
 			$public_id = $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true );
 
 			/*
