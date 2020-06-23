@@ -308,19 +308,23 @@ class Video {
 				$overwrite_transformations = true;
 			}
 			$cloudinary_url  = $this->media->cloudinary_url( $attachment_id, false, false, null, $overwrite_transformations );
-			$transformations = $this->media->get_transformations_from_string( $cloudinary_url, 'video' );
-			if ( ! empty( $transformations ) ) {
-				$args['transformation'] = $transformations;
-			}
-			$video = wp_get_attachment_metadata( $attachment_id );
-			if ( $this->player_enabled() ) {
-				$instance = $this->queue_video_config( $attachment_id, $url, $video['fileformat'], $args );
-				// Remove src and replace with an ID.
-				$new_tag = str_replace( 'src="' . $url . '"', 'id="cloudinary-video-' . esc_attr( $instance ) . '"', $tag );
-				$content = str_replace( $tag, $new_tag, $content );
-			} else {
-				// Just replace URL.
-				$content = str_replace( $url, $cloudinary_url, $content );
+			// Bail replacing the video URL for cases where it doesn't exist.
+			// Cases are, for instance, when the file size is larger than the API limits — free accounts.
+			if ( ! empty( $cloudinary_url ) ) {
+				$transformations = $this->media->get_transformations_from_string( $cloudinary_url, 'video' );
+				if ( ! empty( $transformations ) ) {
+					$args['transformation'] = $transformations;
+				}
+				$video = wp_get_attachment_metadata( $attachment_id );
+				if ( $this->player_enabled() ) {
+					$instance = $this->queue_video_config( $attachment_id, $url, $video['fileformat'], $args );
+					// Remove src and replace with an ID.
+					$new_tag = str_replace( 'src="' . $url . '"', 'id="cloudinary-video-' . esc_attr( $instance ) . '"', $tag );
+					$content = str_replace( $tag, $new_tag, $content );
+				} else {
+					// Just replace URL.
+					$content = str_replace( $url, $cloudinary_url, $content );
+				}
 			}
 		}
 
