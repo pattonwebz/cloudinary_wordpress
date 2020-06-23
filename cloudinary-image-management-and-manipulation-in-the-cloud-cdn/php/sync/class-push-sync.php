@@ -429,13 +429,13 @@ class Push_Sync {
 				}
 				$max_width = $this->plugin->components['media']->get_max_width();
 				// Add breakpoints request options.
-				if ( ! empty( $this->plugin->config['settings']['global_transformations']['enable_breakpoints'] ) ) {
+				if ( ! empty( $settings['global_transformations']['enable_breakpoints'] ) ) {
 					$options['responsive_breakpoints'] = array(
 						'create_derived' => true,
-						'bytes_step'     => $this->plugin->config['settings']['global_transformations']['bytes_step'],
-						'max_images'     => $this->plugin->config['settings']['global_transformations']['breakpoints'],
+						'bytes_step'     => $settings['global_transformations']['bytes_step'],
+						'max_images'     => $settings['global_transformations']['breakpoints'],
 						'max_width'      => $meta['width'] < $max_width ? $meta['width'] : $max_width,
-						'min_width'      => $this->plugin->config['settings']['global_transformations']['min_width'],
+						'min_width'      => $settings['global_transformations']['min_width'],
 					);
 					$transformations                   = $this->plugin->components['media']->get_transformation_from_meta( $post->ID );
 					if ( ! empty( $transformations ) ) {
