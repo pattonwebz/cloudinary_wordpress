@@ -312,8 +312,10 @@ class Push_Sync {
 			}
 			// fallback to upload.
 		} else {
-			// Has signature. Compare and find if different.
+			// Has signature find differences.
 			$required_signature = $this->plugin->components['sync']->generate_signature( $attachment->ID );
+			// Apply the generated asset signature as a default. To allow for signature extensions that may not exist.
+			$attachment_signature = wp_parse_args( $attachment_signature, $required_signature );
 			foreach ( $required_signature as $key => $signature ) {
 				if ( ( ! isset( $attachment_signature[ $key ] ) || $attachment_signature[ $key ] !== $signature ) && isset( $this->sync_types[ $key ] ) ) {
 					return $this->sync_types[ $key ];
