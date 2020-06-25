@@ -141,11 +141,18 @@ class Sync implements Setup, Assets {
 	 * @return array|bool
 	 */
 	public function get_signature( $post_id ) {
-		$return    = false;
-		$signature = $this->plugin->components['media']->get_post_meta( $post_id, self::META_KEYS['signature'], true );
-		if ( ! empty( $signature ) ) {
-			$base_signatures = $this->generate_signature( $post_id );
-			$return          = wp_parse_args( $signature, $base_signatures );
+		static $signatures = array(); // Cache signatures already fetched.
+
+		$return = false;
+		if ( ! empty( $signatures[ $post_id ] ) ) {
+			$return = $signatures[ $post_id ];
+		} else {
+			$signature = $this->plugin->components['media']->get_post_meta( $post_id, self::META_KEYS['signature'], true );
+			if ( ! empty( $signature ) ) {
+				$base_signatures        = $this->generate_signature( $post_id );
+				$signatures[ $post_id ] = wp_parse_args( $signature, $base_signatures );
+				$return                 = $signatures[ $post_id ];
+			}
 		}
 
 		return $return;

@@ -304,7 +304,7 @@ class Push_Sync {
 
 		$type = 'upload';
 		// Check for explicit (has public_id, but no breakpoints).
-		$attachment_signature = $this->plugin->components['sync']->generate_signature( $attachment->ID );
+		$attachment_signature = $this->plugin->components['sync']->get_signature( $attachment->ID );
 		if ( empty( $attachment_signature ) ) {
 			if ( ! empty( $attachment->{Sync::META_KEYS['public_id']} ) ) {
 				// Has a public id but no signature, explicit update to complete download.
@@ -312,10 +312,8 @@ class Push_Sync {
 			}
 			// fallback to upload.
 		} else {
-			// Has signature find differences.
+			// Has signature find differences and use specific sync method.
 			$required_signature = $this->plugin->components['sync']->generate_signature( $attachment->ID );
-			// Apply the generated asset signature as a default. To allow for signature extensions that may not exist.
-			$attachment_signature = wp_parse_args( $attachment_signature, $required_signature );
 			foreach ( $required_signature as $key => $signature ) {
 				if ( ( ! isset( $attachment_signature[ $key ] ) || $attachment_signature[ $key ] !== $signature ) && isset( $this->sync_types[ $key ] ) ) {
 					return $this->sync_types[ $key ];
