@@ -304,7 +304,7 @@ class Push_Sync {
 
 		$type = 'upload';
 		// Check for explicit (has public_id, but no breakpoints).
-		$attachment_signature = $this->plugin->components['media']->get_post_meta( $attachment->ID, Sync::META_KEYS['signature'] );
+		$attachment_signature = $this->plugin->components['sync']->generate_signature( $attachment->ID );
 		if ( empty( $attachment_signature ) ) {
 			if ( ! empty( $attachment->{Sync::META_KEYS['public_id']} ) ) {
 				// Has a public id but no signature, explicit update to complete download.
@@ -400,7 +400,7 @@ class Push_Sync {
 				$public_id = $file_info['filename'];
 			} else {
 				$public_id_parts = pathinfo( $public_id );
-				$public_id = $public_id_parts['basename'];
+				$public_id       = $public_id_parts['basename'];
 			}
 
 			// Prepare upload options.
@@ -470,8 +470,8 @@ class Push_Sync {
 			}
 
 			// Stage folder to public_id.
-			$public_id = $cld_folder . $options['public_id'];
-			$return = array(
+			$public_id                      = $cld_folder . $options['public_id'];
+			$return                         = array(
 				'file'        => $file,
 				'folder'      => $cld_folder,
 				'public_id'   => $public_id,
@@ -480,7 +480,7 @@ class Push_Sync {
 			);
 			$return['options']['public_id'] = $public_id;
 			if ( ! empty( $breakpoints ) ) {
-				$return['breakpoints'] = $breakpoints;
+				$return['breakpoints']              = $breakpoints;
 				$return['breakpoints']['public_id'] = $public_id; // Stage public ID to folder for breakpoints.
 			}
 			$this->upload_options[ $post->ID ] = $return;

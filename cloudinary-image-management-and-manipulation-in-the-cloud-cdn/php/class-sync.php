@@ -100,7 +100,7 @@ class Sync implements Setup, Assets {
 	 */
 	public function is_synced( $post_id ) {
 		$return    = false;
-		$signature = $this->plugin->components['media']->get_post_meta( $post_id, self::META_KEYS['signature'], true );
+		$signature = $this->get_signature( $post_id );
 		if ( ! empty( $signature ) && $this->generate_signature( $post_id ) === $signature ) {
 			$return = $signature;
 		}
@@ -129,6 +129,24 @@ class Sync implements Setup, Assets {
 			},
 			$upload
 		);
+
+		return $return;
+	}
+
+	/**
+	 * Get the current sync signature of an asset.
+	 *
+	 * @param int $post_id The post ID.
+	 *
+	 * @return array|bool
+	 */
+	public function get_signature( $post_id ) {
+		$return    = false;
+		$signature = $this->plugin->components['media']->get_post_meta( $post_id, self::META_KEYS['signature'], true );
+		if ( ! empty( $signature ) ) {
+			$base_signatures = $this->generate_signature( $post_id );
+			$return          = wp_parse_args( $signature, $base_signatures );
+		}
 
 		return $return;
 	}
