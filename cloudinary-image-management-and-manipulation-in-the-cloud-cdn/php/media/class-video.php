@@ -468,11 +468,7 @@ class Video {
 	public function setup_hooks() {
 		add_filter( 'wp_video_shortcode_override', array( $this, 'filter_video_shortcode' ), 10, 2 );
 
-		if ( 
-			! is_admin() && 
-			$this->media->plugin->components['connect'] && 
-			$this->media->plugin->components['connect']->is_connected() 
-		) {
+		if ( ! is_admin() ) {
 			add_filter( 'the_content', array( $this, 'filter_video_tags' ) );
 			// Filter for block rendering.
 			add_filter( 'render_block_data', array( $this, 'filter_video_block_pre_render' ), 10, 2 );

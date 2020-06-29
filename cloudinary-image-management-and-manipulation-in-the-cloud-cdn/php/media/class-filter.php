@@ -716,6 +716,8 @@ class Filter {
 	public function setup_hooks() {
 		// Filter URLS within content.
 		add_action( 'wp_insert_post_data', array( $this, 'filter_out_cloudinary' ) );
+		add_filter( 'the_editor_content', array( $this, 'filter_out_local' ) );
+		add_filter( 'the_content', array( $this, 'filter_out_local' ), 9 ); // Early to hook before responsive srcsets.
 
 		// Remove editors to prevent users from manually editing images in WP.
 		add_filter( 'wp_image_editors', array( $this, 'disable_editors_maybe' ) );
@@ -729,31 +731,24 @@ class Filter {
 		// Try to get SVGs size.
 		add_filter( 'wp_get_attachment_image_src', array( $this, 'filter_svg_image_size' ), 10, 3 );
 
-		// Only use the CDN if we're properly connected.
-		if ( $this->media->plugin->components['connect'] && $this->media->plugin->components['connect']->is_connected() ) {
-			// Filter URLS within content.
-			add_filter( 'the_editor_content', array( $this, 'filter_out_local' ) );
-			add_filter( 'the_content', array( $this, 'filter_out_local' ), 9 ); // Early to hook before responsive srcsets.
+		add_filter( 'wp_prepare_attachment_for_js', array( $this, 'filter_attachment_for_js' ) );
+		// Add support for custom header.
+		add_filter( 'get_header_image_tag', array( $this, 'filter_out_local' ) );
 
-			add_filter( 'wp_prepare_attachment_for_js', array( $this, 'filter_attachment_for_js' ) );
-			// Add support for custom header.
-			add_filter( 'get_header_image_tag', array( $this, 'filter_out_local' ) );
+		// Add transformations.
+		add_filter( 'media_send_to_editor', array( $this, 'transform_to_editor' ), 10, 3 );
+		// Filter video codes.
+		add_filter( 'media_send_to_editor', array( $this, 'filter_video_embeds' ), 10, 3 );
 
-			// Add transformations.
-			add_filter( 'media_send_to_editor', array( $this, 'transform_to_editor' ), 10, 3 );
-			// Filter video codes.
-			add_filter( 'media_send_to_editor', array( $this, 'filter_video_embeds' ), 10, 3 );
-
-			// Gutenberg compatibility.
-			add_filter( 'rest_prepare_attachment', array( $this, 'filter_attachment_for_rest' ) );
-			$types  = get_post_types_by_support( 'editor' );
-			$filter = $this;
-			array_map(
-				function ( $type ) use ( $filter ) {
-					add_filter( 'rest_prepare_' . $type, array( $filter, 'pre_filter_rest_content' ), 10, 3 );
-				},
-				$types
-			);
-		}
+		// Gutenberg compatibility.
+		add_filter( 'rest_prepare_attachment', array( $this, 'filter_attachment_for_rest' ) );
+		$types  = get_post_types_by_support( 'editor' );
+		$filter = $this;
+		array_map(
+			function ( $type ) use ( $filter ) {
+				add_filter( 'rest_prepare_' . $type, array( $filter, 'pre_filter_rest_content' ), 10, 3 );
+			},
+			$types
+		);
 	}
 }

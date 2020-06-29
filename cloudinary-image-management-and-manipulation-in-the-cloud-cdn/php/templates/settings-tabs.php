@@ -11,14 +11,12 @@ if ( empty( $current_page['tabs'] ) ) {
 }
 $nav_tabs    = $current_page['tabs'];
 $config      = $this->plugin->config;
+$connect     = $this->plugin->components['connect'];
 $active_tabs = array_filter(
 	$nav_tabs,
-	function ( $tab ) use ( $config ) {
-		if ( ! empty( $tab['requires_config'] ) && empty( $config['connect'] ) ) {
-			return false;
-		}
-
-		return true;
+	function ( $tab ) use ( $config, $connect ) {
+		// If this tab has "require_config" set, ensure we're fully connected to cloudinary.
+		return ! empty( $tab['requires_config'] ) && ( ! $config['connect'] || ! $connect || ! $connect->is_connected() );
 	}
 );
 

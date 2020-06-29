@@ -1328,13 +1328,11 @@ class Media implements Setup {
 			add_filter( 'upload_dir', array( $this, 'upload_dir' ) );
 
 			// Filter live URLS. (functions that return a URL).
-			if ( $this->plugin->components['connect']->is_connected() ) {
-				add_filter( 'wp_calculate_image_srcset', array( $this, 'image_srcset' ), 10, 5 );
-				add_filter( 'wp_calculate_image_srcset_meta', array( $this, 'match_responsive_sources' ), 10, 4 );
-				add_filter( 'wp_get_attachment_metadata', array( $this, 'add_cloudinary_full_size' ), 10, 2 );
-				add_filter( 'wp_get_attachment_url', array( $this, 'attachment_url' ), 10, 2 );
-				add_filter( 'image_downsize', array( $this, 'filter_downsize' ), 10, 3 );
-			}
+			add_filter( 'wp_calculate_image_srcset', array( $this, 'image_srcset' ), 10, 5 );
+			add_filter( 'wp_calculate_image_srcset_meta', array( $this, 'match_responsive_sources' ), 10, 4 );
+			add_filter( 'wp_get_attachment_metadata', array( $this, 'add_cloudinary_full_size' ), 10, 2 );
+			add_filter( 'wp_get_attachment_url', array( $this, 'attachment_url' ), 10, 2 );
+			add_filter( 'image_downsize', array( $this, 'filter_downsize' ), 10, 3 );
 
 			// Filter and action the custom column.
 			add_filter( 'manage_media_columns', array( $this, 'media_column' ) );
