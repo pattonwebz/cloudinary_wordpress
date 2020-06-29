@@ -61,7 +61,7 @@ class Push_Sync {
 			'public_id'   => 'rename',
 			'breakpoints' => 'explicit',
 			'options'     => 'context',
-			'folder'      => 'rename',
+			'folder'      => 'upload',
 			'cloud_name'  => 'upload',
 		);
 		$this->sync_types = apply_filters( 'cloudinary_sync_types', $sync_types );
@@ -395,17 +395,25 @@ class Push_Sync {
 			$cld_folder = trailingslashit( $settings['sync_media']['cloudinary_folder'] );
 			if ( empty( $public_id ) ) {
 				$file_info = pathinfo( $file );
-				$public_id = $file_info['filename'];
+				$public_id = $cld_folder . $file_info['filename'];
+			}
+
+			if ( false !== strpos( $public_id, '/' ) ) {
+				// Split the public_id into path and filename to allow filtering just the ID and not giving access to the path.
+				$public_id_info   = pathinfo( $public_id );
+				$public_id_folder = trailingslashit( $public_id_info['dirname'] );
+				$public_id_file   = $public_id_info['filename'];
 			} else {
-				$public_id_parts = pathinfo( $public_id );
-				$public_id       = $public_id_parts['basename'];
+				// File is in the root of cloudinary.
+				$public_id_folder = '';
+				$public_id_file   = $public_id;
 			}
 
 			// Prepare upload options.
 			$options = array(
 				'unique_filename' => false,
 				'resource_type'   => $resource_type,
-				'public_id'       => $public_id,
+				'public_id'       => $public_id_file,
 				'context'         => array(
 					'caption' => esc_attr( $post->post_title ),
 					'alt'     => $post->_wp_attachment_image_alt,
@@ -467,8 +475,8 @@ class Push_Sync {
 				$breakpoints['context'] = http_build_query( $breakpoints['context'], null, '|' );
 			}
 
-			// Stage folder to public_id.
-			$public_id                      = $cld_folder . $options['public_id'];
+			// Restructure the path to the filename to allow correct placement in Cloudinary.
+			$public_id                      = $public_id_folder . $options['public_id'];
 			$return                         = array(
 				'file'        => $file,
 				'folder'      => $cld_folder,

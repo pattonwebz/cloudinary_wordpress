@@ -101,7 +101,8 @@ class Sync implements Setup, Assets {
 	public function is_synced( $post_id ) {
 		$return    = false;
 		$signature = $this->get_signature( $post_id );
-		if ( ! empty( $signature ) && $this->generate_signature( $post_id ) === $signature ) {
+		$expecting = $this->generate_signature( $post_id );
+		if ( ! empty( $signature ) && $expecting === $signature ) {
 			$return = $signature;
 		}
 
