@@ -57,12 +57,12 @@ class Push_Sync {
 
 		// Define the sync types and their option keys.
 		$sync_types       = array(
+			'cloud_name'  => 'upload',
+			'folder'      => 'upload',
 			'file'        => 'upload',
 			'public_id'   => 'rename',
 			'breakpoints' => 'explicit',
 			'options'     => 'context',
-			'folder'      => 'upload',
-			'cloud_name'  => 'upload',
 		);
 		$this->sync_types = apply_filters( 'cloudinary_sync_types', $sync_types );
 
