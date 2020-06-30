@@ -48,6 +48,7 @@ class Sync implements Setup, Assets {
 		'transformation' => '_transformations',
 		'sync_error'     => '_sync_error',
 		'cloudinary'     => '_cloudinary_v2',
+		'folder_sync'    => '_folder_sync',
 	);
 
 	/**
@@ -100,8 +101,9 @@ class Sync implements Setup, Assets {
 	 */
 	public function is_synced( $post_id ) {
 		$return    = false;
-		$signature = $this->plugin->components['media']->get_post_meta( $post_id, self::META_KEYS['signature'], true );
-		if ( ! empty( $signature ) && $this->generate_signature( $post_id ) === $signature ) {
+		$signature = $this->get_signature( $post_id );
+		$expecting = $this->generate_signature( $post_id );
+		if ( ! empty( $signature ) && $expecting === $signature ) {
 			$return = $signature;
 		}
 
@@ -129,6 +131,31 @@ class Sync implements Setup, Assets {
 			},
 			$upload
 		);
+
+		return $return;
+	}
+
+	/**
+	 * Get the current sync signature of an asset.
+	 *
+	 * @param int $post_id The post ID.
+	 *
+	 * @return array|bool
+	 */
+	public function get_signature( $post_id ) {
+		static $signatures = array(); // Cache signatures already fetched.
+
+		$return = false;
+		if ( ! empty( $signatures[ $post_id ] ) ) {
+			$return = $signatures[ $post_id ];
+		} else {
+			$signature = $this->plugin->components['media']->get_post_meta( $post_id, self::META_KEYS['signature'], true );
+			if ( ! empty( $signature ) ) {
+				$base_signatures        = $this->generate_signature( $post_id );
+				$signatures[ $post_id ] = wp_parse_args( $signature, $base_signatures );
+				$return                 = $signatures[ $post_id ];
+			}
+		}
 
 		return $return;
 	}
