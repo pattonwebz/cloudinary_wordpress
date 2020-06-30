@@ -261,6 +261,7 @@ class Upload_Sync {
 		if ( ! in_array( $attachment_id, $this->to_sync, true ) ) {
 			// Flag image as pending to prevent duplicate upload.
 			update_post_meta( $attachment_id, Sync::META_KEYS['pending'], time() );
+			$this->plugin->components['media']->update_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], true );
 			$this->to_sync[] = $attachment_id;
 		}
 	}
