@@ -398,15 +398,16 @@ class Push_Sync {
 				$public_id = $cld_folder . $file_info['filename'];
 			}
 
+			// Assume that the public_id is a root item.
+			$public_id_folder = '';
+			$public_id_file   = $public_id;
+
+			// Check if in a lower level.
 			if ( false !== strpos( $public_id, '/' ) ) {
 				// Split the public_id into path and filename to allow filtering just the ID and not giving access to the path.
 				$public_id_info   = pathinfo( $public_id );
 				$public_id_folder = trailingslashit( $public_id_info['dirname'] );
 				$public_id_file   = $public_id_info['filename'];
-			} else {
-				// File is in the root of cloudinary.
-				$public_id_folder = '';
-				$public_id_file   = $public_id;
 			}
 
 			// Prepare upload options.
