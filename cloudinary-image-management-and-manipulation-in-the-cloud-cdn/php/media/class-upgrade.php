@@ -62,6 +62,24 @@ class Upgrade {
 				// Has public ID, but not  fully down synced.
 				$cloudinary_id = $public_id;
 			}
+		} else {
+			// Backwards compat.
+			$folder_sync = $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], true );
+			if ( 0 === strlen( $folder_sync ) ) {
+				// Does not exist, add it to be compatible with v1.2.2.
+				$public_id = $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true );
+				// Set the folder sync to 0 to flag it by default as not synced.
+				$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], '0' );
+				if ( false !== strpos( $public_id, '/' ) ) {
+					$path              = pathinfo( $public_id );
+					$asset_folder      = trailingslashit( $path['dirname'] );
+					$cloudinary_folder = trailingslashit( $this->media->plugin->config['settings']['sync_media']['cloudinary_folder'] );
+					if ( $asset_folder === $cloudinary_folder ) {
+						// The asset folder matches the defined cloudinary folder, flag it as being in a folder sync.
+						$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], '1' );
+					}
+				}
+			}
 		}
 
 		return $cloudinary_id;
