@@ -487,7 +487,7 @@ class Push_Sync {
 			}
 
 			// Restructure the path to the filename to allow correct placement in Cloudinary.
-			$public_id                      = $public_id_folder . $options['public_id'];
+			$public_id                      = ltrim( $public_id_folder . $options['public_id'], '/' );
 			$return                         = array(
 				'file'        => $file,
 				'folder'      => $cld_folder,
