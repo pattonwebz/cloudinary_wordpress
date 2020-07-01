@@ -115,10 +115,15 @@ class Sync implements Setup, Assets {
 	 *
 	 * @param int $post_id The post id to generate a signature for.
 	 *
-	 * @return string
+	 * @return string|bool
 	 */
 	public function generate_signature( $post_id ) {
-		$upload               = $this->managers['push']->prepare_upload( $post_id );
+		$upload = $this->managers['push']->prepare_upload( $post_id );
+		// Check if has an error (ususally due to file quotas).
+		if ( is_wp_error( $upload ) ) {
+			$this->plugin->components['media']->get_post_meta( $post_id, self::META_KEYS['sync_error'], $upload->get_error_message() );
+			return false;
+		}
 		$credentials          = $this->plugin->components['connect']->get_credentials();
 		$upload['cloud_name'] = $credentials['cloud_name'];
 		$return               = array_map(
