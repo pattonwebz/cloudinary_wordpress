@@ -72,7 +72,7 @@ class Upload_Sync {
 		// Hook for on demand upload push.
 		add_action( 'shutdown', array( $this, 'init_background_upload' ) );
 		// Hook into auto upload sync.
-		add_filter( 'cloudinary_on_demand_sync_enabled', array( $this, 'auto_sync_enabled' ) );
+		add_filter( 'cloudinary_on_demand_sync_enabled', array( $this, 'auto_sync_enabled' ), 10, 2 );
 		// Handle bulk and inline actions.
 		add_filter( 'handle_bulk_actions-upload', array( $this, 'handle_bulk_actions' ), 10, 3 );
 		// Add inline action.
@@ -160,11 +160,17 @@ class Upload_Sync {
 	 * Check if auto-sync is enabled.
 	 *
 	 * @param bool $enabled Flag to determine if autosync is enabled.
+	 * @param int  $post_id The post id currently processing.
 	 *
 	 * @return bool
 	 */
-	public function auto_sync_enabled( $enabled ) {
+	public function auto_sync_enabled( $enabled, $post_id ) {
 		if ( isset( $this->plugin->config['settings']['sync_media']['auto_sync'] ) && 'on' === $this->plugin->config['settings']['sync_media']['auto_sync'] ) {
+			$enabled = true;
+		}
+
+		// Check if it was synced before to allow re-sync for changes.
+		if ( ! empty( $this->plugin->components['sync']->get_signature( $post_id ) ) ) {
 			$enabled = true;
 		}
 
@@ -211,7 +217,7 @@ class Upload_Sync {
 		$attachment_id = intval( $attachment_id );
 		if ( $attachment_id && false === $cloudinary_id ) {
 			// Check that this has not already been prepared for upload.
-			if ( ! $this->is_pending( $attachment_id ) && apply_filters( 'cloudinary_on_demand_sync_enabled', $this->enabled ) ) {
+			if ( ! $this->is_pending( $attachment_id ) && apply_filters( 'cloudinary_on_demand_sync_enabled', $this->enabled, $attachment_id ) ) {
 				$max_size = ( wp_attachment_is_image( $attachment_id ) ? 'max_image_size' : 'max_video_size' );
 				$file     = get_attached_file( $attachment_id );
 				// Get the file size to make sure it can exist in cloudinary.
@@ -261,6 +267,7 @@ class Upload_Sync {
 		if ( ! in_array( $attachment_id, $this->to_sync, true ) ) {
 			// Flag image as pending to prevent duplicate upload.
 			update_post_meta( $attachment_id, Sync::META_KEYS['pending'], time() );
+			$this->plugin->components['media']->update_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], true );
 			$this->to_sync[] = $attachment_id;
 		}
 	}

@@ -228,6 +228,7 @@ class Video {
 		if ( ! empty( $transformations ) ) {
 			$args['transformation'] = $transformations;
 		}
+		$args['overwrite_transformations'] = $overwrite_transformations;
 		// Size settings.
 		$size = '';
 		if ( ! empty( $attr['width'] ) ) {
@@ -307,6 +308,8 @@ class Video {
 			if ( false !== strpos( $classes, 'cld-overwrite' ) ) {
 				$overwrite_transformations = true;
 			}
+			$args['overwrite_transformations'] = $overwrite_transformations;
+
 			$cloudinary_url  = $this->media->cloudinary_url( $attachment_id, false, false, null, $overwrite_transformations );
 			// Bail replacing the video URL for cases where it doesn't exist.
 			// Cases are, for instance, when the file size is larger than the API limits — free accounts.
@@ -388,15 +391,19 @@ class Video {
 					if ( videoElement.length === 1 ) {
 						videoElement = videoElement[0];
 						videoElement.style.width = '100%';
-
 						<?php if ( $this->config['video_freeform'] ): ?>
-							if ( videoElement.src.indexOf( '<?php echo esc_js( $this->config['video_freeform'] ) ?>' ) === -1 ) {
-								videoElement.src = videoElement.src.replace(
-									'upload/',
-									'upload/<?php echo esc_js( $this->config['video_freeform'] ) ?>/'
-								);
-							}
+
+						if ( 
+							videoElement.src.indexOf( '<?php echo esc_js( $this->config['video_freeform'] ) ?>' ) === -1 &&
+							! cldVideos[videoInstance]['overwrite_transformations']
+						) {
+							videoElement.src = videoElement.src.replace(
+								'upload/',
+								'upload/<?php echo esc_js( $this->config['video_freeform'] ) ?>/'
+							);
+						}
 						<?php endif ?>
+
 					}
 				}
 			} );
