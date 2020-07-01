@@ -103,7 +103,7 @@ class Sync implements Setup, Assets {
 		$return    = false;
 		$signature = $this->get_signature( $post_id );
 		$expecting = $this->generate_signature( $post_id );
-		if ( ! empty( $signature ) && $expecting === $signature ) {
+		if ( ! empty( $signature ) && ! empty( $expecting ) && $expecting === $signature ) {
 			$return = $signature;
 		}
 
@@ -122,6 +122,7 @@ class Sync implements Setup, Assets {
 		// Check if has an error (ususally due to file quotas).
 		if ( is_wp_error( $upload ) ) {
 			$this->plugin->components['media']->get_post_meta( $post_id, self::META_KEYS['sync_error'], $upload->get_error_message() );
+
 			return false;
 		}
 		$credentials          = $this->plugin->components['connect']->get_credentials();
