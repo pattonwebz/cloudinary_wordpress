@@ -348,7 +348,6 @@ class Video {
 				$default       = array(
 					'publicId'    => $cloudinary_id,
 					'sourceTypes' => array( $video['format'] ), // @todo Make this based on eager items as mentioned above.
-					'controls'    => 'on' === $this->config['video_controls'] ? true : false,
 					'autoplay'    => 'off' !== $this->config['video_autoplay_mode'] ? true : false,
 					'loop'        => 'on' === $this->config['video_loop'] ? true : false,
 				);
@@ -359,11 +358,12 @@ class Video {
 				}
 
 				$config = wp_parse_args( $video['args'], $default );
-
+				
 				if ( empty( $config['size'] ) && ! empty( $config['transformation'] ) && ! $this->media->get_crop_from_transformation( $config['transformation'] ) ) {
 					$config['fluid'] = true;
 				}
 
+				$config['controls'] = 'on' === $this->config['video_controls'];
 				$cld_videos[ $instance ] = $config;
 
 			}
