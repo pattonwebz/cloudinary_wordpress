@@ -231,9 +231,9 @@ class Push_Sync {
 	public function resume_queue() {
 		// Check if there is a Cloudinary ID in case this was synced on-demand before being processed by the queue.
 		add_filter( 'cloudinary_on_demand_sync_enabled', '__return_false' ); // Disable the on-demand sync since we want the status.
-		add_filter( 'cloudinary_id', '__return_false' ); // Disable the on-demand sync since we want the status.
+		define( 'DOING_BULK_SYNC', true ); // Define bulk sync in action.
 
-		if ( false === $this->plugin->components['media']->cloudinary_id( $this->post_id ) ) {
+		if ( ! $this->plugin->components['sync']->is_synced( $this->post_id ) ) {
 			$stat = $this->push_attachments( array( $this->post_id ) );
 			if ( ! empty( $stat['processed'] ) ) {
 				$result = 'done';
@@ -490,7 +490,7 @@ class Push_Sync {
 			$public_id                      = ltrim( $public_id_folder . $options['public_id'], '/' );
 			$return                         = array(
 				'file'        => $file,
-				'folder'      => $cld_folder,
+				'folder'      => ltrim( $cld_folder, '/' ),
 				'public_id'   => $public_id,
 				'breakpoints' => array(),
 				'options'     => $options,
@@ -542,7 +542,10 @@ class Push_Sync {
 		// Go over each attachment.
 		foreach ( $attachments as $attachment ) {
 			$attachment = get_post( $attachment );
-			$upload     = $this->prepare_upload( $attachment->ID, true );
+			// Clear upload option cache for this item to allow down sync.
+			$this->upload_options[ $attachment->ID ] = false;
+
+			$upload = $this->prepare_upload( $attachment->ID, true );
 
 			// Filter out any attachments with problematic options.
 			if ( is_wp_error( $upload ) ) {
