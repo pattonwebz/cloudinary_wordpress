@@ -65,8 +65,8 @@ class Upload_Sync {
 	private function register_hooks() {
 		// Add action to upload.
 		add_action( 'add_attachment', array( $this, 'push_on_upload' ), 10 );
-		// Filter id for on-demand upload sync.
-		add_filter( 'cloudinary_id', array( $this, 'prep_on_demand_upload' ), 9, 2 );
+		// Action Cloudinary id for on-demand upload sync.
+		add_action( 'cloudinary_id', array( $this, 'prep_on_demand_upload' ), 9, 2 );
 		// Show sync status.
 		add_filter( 'cloudinary_media_status', array( $this, 'filter_status' ), 10, 2 );
 		// Hook for on demand upload push.
