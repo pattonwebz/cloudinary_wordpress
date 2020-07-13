@@ -139,9 +139,10 @@ class Upgrade {
 		$path      = pathinfo( $public_id );
 		$public_id = strstr( $public_id, '.' . $path['extension'], true );
 		$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['public_id'], $public_id );
-		if ( !defined( 'DOING_BULK_SYNC' ) ) {
+		if ( ! defined( 'DOING_BULK_SYNC' ) ) {
 			$this->sync->managers['upload']->add_to_sync( $attachment_id ); // Auto sync if upgrading outside of bulk sync.
 		}
+
 		return $public_id;
 	}
 
