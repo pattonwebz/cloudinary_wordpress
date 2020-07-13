@@ -26,12 +26,22 @@ class Upgrade {
 	private $media;
 
 	/**
+	 * Holds the Sync instance.
+	 *
+	 * @since   0.1
+	 *
+	 * @var     \Cloudinary\Sync Instance of the plugin.
+	 */
+	private $sync;
+
+	/**
 	 * Filter constructor.
 	 *
 	 * @param \Cloudinary\Media $media The plugin.
 	 */
 	public function __construct( \Cloudinary\Media $media ) {
 		$this->media = $media;
+		$this->sync  = $media->plugin->components['sync'];
 		$this->setup_hooks();
 	}
 
@@ -44,6 +54,7 @@ class Upgrade {
 	 * @return string|bool
 	 */
 	public function check_cloudinary_version( $cloudinary_id, $attachment_id ) {
+
 		if ( false === $cloudinary_id ) {
 			// Backwards compat.
 			$meta = wp_get_attachment_metadata( $attachment_id );
@@ -128,6 +139,9 @@ class Upgrade {
 		$path      = pathinfo( $public_id );
 		$public_id = strstr( $public_id, '.' . $path['extension'], true );
 		$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['public_id'], $public_id );
+		if ( ! defined( 'DOING_BULK_SYNC' ) ) {
+			$this->sync->managers['upload']->add_to_sync( $attachment_id ); // Auto sync if upgrading outside of bulk sync.
+		}
 
 		return $public_id;
 	}
@@ -136,7 +150,7 @@ class Upgrade {
 	 * Setup hooks for the filters.
 	 */
 	public function setup_hooks() {
-		add_filter( 'cloudinary_id', array( $this, 'check_cloudinary_version' ), 10, 2 ); // Priority 10, to allow prep_on_demand_upload.
+		add_filter( 'validate_cloudinary_id', array( $this, 'check_cloudinary_version' ), 10, 2 ); // Priority 10, to allow prep_on_demand_upload.
 
 		// Add a redirection to the new plugin settings, from the old plugin.
 		if ( is_admin() ) {

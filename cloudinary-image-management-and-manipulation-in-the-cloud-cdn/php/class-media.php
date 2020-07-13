@@ -685,14 +685,22 @@ class Media implements Setup {
 		}
 
 		/**
-		 * Filter the Cloudinary ID to allow extending it's availability.
+		 * Filter to  validate the Cloudinary ID to allow extending it's availability.
 		 *
 		 * @param string|bool $cloudinary_id The public ID from Cloudinary, or false if not found.
 		 * @param int         $attachment_id The id of the asset.
 		 *
 		 * @return string|bool
 		 */
-		$cloudinary_id = apply_filters( 'cloudinary_id', $cloudinary_id, $attachment_id );
+		$cloudinary_id = apply_filters( 'validate_cloudinary_id', $cloudinary_id, $attachment_id );
+
+		/**
+		 * Action the Cloudinary ID to allow extending it's availability.
+		 *
+		 * @param string|bool $cloudinary_id The public ID from Cloudinary, or false if not found.
+		 * @param int         $attachment_id The id of the asset.
+		 */
+		do_action( 'cloudinary_id', $cloudinary_id, $attachment_id );
 		// Cache ID to prevent multiple lookups.
 		if ( false !== $cloudinary_id ) {
 			$this->cloudinary_ids[ $attachment_id ] = $cloudinary_id;

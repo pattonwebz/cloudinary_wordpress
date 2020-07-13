@@ -175,7 +175,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	 *
 	 * @since 0.1
 	 *
-	 * @param string $tab          The tab to register the section fields for.
+	 * @param array  $tab          The tab to register the section fields for.
 	 * @param string $setting_slug The slug of the setting to register section for.
 	 */
 	private function register_section_fields( $tab, $setting_slug ) {
@@ -226,8 +226,9 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	 *
 	 * @param array       $field The field to render.
 	 * @param string|null $value The value to render.
+	 * @param bool        $show_description Whether to render the description.
 	 */
-	public function render_field( $field, $value = null ) {
+	public function render_field( $field, $value = null, $show_description = true ) {
 
 		if ( null === $value ) {
 			$value = $this->get_value( $field['slug'] );
@@ -308,7 +309,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 			<p class="description error-notice" id="<?php echo esc_attr( $setting_slug ); ?>-error"><?php echo wp_kses_post( $field['error_notice'] ); ?></p>
 			<?php
 		}
-		if ( ! empty( $field['description'] ) ) {
+		if ( ! empty( $field['description'] ) && $show_description ) {
 			?>
 			<p class="description" id="<?php echo esc_attr( $setting_slug ); ?>-description"><?php echo wp_kses_post( $field['description'] ); ?></p>
 			<?php
