@@ -357,6 +357,7 @@ class Push_Sync {
 			// First check if this has a file and it can be uploaded.
 			$file      = get_attached_file( $post->ID );
 			$file_size = 0;
+			$downsync  = false;
 			if ( empty( $file ) ) {
 				return new \WP_Error( 'attachment_no_file', __( 'Attachment did not have a file.', 'cloudinary' ) );
 			} elseif ( ! file_exists( $file ) ) {
@@ -373,6 +374,7 @@ class Push_Sync {
 						}
 						$file      = get_attached_file( $post->ID );
 						$file_size = filesize( $file );
+						$downsync  = true;
 					}
 				}
 			} else {
@@ -414,7 +416,7 @@ class Push_Sync {
 			}
 			// Check if this asset is a folder sync.
 			$folder_sync = $media->get_post_meta( $post->ID, Sync::META_KEYS['folder_sync'], true );
-			if ( ! empty( $folder_sync ) ) {
+			if ( ! empty( $folder_sync ) && false === $downsync ) {
 				$public_id_folder = $cld_folder; // Ensure the public ID folder is constant.
 			} else {
 				// Not folder synced, so set the folder to the folder that the asset originally came from.
