@@ -52,7 +52,7 @@ class Video {
 	 *
 	 * @var string
 	 */
-	const PLAYER_VER = '1.3.3';
+	const PLAYER_VER = '1.4.0';
 
 	/**
 	 * Cloudinary Core Version.
@@ -356,16 +356,15 @@ class Video {
 				if ( $default['autoplay'] && in_array( $this->config['video_autoplay_mode'], $valid_autoplay_modes, true ) ) {
 					$default['autoplayMode'] = $this->config['video_autoplay_mode'];
 				}
-
+				
 				$config = wp_parse_args( $video['args'], $default );
 				
 				if ( empty( $config['size'] ) && ! empty( $config['transformation'] ) && ! $this->media->get_crop_from_transformation( $config['transformation'] ) ) {
 					$config['fluid'] = true;
 				}
-
-				$config['controls'] = 'on' === $this->config['video_controls'];
+				
+				$config['controls'] = 'on' === $this->config['video_controls'] ? true : false;
 				$cld_videos[ $instance ] = $config;
-
 			}
 
 			if ( empty( $cld_videos ) ) {
