@@ -59,7 +59,7 @@ class Video {
 	 *
 	 * @var string
 	 */
-	const CORE_VER = '2.6.2';
+	const CORE_VER = '2.6.3';
 
 	/**
 	 * Meta key to store usable video transformations for an attachment.
@@ -356,9 +356,9 @@ class Video {
 				if ( $default['autoplay'] && in_array( $this->config['video_autoplay_mode'], $valid_autoplay_modes, true ) ) {
 					$default['autoplayMode'] = $this->config['video_autoplay_mode'];
 				}
-				
+
 				$config = wp_parse_args( $video['args'], $default );
-				
+
 				if ( empty( $config['size'] ) && ! empty( $config['transformation'] ) && ! $this->media->get_crop_from_transformation( $config['transformation'] ) ) {
 					$config['fluid'] = true;
 				}
