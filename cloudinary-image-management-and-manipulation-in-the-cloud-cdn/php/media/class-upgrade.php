@@ -26,12 +26,22 @@ class Upgrade {
 	private $media;
 
 	/**
+	 * Holds the Sync instance.
+	 *
+	 * @since   0.1
+	 *
+	 * @var     \Cloudinary\Sync Instance of the plugin.
+	 */
+	private $sync;
+
+	/**
 	 * Filter constructor.
 	 *
 	 * @param \Cloudinary\Media $media The plugin.
 	 */
 	public function __construct( \Cloudinary\Media $media ) {
 		$this->media = $media;
+		$this->sync  = $media->plugin->components['sync'];
 		$this->setup_hooks();
 	}
 
@@ -44,9 +54,13 @@ class Upgrade {
 	 * @return string|bool
 	 */
 	public function check_cloudinary_version( $cloudinary_id, $attachment_id ) {
+
 		if ( false === $cloudinary_id ) {
 			// Backwards compat.
-			$meta      = wp_get_attachment_metadata( $attachment_id );
+			$meta = wp_get_attachment_metadata( $attachment_id );
+			if ( ! empty( $meta[ Sync::META_KEYS['cloudinary'] ] ) ) {
+				return $cloudinary_id; // Current version.
+			}
 			$public_id = $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true );
 
 			/*
@@ -58,6 +72,24 @@ class Upgrade {
 			} elseif ( ! empty( $public_id ) ) {
 				// Has public ID, but not  fully down synced.
 				$cloudinary_id = $public_id;
+			}
+		} else {
+			// Backwards compat.
+			$folder_sync = $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], true );
+			if ( 0 === strlen( $folder_sync ) ) {
+				// Does not exist, add it to be compatible with v1.2.2.
+				$public_id = $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true );
+				// Set the folder sync to 0 to flag it by default as not synced.
+				$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], '0' );
+				if ( false !== strpos( $public_id, '/' ) ) {
+					$path              = pathinfo( $public_id );
+					$asset_folder      = trailingslashit( $path['dirname'] );
+					$cloudinary_folder = trailingslashit( $this->media->plugin->config['settings']['sync_media']['cloudinary_folder'] );
+					if ( $asset_folder === $cloudinary_folder ) {
+						// The asset folder matches the defined cloudinary folder, flag it as being in a folder sync.
+						$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], '1' );
+					}
+				}
 			}
 		}
 
@@ -107,6 +139,9 @@ class Upgrade {
 		$path      = pathinfo( $public_id );
 		$public_id = strstr( $public_id, '.' . $path['extension'], true );
 		$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['public_id'], $public_id );
+		if ( ! defined( 'DOING_BULK_SYNC' ) ) {
+			$this->sync->managers['upload']->add_to_sync( $attachment_id ); // Auto sync if upgrading outside of bulk sync.
+		}
 
 		return $public_id;
 	}
@@ -115,7 +150,7 @@ class Upgrade {
 	 * Setup hooks for the filters.
 	 */
 	public function setup_hooks() {
-		add_filter( 'cloudinary_id', array( $this, 'check_cloudinary_version' ), 10, 2 ); // Priority 10, to allow prep_on_demand_upload.
+		add_filter( 'validate_cloudinary_id', array( $this, 'check_cloudinary_version' ), 10, 2 ); // Priority 10, to allow prep_on_demand_upload.
 
 		// Add a redirection to the new plugin settings, from the old plugin.
 		if ( is_admin() ) {
