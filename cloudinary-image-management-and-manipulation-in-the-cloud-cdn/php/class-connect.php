@@ -205,6 +205,14 @@ class Connect implements Config, Setup, Notice {
 			return false;
 		}
 
+		$api  = new Connect\Api( $this, $this->plugin->version );
+		$ping = $api->ping();
+
+		if ( is_wp_error( $ping ) || $ping['status'] !== 'ok' ) {
+			delete_option( self::META_KEYS['signature'] );
+			return false;
+		}
+
 		return true;
 	}
 
