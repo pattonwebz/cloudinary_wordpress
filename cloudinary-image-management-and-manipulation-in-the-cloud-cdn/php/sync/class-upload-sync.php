@@ -145,6 +145,8 @@ class Upload_Sync {
 					delete_post_meta( $post_id, Sync::META_KEYS['sync_error'] );
 					delete_post_meta( $post_id, Sync::META_KEYS['public_id'] );
 					delete_post_meta( $post_id, Sync::META_KEYS['pending'] );
+					delete_post_meta( $post_id, Sync::META_KEYS['downloading'] );
+					delete_post_meta( $post_id, Sync::META_KEYS['syncing'] );
 					$file = get_attached_file( $post_id );
 					wp_generate_attachment_metadata( $post_id, $file );
 					$this->prep_upload( $post_id );

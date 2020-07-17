@@ -391,6 +391,10 @@ class Push_Sync {
 				$error = sprintf( __( 'File size exceeds the maximum of %s. This media asset will be served from WordPress.', 'cloudinary' ), $max_size_hr );
 				$media->delete_post_meta( $post->ID, Sync::META_KEYS['pending'] ); // Remove Flag.
 
+				// Cleanup flags
+				delete_post_meta( $post->ID, Sync::META_KEYS['syncing'] );
+				delete_post_meta( $post->ID, Sync::META_KEYS['downloading'] );
+
 				return new \WP_Error( 'upload_error', $error );
 			}
 
@@ -629,6 +633,11 @@ class Push_Sync {
 					$meta_data[ Sync::META_KEYS['version'] ] = $result['version'];
 				}
 				$media->delete_post_meta( $attachment->ID, Sync::META_KEYS['pending'] );
+
+				// Cleanup flags
+				delete_post_meta( $attachment->ID, Sync::META_KEYS['downloading'] );
+				delete_post_meta( $attachment->ID, Sync::META_KEYS['syncing'] );
+
 				$media->delete_post_meta( $attachment->ID, Sync::META_KEYS['sync_error'], false );
 				if ( ! empty( $this->plugin->config['settings']['global_transformations']['enable_breakpoints'] ) ) {
 					if ( ! empty( $result['responsive_breakpoints'] ) ) { // Images only.
