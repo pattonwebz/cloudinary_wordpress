@@ -306,14 +306,14 @@ class Upload_Sync {
 
 		if ( $this->is_pending( $attachment_id ) ) {
 			$status['state'] = 'warning';
-			$status['note']  = esc_html__( 'Upload sync pending', 'cloudinary' );
+			$status['note']  = __( 'Upload sync pending', 'cloudinary' );
 		}
 
 		// Check if there's an error.
 		$has_error = $this->plugin->components['media']->get_post_meta( $attachment_id, Sync::META_KEYS['sync_error'], true );
 		if ( ! empty( $has_error ) ) {
-			$status['note']  = $has_error;
 			$status['state'] = 'error';
+			$status['note']  = $has_error;
 		}
 
 		return $status;
