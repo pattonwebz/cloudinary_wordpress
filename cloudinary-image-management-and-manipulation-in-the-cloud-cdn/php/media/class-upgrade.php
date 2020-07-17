@@ -97,6 +97,29 @@ class Upgrade {
 	}
 
 	/**
+	 * Checks the status of the media item.
+	 *
+	 * @param array $status        Array of state and note.
+	 * @param int   $attachment_id The attachment id.
+	 *
+	 * @return array
+	 */
+	public function filter_status( $status, $attachment_id ) {
+
+		if ( get_post_meta( $attachment_id, Sync::META_KEYS['downloading'] ) ) {
+			$status['state'] = 'info downloading';
+			$status['note']  = __( 'Downloading', 'cloudinary' );
+		}
+
+		if ( get_post_meta( $attachment_id, Sync::META_KEYS['syncing'] ) ) {
+			$status['state'] = 'info syncing';
+			$status['note']  = __( 'Syncing metadata', 'cloudinary' );
+		}
+
+		return $status;
+	}
+
+	/**
 	 * Convert an image post that was created from Cloudinary v1.
 	 *
 	 * @param int $attachment_id The attachment ID to convert.
@@ -151,6 +174,9 @@ class Upgrade {
 	 */
 	public function setup_hooks() {
 		add_filter( 'validate_cloudinary_id', array( $this, 'check_cloudinary_version' ), 10, 2 ); // Priority 10, to allow prep_on_demand_upload.
+
+		// Show sync status.
+		add_filter( 'cloudinary_media_status', array( $this, 'filter_status' ), 20, 2 );
 
 		// Add a redirection to the new plugin settings, from the old plugin.
 		if ( is_admin() ) {
