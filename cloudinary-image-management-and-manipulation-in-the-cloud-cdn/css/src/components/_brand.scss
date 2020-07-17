@@ -48,12 +48,20 @@
 			}
 		}
 
-		&.warning {
-			color : $color-orange;
+		&.info {
+			color : $color-blue;
 		}
 
-		&.warning {
-			color : $color-orange;
+		&.downloading {
+			&:before {
+				content: '\e903';
+			}
+		}
+
+		&.syncing {
+			&:before {
+				content: '\e904';
+			}
 		}
 	}
 }
