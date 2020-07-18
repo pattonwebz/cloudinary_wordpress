@@ -145,6 +145,8 @@ class Upload_Sync {
 					delete_post_meta( $post_id, Sync::META_KEYS['sync_error'] );
 					delete_post_meta( $post_id, Sync::META_KEYS['public_id'] );
 					delete_post_meta( $post_id, Sync::META_KEYS['pending'] );
+					delete_post_meta( $post_id, Sync::META_KEYS['downloading'] );
+					delete_post_meta( $post_id, Sync::META_KEYS['syncing'] );
 					$file = get_attached_file( $post_id );
 					wp_generate_attachment_metadata( $post_id, $file );
 					$this->prep_upload( $post_id );
@@ -304,14 +306,14 @@ class Upload_Sync {
 
 		if ( $this->is_pending( $attachment_id ) ) {
 			$status['state'] = 'warning';
-			$status['note']  = esc_html__( 'Upload sync pending', 'cloudinary' );
+			$status['note']  = __( 'Upload sync pending', 'cloudinary' );
 		}
 
 		// Check if there's an error.
 		$has_error = $this->plugin->components['media']->get_post_meta( $attachment_id, Sync::META_KEYS['sync_error'], true );
 		if ( ! empty( $has_error ) ) {
-			$status['note']  = $has_error;
 			$status['state'] = 'error';
+			$status['note']  = $has_error;
 		}
 
 		return $status;

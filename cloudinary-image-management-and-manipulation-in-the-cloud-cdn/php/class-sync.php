@@ -49,6 +49,8 @@ class Sync implements Setup, Assets {
 		'sync_error'     => '_sync_error',
 		'cloudinary'     => '_cloudinary_v2',
 		'folder_sync'    => '_folder_sync',
+		'syncing'        => '_cloudinary_syncing',
+		'downloading'    => '_cloudinary_downloading',
 	);
 
 	/**
@@ -100,14 +102,18 @@ class Sync implements Setup, Assets {
 	 * @return bool
 	 */
 	public function is_synced( $post_id ) {
-		$return    = false;
 		$signature = $this->get_signature( $post_id );
 		$expecting = $this->generate_signature( $post_id );
+
 		if ( ! empty( $signature ) && ! empty( $expecting ) && $expecting === $signature ) {
-			$return = $signature;
+			return true;
 		}
 
-		return $return;
+		if ( apply_filters( 'cloudinary_flag_sync', '__return_false' ) ) {
+			update_post_meta( $post_id, Sync::META_KEYS['syncing'], true );
+		}
+
+		return false;
 	}
 
 	/**
