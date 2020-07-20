@@ -109,7 +109,7 @@ class Sync implements Setup, Assets {
 			return true;
 		}
 
-		if ( apply_filters( 'cloudinary_flag_sync', '__return_false' ) ) {
+		if ( apply_filters( 'cloudinary_flag_sync', '__return_false' ) && ! get_post_meta( $post_id, Sync::META_KEYS['downloading'], true ) ) {
 			update_post_meta( $post_id, Sync::META_KEYS['syncing'], true );
 		}
 
