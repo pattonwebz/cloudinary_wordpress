@@ -165,6 +165,7 @@ class Upgrade {
 
 		// Flag the download
 		update_post_meta( $attachment_id, Sync::META_KEYS['downloading'], true );
+		delete_post_meta( $attachment_id, Sync::META_KEYS['syncing'] );
 
 		if ( ! defined( 'DOING_BULK_SYNC' ) ) {
 			$this->sync->managers['upload']->add_to_sync( $attachment_id ); // Auto sync if upgrading outside of bulk sync.
