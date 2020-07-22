@@ -528,7 +528,9 @@ class Filter {
 		}
 
 		$data    = $response->get_data();
-		$content = $this->video_shortcode_to_block( $data['content']['raw'] );
+
+		$content = $this->classic_image_to_block( $data['content']['raw'] );
+		$content = $this->video_shortcode_to_block( $content );
 
 		$data['content']['raw'] = $this->filter_out_local( $content );
 		$response->set_data( $data );
@@ -554,13 +556,61 @@ class Filter {
 		preg_match_all( '/(mp4|id)="([^"]*)"/i', $shortcode[3], $attrs );
 
 		// @TODO: Find a way to generate a video block
-		$video = <<<VIDEO_HTML
-<!-- wp:video {"id":{$attrs[2][1]}} -->
-<figure class="wp-block-video"><video autoplay src="{$attrs[2][0]}"></video></figure>
-<!-- /wp:video -->
-VIDEO_HTML;
+		$video = '<!-- wp:video {"id":' . $attrs[2][1] . '} --><figure class="wp-block-video"><video autoplay src="' . $attrs[2][0] . '"></video></figure><!-- /wp:video -->';
 
-		return str_replace( '<p>' . $shortcode[0] . '</p>', $video, $content );
+		return str_replace( [ '<p>' . $shortcode[0] . '</p>', $shortcode[0] ], $video, $content );
+	}
+
+	/**
+	 * Converts classic image to a Gutenberg block.
+	 *
+	 * @param string $content
+	 * 
+	 * @return string
+	 */
+	protected function classic_image_to_block( $content ) {
+		if ( strpos( $content, '<p><img class=' ) === false ) {
+			return $content;
+		}
+
+		$dom = new \DOMDocument;                
+		@$dom->loadHTML( $content, LIBXML_HTML_NODEFDTD );
+		$nodes = $dom->getElementsByTagName( 'p' );
+
+		foreach ($nodes as $node) {
+			$imgs = $node->getElementsByTagName( 'img' );
+
+			// If one image is within a paragraph, we ensure we're dealing
+			// with a conversion from classic editor to gutenberg.
+			if ( $imgs->length === 1 ) {
+				$img_tag = $imgs->item( 0 );
+				$img_id  = preg_replace( '/[^0-9]/', '', $img_tag->getAttribute( 'class' ) );
+
+				// Prep the <img> node
+				$img_tag->removeAttribute( 'width' );
+				$img_tag->removeAttribute( 'height' );
+				$img_tag->setAttribute( 'class', 'wp-image-' . $img_id );
+
+				// Prep the <figure> node
+				$img_fig = $dom->createElement( 'figure' );
+				$img_fig->appendChild( $img_tag );
+				$img_fig->setAttribute( 'class', 'wp-block-image' );
+
+				// Surround <figure> with block comments
+				$fragment = $dom->createDocumentFragment();
+				$fragment->appendChild( $dom->createComment( ' wp:image {"id":' . $img_id . ',"sizeSlug":"large"} ' ) );
+				$fragment->appendChild( $img_fig );
+				$fragment->appendChild( $dom->createComment( ' /wp:image ' ) );
+
+				// Replace classic editor <p><img></p> with <figure>.
+				$node->parentNode->replaceChild( $fragment, $node );
+			}
+		}
+
+		$front = strpos( $dom->saveHTML(),'<body>' ) + 6;
+		$end = ( strrpos ($dom->saveHTML(), '</body>' ) ) - strlen( $dom->saveHTML() );
+
+		return substr( $dom->saveHTML(), $front, $end );
 	}
 
 	/**
