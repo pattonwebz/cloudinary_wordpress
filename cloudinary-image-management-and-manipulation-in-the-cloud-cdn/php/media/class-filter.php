@@ -522,15 +522,45 @@ class Filter {
 	 */
 	public function pre_filter_rest_content( $response, $post, $request ) {
 		$context = $request->get_param( 'context' );
-		if ( 'edit' === $context ) {
-			$data                   = $response->get_data();
-			$content                = wp_unslash( $data['content']['raw'] );
-			$data['content']['raw'] = $this->filter_out_local( $content );
 
-			$response->set_data( $data );
+		if ( 'edit' !== $context ) {
+			return $response;
 		}
 
+		$data    = $response->get_data();
+		$content = $this->video_shortcode_to_block( $data['content']['raw'] );
+
+		$data['content']['raw'] = $this->filter_out_local( $content );
+		$response->set_data( $data );
+
 		return $response;
+	}
+
+	/**
+	 * Converts video shortcode to a Gutenberg block.
+	 *
+	 * @param string $content
+	 * 
+	 * @return string
+	 */
+	protected function video_shortcode_to_block( $content ) {
+		if ( ! has_shortcode( $content, 'video' ) ) {
+			return $content;
+		}
+
+		$shortcode = $attrs = array();
+
+		preg_match( '/' . get_shortcode_regex() . '/', $content, $shortcode );
+		preg_match_all( '/(mp4|id)="([^"]*)"/i', $shortcode[3], $attrs );
+
+		// @TODO: Find a way to generate a video block
+		$video = <<<VIDEO_HTML
+<!-- wp:video {"id":{$attrs[2][1]}} -->
+<figure class="wp-block-video"><video autoplay src="{$attrs[2][0]}"></video></figure>
+<!-- /wp:video -->
+VIDEO_HTML;
+
+		return str_replace( '<p>' . $shortcode[0] . '</p>', $video, $content );
 	}
 
 	/**
