@@ -528,7 +528,6 @@ class Filter {
 		}
 
 		$data    = $response->get_data();
-
 		$content = $this->classic_image_to_block( $data['content']['raw'] );
 		$content = $this->video_shortcode_to_block( $content );
 
@@ -569,42 +568,40 @@ class Filter {
 	 * @return string
 	 */
 	protected function classic_image_to_block( $content ) {
-		if ( strpos( $content, '<p><img class=' ) === false ) {
+		if ( strpos( $content, '<img class=' ) === false ) {
 			return $content;
 		}
 
-		$dom = new \DOMDocument;                
+		$dom = new \DOMDocument();                
 		@$dom->loadHTML( $content, LIBXML_HTML_NODEFDTD );
-		$nodes = $dom->getElementsByTagName( 'p' );
+		$imgs = $dom->getElementsByTagName( 'img' );
 
-		foreach ($nodes as $node) {
-			$imgs = $node->getElementsByTagName( 'img' );
-
-			// If one image is within a paragraph, we ensure we're dealing
-			// with a conversion from classic editor to gutenberg.
-			if ( $imgs->length === 1 ) {
-				$img_tag = $imgs->item( 0 );
-				$img_id  = preg_replace( '/[^0-9]/', '', $img_tag->getAttribute( 'class' ) );
-
-				// Prep the <img> node
-				$img_tag->removeAttribute( 'width' );
-				$img_tag->removeAttribute( 'height' );
-				$img_tag->setAttribute( 'class', 'wp-image-' . $img_id );
-
-				// Prep the <figure> node
-				$img_fig = $dom->createElement( 'figure' );
-				$img_fig->appendChild( $img_tag );
-				$img_fig->setAttribute( 'class', 'wp-block-image' );
-
-				// Surround <figure> with block comments
-				$fragment = $dom->createDocumentFragment();
-				$fragment->appendChild( $dom->createComment( ' wp:image {"id":' . $img_id . ',"sizeSlug":"large"} ' ) );
-				$fragment->appendChild( $img_fig );
-				$fragment->appendChild( $dom->createComment( ' /wp:image ' ) );
-
-				// Replace classic editor <p><img></p> with <figure>.
-				$node->parentNode->replaceChild( $fragment, $node );
+		foreach ($imgs as $img) {
+			// Ensure we're dealing with a proper <img> tag
+			if ( false === strpos( $img->getAttribute( 'class' ), 'wp-image-' ) ) {
+				continue;
 			}
+
+			$img_id = preg_replace( '/[^0-9]/', '', $img->getAttribute( 'class' ) );
+			
+			// Prep the <img> node
+			$img_clone = $img->cloneNode( true );
+			$img_clone->removeAttribute( 'width' );
+			$img_clone->removeAttribute( 'height' );
+			$img_clone->setAttribute( 'class', 'wp-image-' . $img_id );
+
+			// Prep the <figure> node
+			$img_fig = $dom->createElement( 'figure' );
+			$img_fig->appendChild( $img_clone );
+			$img_fig->setAttribute( 'class', 'wp-block-image' );
+			
+			// Surround <figure> with block comments
+			$fragment = $dom->createDocumentFragment();
+			$fragment->appendChild( $dom->createComment( ' wp:image {"id":' . $img_id . ',"sizeSlug":"large"} ' ) );
+			$fragment->appendChild( $img_fig );
+			$fragment->appendChild( $dom->createComment( ' /wp:image ' ) );
+
+			$img->parentNode->replaceChild( $fragment, $img );
 		}
 
 		$front = strpos( $dom->saveHTML(),'<body>' ) + 6;
