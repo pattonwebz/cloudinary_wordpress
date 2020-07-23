@@ -173,6 +173,30 @@ class Sync implements Setup, Assets {
 	}
 
 	/**
+	 * Generate a new Public ID for an asset.
+	 *
+	 * @param int $attachment_id The attachment ID for the new public ID.
+	 *
+	 * @return string
+	 */
+	public function generate_public_id( $attachment_id, $prefix = null ) {
+		$settings   = $this->plugin->config['settings'];
+		$cld_folder = trailingslashit( $settings['sync_media']['cloudinary_folder'] );
+		$file       = get_attached_file( $attachment_id );
+		$file_info  = pathinfo( $file );
+		$public_id  = $cld_folder . $prefix . $file_info['filename'];
+
+		$cld_asset = $this->plugin->components['connect']->api->get_asset_details( $public_id, 'image' );
+		if ( ! is_wp_error( $cld_asset ) && ! empty( $cld_asset['public_id'] ) ) {
+			// Exists, generate a new ID with a prefix.
+			$prefix    = uniqid() . '-';
+			$public_id = $this->generate_public_id( $attachment_id, $prefix );
+		}
+
+		return $public_id;
+	}
+
+	/**
 	 * Additional component setup.
 	 */
 	public function setup() {

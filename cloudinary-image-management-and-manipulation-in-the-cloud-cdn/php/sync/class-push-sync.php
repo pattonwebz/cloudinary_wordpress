@@ -331,11 +331,11 @@ class Push_Sync {
 	 * Prepare an attachment for upload.
 	 *
 	 * @param int|\WP_Post $post      The attachment to prepare.
-	 * @param bool         $down_sync Flag to determine if a missing file starts a downsync.
+	 * @param bool         $push_sync Flag to determine if this prep is for a sync. True = build for syncing, false = build for validation.
 	 *
 	 * @return array|\WP_Error
 	 */
-	public function prepare_upload( $post, $down_sync = false ) {
+	public function prepare_upload( $post, $push_sync = false ) {
 
 		if ( is_numeric( $post ) ) {
 			$post = get_post( $post );
@@ -365,7 +365,7 @@ class Push_Sync {
 				$src = get_post_meta( $post->ID, '_wp_attached_file', true );
 				if ( $media->is_cloudinary_url( $src ) ) {
 					// Download first maybe.
-					if ( true === $down_sync ) {
+					if ( true === $push_sync ) {
 						$download = $this->plugin->components['sync']->managers['download']->down_sync( $post->ID );
 						if ( is_wp_error( $download ) ) {
 							update_post_meta( $post->ID, Sync::META_KEYS['sync_error'], $download->get_error_message() );
@@ -403,8 +403,13 @@ class Push_Sync {
 			$public_id  = $post->{Sync::META_KEYS['public_id']}; // use the __get method on the \WP_Post to get post_meta.
 			$cld_folder = trailingslashit( $settings['sync_media']['cloudinary_folder'] );
 			if ( empty( $public_id ) ) {
+				// Build a default ID.
 				$file_info = pathinfo( $file );
 				$public_id = $cld_folder . $file_info['filename'];
+				// Check if this is a sync prep. If so, generate a safe ID.
+				if ( true === $push_sync ) {
+					$public_id = $this->plugin->components['sync']->generate_public_id( $post->ID );
+				}
 			}
 
 			// Assume that the public_id is a root item.
