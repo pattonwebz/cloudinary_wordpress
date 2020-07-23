@@ -213,6 +213,7 @@ class Sync implements Setup, Assets {
 		if ( $this->plugin->config['connect'] ) {
 			$this->managers['upload']->setup();
 			$this->managers['delete']->setup();
+			$this->managers['push']->setup();
 		}
 	}
 }

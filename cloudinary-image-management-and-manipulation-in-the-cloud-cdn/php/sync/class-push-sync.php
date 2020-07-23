@@ -83,12 +83,6 @@ class Push_Sync {
 	public function __construct( \Cloudinary\Plugin $plugin ) {
 		$this->plugin = $plugin;
 
-		// Setup components.
-		$this->media   = $this->plugin->components['media'];
-		$this->sync    = $this->plugin->components['sync'];
-		$this->connect = $this->plugin->components['connect'];
-		$this->api     = $this->plugin->components['api'];
-
 		// Define the sync types and their option keys.
 		$sync_types       = array(
 			'cloud_name'  => 'upload',
@@ -108,6 +102,17 @@ class Push_Sync {
 	 */
 	private function register_hooks() {
 		add_filter( 'cloudinary_api_rest_endpoints', array( $this, 'rest_endpoints' ) );
+	}
+
+	/**
+	 * Setup this component.
+	 */
+	public function setup(){
+		// Setup components.
+		$this->media   = $this->plugin->components['media'];
+		$this->sync    = $this->plugin->components['sync'];
+		$this->connect = $this->plugin->components['connect'];
+		$this->api     = $this->plugin->components['api'];
 	}
 
 	/**
