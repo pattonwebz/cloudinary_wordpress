@@ -220,6 +220,7 @@ class Video {
 
 		if ( isset( $attr['autoplay'] ) ) {
 			$args['autoplay'] = 'true' === $attr['autoplay'];
+			$args['muted'] = 'true' === $attr['autoplay'];
 		}
 		if ( isset( $attr['loop'] ) ) {
 			$args['loop'] = 'true' === $attr['loop'];
@@ -285,6 +286,7 @@ class Video {
 			// Enable Autoplay for this video.
 			if ( false !== strpos( $tag, 'autoplay' ) ) {
 				$args['autoplayMode'] = $this->config['video_autoplay_mode']; // if on, use defined mode.
+				$args['muted'] = 'always' === $this->config['video_autoplay_mode'];
 			}
 			// Enable Loop.
 			if ( false !== strpos( $tag, 'loop' ) ) {
