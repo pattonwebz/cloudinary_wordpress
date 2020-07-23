@@ -198,9 +198,19 @@ class Sync implements Setup, Assets {
 		}
 		$cld_asset = $this->plugin->components['connect']->api->get_asset_details( $public_id, $type );
 		if ( ! is_wp_error( $cld_asset ) && ! empty( $cld_asset['public_id'] ) ) {
-			// Exists, generate a new ID with a uniqueID prefix.
-			$prefix    = uniqid() . '-';
-			$public_id = $this->generate_public_id( $attachment_id, $prefix );
+			$context_id = null;
+
+			// Exists, check to see if this asset originally belongs to this ID.
+			if ( ! empty( $cld_asset['context'] ) && ! empty( $cld_asset['context']['custom'] ) && ! empty( $cld_asset['context']['custom']['wp_id'] ) ) {
+				$context_id = (int) $cld_asset['context']['custom']['wp_id'];
+			}
+
+			// Generate new ID only if context ID is not related.
+			if ( $context_id !== $attachment_id ) {
+				// Generate a new ID with a uniqueID prefix.
+				$prefix    = uniqid() . '-';
+				$public_id = $this->generate_public_id( $attachment_id, $prefix );
+			}
 		}
 
 		return $public_id;
