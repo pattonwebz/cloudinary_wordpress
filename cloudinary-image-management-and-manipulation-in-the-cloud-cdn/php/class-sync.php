@@ -177,7 +177,7 @@ class Sync implements Setup, Assets {
 	 *
 	 * @param int $attachment_id The attachment ID for the new public ID.
 	 *
-	 * @return string
+	 * @return string|null
 	 */
 	public function generate_public_id( $attachment_id, $prefix = null ) {
 		$settings   = $this->plugin->config['settings'];
@@ -185,10 +185,20 @@ class Sync implements Setup, Assets {
 		$file       = get_attached_file( $attachment_id );
 		$file_info  = pathinfo( $file );
 		$public_id  = $cld_folder . $prefix . $file_info['filename'];
-
-		$cld_asset = $this->plugin->components['connect']->api->get_asset_details( $public_id, 'image' );
+		// Get the type.
+		if ( wp_attachment_is( 'image', $attachment_id ) ) {
+			$type = 'image';
+		} elseif ( wp_attachment_is( 'video', $attachment_id ) ) {
+			$type = 'video';
+		} elseif ( wp_attachment_is( 'video', $attachment_id ) ) {
+			$type = 'audio';
+		} else {
+			// not supported.
+			return null;
+		}
+		$cld_asset = $this->plugin->components['connect']->api->get_asset_details( $public_id, $type );
 		if ( ! is_wp_error( $cld_asset ) && ! empty( $cld_asset['public_id'] ) ) {
-			// Exists, generate a new ID with a prefix.
+			// Exists, generate a new ID with a uniqueID prefix.
 			$prefix    = uniqid() . '-';
 			$public_id = $this->generate_public_id( $attachment_id, $prefix );
 		}
