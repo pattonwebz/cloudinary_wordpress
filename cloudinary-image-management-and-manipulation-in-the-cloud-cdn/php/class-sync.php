@@ -175,7 +175,8 @@ class Sync implements Setup, Assets {
 	/**
 	 * Generate a new Public ID for an asset.
 	 *
-	 * @param int $attachment_id The attachment ID for the new public ID.
+	 * @param int    $attachment_id The attachment ID for the new public ID.
+	 * @param string $suffix        The suffic to prepend the ID.
 	 *
 	 * @return string|null
 	 */
@@ -190,7 +191,7 @@ class Sync implements Setup, Assets {
 			$type = 'image';
 		} elseif ( wp_attachment_is( 'video', $attachment_id ) ) {
 			$type = 'video';
-		} elseif ( wp_attachment_is( 'video', $attachment_id ) ) {
+		} elseif ( wp_attachment_is( 'audio', $attachment_id ) ) {
 			$type = 'audio';
 		} else {
 			// not supported.
