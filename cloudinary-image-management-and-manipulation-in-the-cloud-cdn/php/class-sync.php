@@ -175,17 +175,17 @@ class Sync implements Setup, Assets {
 	/**
 	 * Generate a new Public ID for an asset.
 	 *
-	 * @param int    $attachment_id The attachment ID for the new public ID.
-	 * @param string $suffix        The suffic to prepend the ID.
+	 * @param int         $attachment_id The attachment ID for the new public ID.
+	 * @param string|null $suffix        The suffix to prepend the ID.
 	 *
 	 * @return string|null
 	 */
-	public function generate_public_id( $attachment_id, $prefix = null ) {
+	public function generate_public_id( $attachment_id, $suffix = null ) {
 		$settings   = $this->plugin->config['settings'];
 		$cld_folder = trailingslashit( $settings['sync_media']['cloudinary_folder'] );
 		$file       = get_attached_file( $attachment_id );
 		$file_info  = pathinfo( $file );
-		$public_id  = $cld_folder . $prefix . $file_info['filename'];
+		$public_id  = $cld_folder . $file_info['filename'] . $suffix;
 		// Get the type.
 		if ( wp_attachment_is( 'image', $attachment_id ) ) {
 			$type = 'image';
@@ -197,20 +197,30 @@ class Sync implements Setup, Assets {
 			// not supported.
 			return null;
 		}
-		$cld_asset = $this->plugin->components['connect']->api->get_asset_details( $public_id, $type );
-		if ( ! is_wp_error( $cld_asset ) && ! empty( $cld_asset['public_id'] ) ) {
-			$context_id = null;
 
-			// Exists, check to see if this asset originally belongs to this ID.
-			if ( ! empty( $cld_asset['context'] ) && ! empty( $cld_asset['context']['custom'] ) && ! empty( $cld_asset['context']['custom']['wp_id'] ) ) {
-				$context_id = (int) $cld_asset['context']['custom']['wp_id'];
-			}
+		// Test if asset exists by calling just the head on the asset url, to prevent API rate limits.
+		$url         = $this->plugin->components['connect']->api->cloudinary_url( $public_id );
+		$req         = wp_remote_head( $url, array( 'body' => array( 'rdm' => wp_rand( 100, 999 ) ) ) );
+		$asset_error = strtolower( wp_remote_retrieve_header( $req, 'x-cld-error' ) );
+		$code        = wp_remote_retrieve_response_code( $req );
 
-			// Generate new ID only if context ID is not related.
-			if ( $context_id !== $attachment_id ) {
-				// Generate a new ID with a uniqueID prefix.
-				$prefix    = uniqid() . '-';
-				$public_id = $this->generate_public_id( $attachment_id, $prefix );
+		// If the request is not a 404 & does not have a cld-error header stating resource not found, it exists and should be checked that it's not a resync or generate a prefixed ID.
+		if ( 404 !== $code && false === strpos( $asset_error, 'resource not found' ) ) {
+			$cld_asset = $this->plugin->components['connect']->api->get_asset_details( $public_id, $type );
+			if ( ! is_wp_error( $cld_asset ) && ! empty( $cld_asset['public_id'] ) ) {
+				$context_id = null;
+
+				// Exists, check to see if this asset originally belongs to this ID.
+				if ( ! empty( $cld_asset['context'] ) && ! empty( $cld_asset['context']['custom'] ) && ! empty( $cld_asset['context']['custom']['wp_id'] ) ) {
+					$context_id = (int) $cld_asset['context']['custom']['wp_id'];
+				}
+
+				// Generate new ID only if context ID is not related.
+				if ( $context_id !== $attachment_id ) {
+					// Generate a new ID with a uniqueID prefix.
+					$suffix    = '-' . uniqid();
+					$public_id = $this->generate_public_id( $attachment_id, $suffix );
+				}
 			}
 		}
 
