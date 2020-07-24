@@ -107,7 +107,7 @@ class Push_Sync {
 	/**
 	 * Setup this component.
 	 */
-	public function setup(){
+	public function setup() {
 		// Setup components.
 		$this->media   = $this->plugin->components['media'];
 		$this->sync    = $this->plugin->components['sync'];
@@ -439,13 +439,8 @@ class Push_Sync {
 			$public_id  = $post->{Sync::META_KEYS['public_id']}; // use the __get method on the \WP_Post to get post_meta.
 			$cld_folder = trailingslashit( $settings['sync_media']['cloudinary_folder'] );
 			if ( empty( $public_id ) ) {
-				// Build a default ID.
-				$file_info = pathinfo( $file );
-				$public_id = $cld_folder . $file_info['filename'];
-				// Check if this is a sync prep. If so, generate a safe ID.
-				if ( true === $push_sync ) {
-					$public_id = $this->sync->generate_public_id( $post->ID );
-				}
+				// Create a new public_id.
+				$public_id = $this->sync->generate_public_id( $post->ID );
 			}
 
 			// Assume that the public_id is a root item.
@@ -534,7 +529,11 @@ class Push_Sync {
 			}
 
 			// Restructure the path to the filename to allow correct placement in Cloudinary.
-			$public_id                      = ltrim( $public_id_folder . $options['public_id'], '/' );
+			$public_id = ltrim( $public_id_folder . $options['public_id'], '/' );
+			// If this is a push sync, make sure the ID is allowed and unique.
+			if ( true === $push_sync ) {
+				$public_id = $this->sync->add_suffix_maybe( $public_id, $post->ID );
+			}
 			$return                         = array(
 				'file'        => $file,
 				'folder'      => ltrim( $cld_folder, '/' ),
