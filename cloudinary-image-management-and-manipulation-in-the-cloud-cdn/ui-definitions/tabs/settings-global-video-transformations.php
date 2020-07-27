@@ -64,7 +64,7 @@ $struct = array(
 				// translators: Placeholders are <a> tags.
 				__( 'Please note that when choosing "always", the video will autoplay without sound (muted). This is a built-in browser feature and applies to all major browsers.%1$sRead more about muted autoplay%2$s', 'cloudinary' ),
 				'<br><a href="https://developers.google.com/web/updates/2016/07/autoplay" target="_blank">',
-				'</a>',
+				'</a>'
 			),
 		),
 
