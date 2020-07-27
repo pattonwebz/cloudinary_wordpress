@@ -35,6 +35,20 @@ class Upgrade {
 	private $sync;
 
 	/**
+	 * The cron frequency to ensure that the queue is progressing.
+	 *
+	 * @var int
+	 */
+	protected $cron_frequency;
+
+	/**
+	 * The cron offset since the last update.
+	 *
+	 * @var int
+	 */
+	protected $cron_start_offset;
+
+	/**
 	 * Filter constructor.
 	 *
 	 * @param \Cloudinary\Media $media The plugin.
@@ -42,6 +56,10 @@ class Upgrade {
 	public function __construct( \Cloudinary\Media $media ) {
 		$this->media = $media;
 		$this->sync  = $media->plugin->components['sync'];
+
+		$this->cron_frequency    = apply_filters( 'cloudinary_cron_frequency', 600 );
+		$this->cron_start_offset = apply_filters( 'cloudinary_cron_start_offset', 60 );
+
 		$this->setup_hooks();
 	}
 
@@ -167,11 +185,42 @@ class Upgrade {
 		update_post_meta( $attachment_id, Sync::META_KEYS['downloading'], true );
 		delete_post_meta( $attachment_id, Sync::META_KEYS['syncing'] );
 
+		if ( ! wp_next_scheduled( 'cloudinary_resume_upgrade' ) ) {
+			wp_schedule_single_event( time() + $this->cron_frequency, 'cloudinary_resume_upgrade' );
+		}
+
 		if ( ! defined( 'DOING_BULK_SYNC' ) ) {
 			$this->sync->managers['upload']->add_to_sync( $attachment_id ); // Auto sync if upgrading outside of bulk sync.
 		}
 
 		return $public_id;
+	}
+
+	/**
+	 * Maybe resume the upgrading assets.
+	 * This is a fallback mechanism to resume the upgrade when it stops unexpectedly.
+	 *
+	 * @return void
+	 */
+	public function maybe_resume_upgrade() {
+		global $wpdb;
+
+		$assets = $wpdb->get_col( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$wpdb->prepare(
+				"SELECT post_id
+				FROM $wpdb->postmeta
+				WHERE meta_key = %s",
+				Sync::META_KEYS['downloading']
+			)
+		);
+
+		if ( ! empty( $assets ) ) {
+			wp_schedule_single_event( time() + $this->cron_frequency, 'cloudinary_resume_upgrade' );
+
+			foreach ( $assets as $asset ) {
+				$this->sync->managers['upload']->add_to_sync( $asset );
+			}
+		}
 	}
 
 	/**
@@ -193,5 +242,7 @@ class Upgrade {
 				}
 			} );
 		}
+
+		add_action( 'cloudinary_resume_upgrade', array( $this, 'maybe_resume_upgrade' ) );
 	}
 }

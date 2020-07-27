@@ -167,7 +167,7 @@ class Upload_Sync {
 	 * @return bool
 	 */
 	public function auto_sync_enabled( $enabled, $post_id ) {
-		if ( isset( $this->plugin->config['settings']['sync_media']['auto_sync'] ) && 'on' === $this->plugin->config['settings']['sync_media']['auto_sync'] ) {
+		if ( $this->plugin->components['settings']->is_auto_sync_enabled() ) {
 			$enabled = true;
 		}
 
