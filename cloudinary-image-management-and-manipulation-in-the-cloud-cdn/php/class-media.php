@@ -463,10 +463,10 @@ class Media implements Setup {
 	 * @return string Cloudinary URL.
 	 */
 	public function attachment_url( $url, $attachment_id ) {
-		if ( ! doing_action( 'wp_insert_post_data' ) && ! is_admin() ) {
+		if ( ! doing_action( 'wp_insert_post_data' ) && false === $this->in_downsize ) {
 			$cloudinary_id = $this->cloudinary_id( $attachment_id );
 			if ( false !== $cloudinary_id ) {
-				$url = $this->cloudinary_url( $attachment_id, $cloudinary_id );
+				$url = $this->cloudinary_url( $attachment_id );
 			}
 		}
 
@@ -655,7 +655,11 @@ class Media implements Setup {
 	public function get_cloudinary_id( $attachment_id ) {
 
 		// A cloudinary_id is a public_id with a file extension.
-		$public_id     = $this->get_public_id( $attachment_id );
+		$public_id   = $this->get_public_id( $attachment_id );
+		$suffix_data = $this->get_post_meta( $attachment_id, Sync::META_KEYS['suffix'], true );
+		if ( is_array( $suffix_data ) && ! empty( $suffix_data['suffix'] ) && $suffix_data['public_id'] === $public_id ) {
+			$public_id = $public_id . $suffix_data['suffix'];
+		}
 		$file          = get_attached_file( $attachment_id );
 		$info          = pathinfo( $file );
 		$cloudinary_id = $public_id . '.' . $info['extension'];
@@ -685,14 +689,22 @@ class Media implements Setup {
 		}
 
 		/**
-		 * Filter the Cloudinary ID to allow extending it's availability.
+		 * Filter to  validate the Cloudinary ID to allow extending it's availability.
 		 *
 		 * @param string|bool $cloudinary_id The public ID from Cloudinary, or false if not found.
 		 * @param int         $attachment_id The id of the asset.
 		 *
 		 * @return string|bool
 		 */
-		$cloudinary_id = apply_filters( 'cloudinary_id', $cloudinary_id, $attachment_id );
+		$cloudinary_id = apply_filters( 'validate_cloudinary_id', $cloudinary_id, $attachment_id );
+
+		/**
+		 * Action the Cloudinary ID to allow extending it's availability.
+		 *
+		 * @param string|bool $cloudinary_id The public ID from Cloudinary, or false if not found.
+		 * @param int         $attachment_id The id of the asset.
+		 */
+		do_action( 'cloudinary_id', $cloudinary_id, $attachment_id );
 		// Cache ID to prevent multiple lookups.
 		if ( false !== $cloudinary_id ) {
 			$this->cloudinary_ids[ $attachment_id ] = $cloudinary_id;
@@ -722,10 +734,17 @@ class Media implements Setup {
 
 		if ( false !== $cloudinary_id ) {
 			$this->in_downsize = true;
-			$image             = image_downsize( $attachment_id, $size );
+			$intermediate      = image_get_intermediate_size( $attachment_id, $size );
+			if ( is_array( $intermediate ) ) {
+				// Found an intermediate size.
+				$image = array(
+					$this->convert_url( $intermediate['url'], $attachment_id, array(), false ),
+					$intermediate['width'],
+					$intermediate['height'],
+					true,
+				);
+			}
 			$this->in_downsize = false;
-
-			$image[0] = $this->convert_url( $image[0], $attachment_id );
 		}
 
 		return $image;
@@ -1020,7 +1039,7 @@ class Media implements Setup {
 			if ( $format !== $file_info['extension'] ) {
 				// Format transformation.
 				$this->set_transformation( $transformations, 'fetch_format', $file_info['extension'] );
-				$url = $file_info['dirname'] . '/' . $file_info['filename'] . '.' . $format;
+				$url = $file_info['dirname'] . '/' . $file_info['filename'] . '.' . $file_info['extension'];
 			}
 			// Try to find the Attachment ID in context meta data.
 			$attachment_id = $this->get_id_from_sync_key( $sync_key );
@@ -1081,6 +1100,7 @@ class Media implements Setup {
 					'state' => 'inactive',
 					'note'  => esc_html__( 'Not Synced', 'cloudinary' ),
 				);
+				add_filter( 'cloudinary_flag_sync', '__return_true' );
 				if ( false === $this->cloudinary_id( $attachment_id ) ) {
 					// If false, lets check why by seeing if the file size is too large.
 					$file     = get_attached_file( $attachment_id ); // Get the file size to make sure it can exist in cloudinary.
@@ -1097,6 +1117,7 @@ class Media implements Setup {
 						'note'  => esc_html__( 'Synced', 'cloudinary' ),
 					);
 				}
+				remove_filter( 'cloudinary_flag_sync', '__return_true' );
 				// filter status.
 				$status = apply_filters( 'cloudinary_media_status', $status, $attachment_id );
 				?>

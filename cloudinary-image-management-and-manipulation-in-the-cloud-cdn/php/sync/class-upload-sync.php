@@ -65,14 +65,14 @@ class Upload_Sync {
 	private function register_hooks() {
 		// Add action to upload.
 		add_action( 'add_attachment', array( $this, 'push_on_upload' ), 10 );
-		// Filter id for on-demand upload sync.
-		add_filter( 'cloudinary_id', array( $this, 'prep_on_demand_upload' ), 9, 2 );
+		// Action Cloudinary id for on-demand upload sync.
+		add_action( 'cloudinary_id', array( $this, 'prep_on_demand_upload' ), 9, 2 );
 		// Show sync status.
 		add_filter( 'cloudinary_media_status', array( $this, 'filter_status' ), 10, 2 );
 		// Hook for on demand upload push.
 		add_action( 'shutdown', array( $this, 'init_background_upload' ) );
 		// Hook into auto upload sync.
-		add_filter( 'cloudinary_on_demand_sync_enabled', array( $this, 'auto_sync_enabled' ) );
+		add_filter( 'cloudinary_on_demand_sync_enabled', array( $this, 'auto_sync_enabled' ), 10, 2 );
 		// Handle bulk and inline actions.
 		add_filter( 'handle_bulk_actions-upload', array( $this, 'handle_bulk_actions' ), 10, 3 );
 		// Add inline action.
@@ -97,23 +97,30 @@ class Upload_Sync {
 	 * @return array
 	 */
 	function add_inline_action( $actions, $post ) {
-		if ( ! $this->plugin->components['sync']->is_synced( $post->ID ) ) {
-			if ( current_user_can( 'delete_post', $post->ID ) ) {
-				$action_url = add_query_arg(
-					array(
-						'action'   => 'cloudinary-push',
-						'media[]'  => $post->ID,
-						'_wpnonce' => wp_create_nonce( 'bulk-media' ),
-					),
-					'upload.php'
-				);
-
+		if ( current_user_can( 'delete_post', $post->ID ) ) {
+			$action_url = add_query_arg(
+				array(
+					'action'   => 'cloudinary-push',
+					'media[]'  => $post->ID,
+					'_wpnonce' => wp_create_nonce( 'bulk-media' ),
+				),
+				'upload.php'
+			);
+			if ( ! $this->plugin->components['sync']->is_synced( $post->ID ) ) {
 				$actions['cloudinary-push'] = sprintf(
 					'<a href="%s" aria-label="%s">%s</a>',
 					$action_url,
 					/* translators: %s: Attachment title. */
 					esc_attr( sprintf( __( 'Push to Cloudinary &#8220;%s&#8221;' ), 'asd' ) ),
 					__( 'Push to Cloudinary', 'cloudinary' )
+				);
+			} else {
+				$actions['cloudinary-push'] = sprintf(
+					'<a href="%s" aria-label="%s">%s</a>',
+					$action_url,
+					/* translators: %s: Attachment title. */
+					esc_attr( sprintf( __( 'Push to Cloudinary &#8220;%s&#8221;' ), 'asd' ) ),
+					__( 'Re-sync to Cloudinary', 'cloudinary' )
 				);
 			}
 		}
@@ -135,9 +142,14 @@ class Upload_Sync {
 		switch ( $action ) {
 			case 'cloudinary-push' :
 				foreach ( $post_ids as $post_id ) {
-					if ( ! $this->plugin->components['sync']->is_synced( $post_id ) ) {
-						$this->prep_upload( $post_id );
-					}
+					delete_post_meta( $post_id, Sync::META_KEYS['sync_error'] );
+					delete_post_meta( $post_id, Sync::META_KEYS['public_id'] );
+					delete_post_meta( $post_id, Sync::META_KEYS['pending'] );
+					delete_post_meta( $post_id, Sync::META_KEYS['downloading'] );
+					delete_post_meta( $post_id, Sync::META_KEYS['syncing'] );
+					$file = get_attached_file( $post_id );
+					wp_generate_attachment_metadata( $post_id, $file );
+					$this->prep_upload( $post_id );
 				}
 				break;
 		}
@@ -150,11 +162,17 @@ class Upload_Sync {
 	 * Check if auto-sync is enabled.
 	 *
 	 * @param bool $enabled Flag to determine if autosync is enabled.
+	 * @param int  $post_id The post id currently processing.
 	 *
 	 * @return bool
 	 */
-	public function auto_sync_enabled( $enabled ) {
-		if ( isset( $this->plugin->config['settings']['sync_media']['auto_sync'] ) && 'on' === $this->plugin->config['settings']['sync_media']['auto_sync'] ) {
+	public function auto_sync_enabled( $enabled, $post_id ) {
+		if ( $this->plugin->components['settings']->is_auto_sync_enabled() ) {
+			$enabled = true;
+		}
+
+		// Check if it was synced before to allow re-sync for changes.
+		if ( ! empty( $this->plugin->components['sync']->get_signature( $post_id ) ) ) {
 			$enabled = true;
 		}
 
@@ -201,7 +219,7 @@ class Upload_Sync {
 		$attachment_id = intval( $attachment_id );
 		if ( $attachment_id && false === $cloudinary_id ) {
 			// Check that this has not already been prepared for upload.
-			if ( ! $this->is_pending( $attachment_id ) && apply_filters( 'cloudinary_on_demand_sync_enabled', $this->enabled ) ) {
+			if ( ! $this->is_pending( $attachment_id ) && apply_filters( 'cloudinary_on_demand_sync_enabled', $this->enabled, $attachment_id ) ) {
 				$max_size = ( wp_attachment_is_image( $attachment_id ) ? 'max_image_size' : 'max_video_size' );
 				$file     = get_attached_file( $attachment_id );
 				// Get the file size to make sure it can exist in cloudinary.
@@ -251,6 +269,7 @@ class Upload_Sync {
 		if ( ! in_array( $attachment_id, $this->to_sync, true ) ) {
 			// Flag image as pending to prevent duplicate upload.
 			update_post_meta( $attachment_id, Sync::META_KEYS['pending'], time() );
+			$this->plugin->components['media']->update_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], true );
 			$this->to_sync[] = $attachment_id;
 		}
 	}
@@ -287,14 +306,14 @@ class Upload_Sync {
 
 		if ( $this->is_pending( $attachment_id ) ) {
 			$status['state'] = 'warning';
-			$status['note']  = esc_html__( 'Upload sync pending', 'cloudinary' );
+			$status['note']  = __( 'Upload sync pending', 'cloudinary' );
 		}
 
 		// Check if there's an error.
 		$has_error = $this->plugin->components['media']->get_post_meta( $attachment_id, Sync::META_KEYS['sync_error'], true );
 		if ( ! empty( $has_error ) ) {
-			$status['note']  = $has_error;
 			$status['state'] = 'error';
+			$status['note']  = $has_error;
 		}
 
 		return $status;
