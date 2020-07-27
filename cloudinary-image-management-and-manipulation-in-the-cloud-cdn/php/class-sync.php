@@ -49,6 +49,7 @@ class Sync implements Setup, Assets {
 		'sync_error'     => '_sync_error',
 		'cloudinary'     => '_cloudinary_v2',
 		'folder_sync'    => '_folder_sync',
+		'suffix'         => '_suffix',
 		'syncing'        => '_cloudinary_syncing',
 		'downloading'    => '_cloudinary_downloading',
 	);
@@ -240,7 +241,7 @@ class Sync implements Setup, Assets {
 			}
 		}
 
-		return $public_id . $suffix;
+		return $suffix;
 	}
 
 	/**

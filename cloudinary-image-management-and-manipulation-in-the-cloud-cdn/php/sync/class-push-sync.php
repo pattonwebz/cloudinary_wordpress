@@ -531,13 +531,37 @@ class Push_Sync {
 			// Restructure the path to the filename to allow correct placement in Cloudinary.
 			$public_id = ltrim( $public_id_folder . $options['public_id'], '/' );
 			// If this is a push sync, make sure the ID is allowed and unique.
+
+			// Setup suffix data for unique ids.
+			$suffix_defaults = array(
+				'public_id' => $public_id,
+				'suffix'    => null,
+			);
+			$suffix_meta     = $this->media->get_post_meta( $post->ID, Sync::META_KEYS['suffix'], true );
+			$suffix_data     = wp_parse_args( $suffix_meta, $suffix_defaults );
+
+			// Prepare a uniqueness check and get a suffix if needed.
 			if ( true === $push_sync ) {
-				$public_id = $this->sync->add_suffix_maybe( $public_id, $post->ID );
+				if ( $public_id !== $suffix_data['public_id'] || empty( $suffix_data['suffix'] ) ) {
+					$suffix_data['suffix'] = $this->sync->add_suffix_maybe( $public_id, $post->ID );
+					if ( ! empty( $suffix_data['suffix'] ) ) {
+						// Only save if there is a suffix to save on metadata.
+						$this->media->update_post_meta( $post->ID, Sync::META_KEYS['suffix'], $suffix_data );
+					} else {
+						// Clear meta data in case of a unique name on a rename etc.
+						$this->media->delete_post_meta( $post->ID, Sync::META_KEYS['suffix'] );
+					}
+				}
+			}
+			// Add Suffix to public_id.
+			if ( ! empty( $suffix_data['suffix'] ) ) {
+				$public_id = $public_id . $suffix_data['suffix'];
 			}
 			$return                         = array(
 				'file'        => $file,
 				'folder'      => ltrim( $cld_folder, '/' ),
 				'public_id'   => $public_id,
+				'suffix'      => $suffix_data['suffix'],
 				'breakpoints' => array(),
 				'options'     => $options,
 			);
@@ -685,6 +709,12 @@ class Push_Sync {
 						delete_post_meta( $attachment->ID, Sync::META_KEYS['breakpoints'] );
 					}
 				}
+
+				// Reset public_id without suffix.
+				if ( ! empty( $upload['suffix'] ) ) {
+					$upload['options']['public_id'] = strstr( $upload['options']['public_id'], $upload['suffix'], true );
+				}
+				// Generate a public_id sync hash.
 				if ( ! empty( $upload['options']['public_id'] ) ) {
 					// a transformation breakpoints only ever happens on a down sync.
 					$sync_key              = '_' . md5( $upload['options']['public_id'] );
@@ -697,6 +727,7 @@ class Push_Sync {
 				$meta                                  = wp_get_attachment_metadata( $attachment->ID, true );
 				$meta[ Sync::META_KEYS['cloudinary'] ] = $meta_data;
 				wp_update_attachment_metadata( $attachment->ID, $meta );
+
 				$this->media->update_post_meta( $attachment->ID, Sync::META_KEYS['public_id'], $upload['options']['public_id'] );
 				// Search and update link references in content.
 				$content_search = new \WP_Query( array( 's' => 'wp-image-' . $attachment->ID, 'fields' => 'ids', 'posts_per_page' => 1000 ) );
