@@ -656,7 +656,7 @@ class Media implements Setup {
 
 		// A cloudinary_id is a public_id with a file extension.
 		$public_id   = $this->get_public_id( $attachment_id );
-		$suffix_data = $this->get_post_meta( $post->ID, Sync::META_KEYS['suffix'], true );
+		$suffix_data = $this->get_post_meta( $attachment_id, Sync::META_KEYS['suffix'], true );
 		if ( is_array( $suffix_data ) && ! empty( $suffix_data['suffix'] ) && $suffix_data['public_id'] === $public_id ) {
 			$public_id = $public_id . $suffix_data['suffix'];
 		}
