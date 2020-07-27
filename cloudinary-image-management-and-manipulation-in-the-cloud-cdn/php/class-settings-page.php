@@ -913,4 +913,19 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 			$this->active_page = $page_slug;
 		}
 	}
+
+	/**
+	 * Checks if auto sync feature is enabled.
+	 *
+	 * @return bool
+	 */
+	public function is_auto_sync_enabled() {
+		$settings = $this->get_config();
+
+		if ( ! empty( $settings['sync_media']['auto_sync'] ) && 'on' === $settings['sync_media']['auto_sync'] ) {
+			return true;
+		}
+
+		return false;
+	}
 }
