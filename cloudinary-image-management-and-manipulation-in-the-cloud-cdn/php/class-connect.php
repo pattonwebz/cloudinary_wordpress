@@ -208,8 +208,15 @@ class Connect implements Config, Setup, Notice {
 		$api  = new Connect\Api( $this, $this->plugin->version );
 		$ping = $api->ping();
 
-		if ( is_wp_error( $ping ) || $ping['status'] !== 'ok' ) {
+		if ( is_wp_error( $ping ) || ( is_array( $ping ) && $ping['status'] !== 'ok' ) ) {
 			delete_option( self::META_KEYS['signature'] );
+
+			$this->notices[] = array(
+				'message'     => __( 'You have been disconnected due to an account error.', 'cloudinary' ),
+				'type'        => 'error',
+				'dismissible' => true,
+			);
+
 			return false;
 		}
 
