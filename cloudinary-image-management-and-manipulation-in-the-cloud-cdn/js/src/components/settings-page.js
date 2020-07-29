@@ -79,7 +79,13 @@
 					field.removeClass( 'settings-valid-field' );
 					field.addClass( 'settings-invalid-field' );
 				}
-			}).trigger('change' );
+			}).trigger('change');
+
+			$('[name="cloudinary_sync_media[auto_sync]"]').change(function () {
+				if ($(this).val() === 'on') {
+					alert(cloudinaryJsData.auto_sync_notice)
+				}
+			});
 
 
 		} );

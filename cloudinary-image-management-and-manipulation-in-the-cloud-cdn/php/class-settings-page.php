@@ -161,6 +161,11 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		register_setting( $setting_slug, $setting_slug, $args );
 		add_filter( 'pre_update_site_option_' . $setting_slug, array( $this, 'set_notices' ), 10, 3 );
 		add_filter( 'pre_update_option_' . $setting_slug, array( $this, 'set_notices' ), 10, 3 );
+
+		if ( ! empty( $tab['javascript_i18n'] ) ) {
+			wp_localize_script( 'jquery', 'cloudinaryJsData', $tab['javascript_i18n'] );
+		}
+
 		add_settings_section(
 			$setting_slug,
 			$title,
@@ -260,6 +265,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		if ( ! empty( $field['prefix'] ) ) {
 			echo wp_kses_post( $field['prefix'] );
 		}
+
 		// switch field type.
 		switch ( $type ) {
 			case 'heading':
@@ -289,6 +295,14 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 				<input type="hidden" name="<?php echo esc_attr( $setting_slug ); ?>[<?php echo esc_attr( $field['slug'] ); ?>]" value="off">
 				<input type="<?php echo esc_attr( $type ); ?>" class="cld-field regular-<?php echo esc_attr( $type ); ?>" id="<?php echo esc_attr( $field['label_for'] ); ?>" name="<?php echo esc_attr( $setting_slug ); ?>[<?php echo esc_attr( $field['slug'] ); ?>]" <?php if ( ! empty( $field['pattern'] ) ) : ?>pattern="<?php echo esc_attr( $field['pattern'] ); ?>"<?php endif; ?> data-condition="<?php echo esc_attr( $condition ); ?>" data-context="<?php echo esc_attr( $context ); ?>" <?php echo esc_attr( $required ); ?> <?php checked( 'on', $value ); ?>>
 				<?php
+				break;
+			case 'radio':
+				foreach ( $field['choices'] as $key => $option ) :
+				?>
+					<input type="<?php echo esc_attr( $type ); ?>" class="cld-field regular-<?php echo esc_attr( $type ); ?>" id="<?php echo esc_attr( $field['label_for'] . '_' . $key ); ?>" name="<?php echo esc_attr( $setting_slug ); ?>[<?php echo esc_attr( $field['slug'] ); ?>]" <?php if ( ! empty( $field['pattern'] ) ) : ?>pattern="<?php echo esc_attr( $field['pattern'] ); ?>"<?php endif; ?> data-condition="<?php echo esc_attr( $condition ); ?>" data-context="<?php echo esc_attr( $context ); ?>" <?php echo esc_attr( $required ); ?> <?php checked( $key, $value ); ?> value="<?php echo esc_attr( $key ); ?>"> 
+					<label for="<?php echo esc_attr( $field['label_for'] . '_' . $key ); ?>"><?php echo $option; ?></label>
+				<?php
+				endforeach;
 				break;
 			case 'textarea':
 				?>
