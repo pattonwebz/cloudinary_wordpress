@@ -404,6 +404,7 @@ class Push_Sync {
 					if ( true === $push_sync ) {
 						$download = $this->sync->managers['download']->down_sync( $post->ID );
 						if ( is_wp_error( $download ) ) {
+							delete_post_meta( $post->ID, Sync::META_KEYS['downloading'] );
 							update_post_meta( $post->ID, Sync::META_KEYS['sync_error'], $download->get_error_message() );
 
 							return new \WP_Error( 'attachment_download_error', $download->get_error_message() );
@@ -541,7 +542,7 @@ class Push_Sync {
 			$suffix_data     = wp_parse_args( $suffix_meta, $suffix_defaults );
 
 			// Prepare a uniqueness check and get a suffix if needed.
-			if ( true === $push_sync ) {
+			if ( true === $push_sync && true !== $downsync ) {
 				if ( $public_id !== $suffix_data['public_id'] || empty( $suffix_data['suffix'] ) ) {
 					$suffix_data['suffix'] = $this->sync->add_suffix_maybe( $public_id, $post->ID );
 					if ( ! empty( $suffix_data['suffix'] ) ) {
@@ -681,6 +682,7 @@ class Push_Sync {
 				$error           = $result->get_error_message();
 				$stats['fail'][] = $error;
 				$this->media->update_post_meta( $attachment->ID, Sync::META_KEYS['sync_error'], $error );
+				delete_post_meta( $attachment->ID, Sync::META_KEYS['syncing'] );
 				continue;
 			}
 
