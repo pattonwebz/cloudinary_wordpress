@@ -542,7 +542,7 @@ class Push_Sync {
 			$suffix_data     = wp_parse_args( $suffix_meta, $suffix_defaults );
 
 			// Prepare a uniqueness check and get a suffix if needed.
-			if ( true === $push_sync ) {
+			if ( true === $push_sync && true !== $downsync ) {
 				if ( $public_id !== $suffix_data['public_id'] || empty( $suffix_data['suffix'] ) ) {
 					$suffix_data['suffix'] = $this->sync->add_suffix_maybe( $public_id, $post->ID );
 					if ( ! empty( $suffix_data['suffix'] ) ) {
