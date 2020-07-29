@@ -404,6 +404,7 @@ class Push_Sync {
 					if ( true === $push_sync ) {
 						$download = $this->sync->managers['download']->down_sync( $post->ID );
 						if ( is_wp_error( $download ) ) {
+							delete_post_meta( $post->ID, Sync::META_KEYS['downloading'] );
 							update_post_meta( $post->ID, Sync::META_KEYS['sync_error'], $download->get_error_message() );
 
 							return new \WP_Error( 'attachment_download_error', $download->get_error_message() );
@@ -681,6 +682,7 @@ class Push_Sync {
 				$error           = $result->get_error_message();
 				$stats['fail'][] = $error;
 				$this->media->update_post_meta( $attachment->ID, Sync::META_KEYS['sync_error'], $error );
+				delete_post_meta( $attachment->ID, Sync::META_KEYS['syncing'] );
 				continue;
 			}
 
