@@ -37,6 +37,13 @@ class Sync implements Setup, Assets {
 	public $managers;
 
 	/**
+	 * Contains the sync base structure and callbacks.
+	 *
+	 * @var array
+	 */
+	protected $sync_base_struct;
+
+	/**
 	 * Holds the meta keys for sync meta to maintain consistency.
 	 */
 	const META_KEYS = array(
@@ -120,21 +127,20 @@ class Sync implements Setup, Assets {
 	/**
 	 * Generate a signature based on whats required for a full sync.
 	 *
-	 * @param int $post_id The post id to generate a signature for.
+	 * @param int $attachment_id The Attachment id to generate a signature for.
 	 *
 	 * @return string|bool
 	 */
-	public function generate_signature( $post_id ) {
-		$upload = $this->managers['push']->prepare_upload( $post_id );
+	public function generate_signature( $attachment_id ) {
 		// Check if has an error (ususally due to file quotas).
-		if ( is_wp_error( $upload ) ) {
-			$this->plugin->components['media']->get_post_meta( $post_id, self::META_KEYS['sync_error'], $upload->get_error_message() );
+		$can_sync = $this->can_sync( $attachment_id );
+		if ( is_wp_error( $can_sync ) ) {
+			$this->plugin->components['media']->get_post_meta( $attachment_id, self::META_KEYS['sync_error'], $can_sync->get_error_message() );
 
 			return false;
 		}
-		$credentials          = $this->plugin->components['connect']->get_credentials();
-		$upload['cloud_name'] = $credentials['cloud_name'];
-		$return               = array_map(
+		$sync_base = $this->sync_base( $attachment_id );
+		$return    = array_map(
 			function ( $item ) {
 				if ( is_array( $item ) ) {
 					$item = wp_json_encode( $item );
@@ -142,10 +148,30 @@ class Sync implements Setup, Assets {
 
 				return md5( $item );
 			},
-			$upload
+			$sync_base
 		);
 
 		return $return;
+	}
+
+	/**
+	 * Check if an asset can be synced.
+	 *
+	 * @param int $attachment_id The attachment ID to check if it  can be synced.
+	 *
+	 * @return bool
+	 */
+	public function can_sync( $attachment_id ) {
+
+		/**
+		 * Filter to allow changing if an asset is allowed to be synced.
+		 * Return a WP Error with reason why it can't be synced.
+		 *
+		 * @param int $attachment_id The attachment post ID.
+		 *
+		 * @return bool|\WP_Error
+		 */
+		return apply_filters( 'cloudinary_can_sync_asset', true, $attachment_id );
 	}
 
 	/**
@@ -245,6 +271,61 @@ class Sync implements Setup, Assets {
 	}
 
 	/**
+	 * Get the sync_setup_base of part callbacks.
+	 *
+	 * @return array
+	 */
+	public function setup_sync_base_struct() {
+
+		$base_struct = array(
+			'file'        => 'get_attached_file',
+			'folder'      => array( $this->managers['media'], 'get_cloudinary_folder' ),
+			'public_id'   => array( $this->managers['media'], 'get_public_id' ),
+			'suffix'      => array( $this, 'get_suffix_maybe' ),
+			'breakpoints' => array( $this->managers['media'], 'get_breakpoint_options' ),
+			'options'     => array( $this->managers['media'], 'get_upload_options' ),
+			'cloud_name'  => array( 'Media', 'get_cloud_name' ),
+		);
+
+		return apply_filters( 'cloudinary_sync_base_struct', $base_struct );
+	}
+
+	/**
+	 * Get the core Sync Base.
+	 *
+	 * @param int|\WP_Post $post The attachment to prepare.
+	 *
+	 * @return array|\WP_Error
+	 */
+	public function sync_base( $post ) {
+
+		if ( ! $this->managers['media']->is_media( $post ) ) {
+			return new \WP_Error( 'attachment_post_expected', __( 'An attachment post was expected.', 'cloudinary' ) );
+		}
+
+		$return = array();
+		foreach ( $this->sync_base_struct as $key => $callback ) {
+			$return[ $key ] = null;
+			if ( is_callable( $callback ) ) {
+				$return[ $key ] = call_user_func( $callback, $post );
+			}
+		}
+
+		/**
+		 * Filter the sync base to allow other plugins to add requested sync components for the sync signature.
+		 *
+		 * @param array    $options The options array.
+		 * @param \WP_Post $post    The attachment post.
+		 * @param \Cloudinary\Sync The sync object instance.
+		 *
+		 * @return array
+		 */
+		$return = apply_filters( 'cloudinary_sync_base', $return, $post );
+
+		return $return;
+	}
+
+	/**
 	 * Additional component setup.
 	 */
 	public function setup() {
@@ -252,6 +333,10 @@ class Sync implements Setup, Assets {
 			$this->managers['upload']->setup();
 			$this->managers['delete']->setup();
 			$this->managers['push']->setup();
+			// Setup additional components.
+			$this->managers['media'] = $this->plugin->components['media'];
+			// Setup the sync_base_structure.
+			$this->sync_base_struct = $this->setup_sync_base_struct();
 		}
 	}
 }

@@ -8,6 +8,7 @@
 namespace Cloudinary;
 
 use Cloudinary\Component\Setup;
+use Cloudinary\Connect\Api;
 use Cloudinary\Media\Filter;
 use Cloudinary\Media\Upgrade;
 use Cloudinary\Media\Global_Transformations;
@@ -120,13 +121,11 @@ class Media implements Setup {
 	 * @return bool
 	 */
 	public function is_media( $attachment ) {
-		$is_media = false;
+		$media_types = array( 'image', 'video' );
+		$is_media    = false;
 		if ( 'attachment' === get_post_type( $attachment ) ) {
-			$is_media = $this->get_post_meta( $attachment, 'is_media', true );
-			if ( '' === $is_media ) {
-				$is_media = wp_attachment_is( 'image', $attachment ) || wp_attachment_is( 'video', $attachment );
-				$this->update_post_meta( $attachment, 'is_media', $is_media );
-			}
+			$type     = strstr( get_post_mime_type( $attachment ), '/', true );
+			$is_media = in_array( $type, apply_filters( 'cloudinary_media_types', $media_types ) );
 		}
 
 		return $is_media;
@@ -617,10 +616,19 @@ class Media implements Setup {
 	 * @return array Altered array of paths.
 	 */
 	public function upload_dir( $dirs ) {
-		$folder                    = $this->cloudinary_folder;
-		$dirs['cloudinary_folder'] = trailingslashit( $folder );
+
+		$dirs['cloudinary_folder'] = trailingslashit( $this->get_cloudinary_folder() );
 
 		return $dirs;
+	}
+
+	/**
+	 * Get the setup Cloudinary Folder.
+	 *
+	 * @return string
+	 */
+	public function get_cloudinary_folder() {
+		return $this->cloudinary_folder;
 	}
 
 	/**
@@ -638,7 +646,7 @@ class Media implements Setup {
 			// Build a public_id based on cloudinary folder, and filename.
 			$file              = get_attached_file( $attachment_id );
 			$info              = pathinfo( $file );
-			$cloudinary_folder = trailingslashit( $this->cloudinary_folder );
+			$cloudinary_folder = trailingslashit( $this->get_cloudinary_folder() );
 			$public_id         = $cloudinary_folder . $info['filename'];
 		}
 
@@ -1031,7 +1039,7 @@ class Media implements Setup {
 			}
 			$transformations = $this->get_transformations_from_string( $url );
 			if ( ! empty( $transformations ) ) {
-				$sync_key                .= wp_json_encode( $transformations );
+				$sync_key                 .= wp_json_encode( $transformations );
 				$asset['transformations'] = $transformations;
 			}
 			// Check Format and url extension.
@@ -1314,6 +1322,116 @@ class Media implements Setup {
 		}
 		// Delete meta data.
 		delete_post_meta( $post_id, $key );
+	}
+
+	/**
+	 * Get the breakpoint generation options for an attachment.
+	 *
+	 * @param int $attachment_id The attachment ID.
+	 *
+	 * @return array
+	 */
+	public function get_breakpoint_options( $attachment_id ) {
+		// Add breakpoints if we have an image.
+		$breakpoints = false;
+		if ( wp_attachment_is_image( $attachment_id ) ) {
+			$meta = wp_get_attachment_metadata( $post->ID );
+			// Get meta image size if non exists.
+			if ( empty( $meta ) ) {
+				$meta          = array();
+				$imagesize     = getimagesize( get_attached_file( $attachment_id ) );
+				$meta['width'] = $imagesize[0] ? $imagesize[0] : 0;
+			}
+			$max_width = $this->get_max_width();
+			$settings  = $this->plugin->config['settings'];
+			// Add breakpoints request options.
+			if ( ! empty( $settings['global_transformations']['enable_breakpoints'] ) ) {
+				$breakpoint_options = array(
+					'create_derived' => true,
+					'bytes_step'     => $settings['global_transformations']['bytes_step'],
+					'max_images'     => $settings['global_transformations']['breakpoints'],
+					'max_width'      => $meta['width'] < $max_width ? $meta['width'] : $max_width,
+					'min_width'      => $settings['global_transformations']['min_width'],
+				);
+				$transformations    = $this->get_transformation_from_meta( $attachment_id );
+				if ( ! empty( $transformations ) ) {
+					$breakpoints['transformation'] = Api::generate_transformation_string( $transformations );
+				}
+				$breakpoints = array(
+					'public_id'              => $this->get_public_id( $attachment_id ),
+					'type'                   => 'upload',
+					'responsive_breakpoints' => $breakpoint_options,
+					'context'                => $this->get_context_options( $attachment_id ),
+				);
+			}
+		}
+
+		return $breakpoints;
+	}
+
+	/**
+	 * Get the context options for an asset.
+	 *
+	 * @param int $attachment_id The ID of the attachment.
+	 *
+	 * @return array
+	 */
+	public function get_context_options( $attachment_id ) {
+
+		$context_options = array(
+			'caption' => esc_attr( get_the_title( $attachment_id ) ),
+			'alt'     => get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ),
+		);
+
+		// Check if this asset is a folder sync.
+		$folder_sync = $this->get_post_meta( $post->ID, Sync::META_KEYS['folder_sync'], true );
+		if ( ! empty( $folder_sync ) ) {
+			$context_options['wp_id'] = $attachment_id;
+		}
+
+		/**
+		 * Filter the options to allow other plugins to add requested options for uploading.
+		 *
+		 * @param array    $options The options array.
+		 * @param \WP_Post $post    The attachment post.
+		 * @param \Cloudinary\Sync The sync object instance.
+		 *
+		 * @return array
+		 */
+		$context_options = apply_filters( 'cloudinary_context_options', $context_options, get_post( $attachment_id ), $this );
+
+		return http_build_query( $context_options, null, '|' );;
+	}
+
+	/**
+	 * Get the media upload options as connected to Cloudinary.
+	 *
+	 * @param int $attachment_id The attachment ID.
+	 *
+	 * @return array
+	 */
+	public function get_upload_options( $attachment_id ) {
+		// Prepare upload options.
+		$options = array(
+			'unique_filename'        => false,
+			'resource_type'          => strstr( get_post_mime_type( $attachment_id ), '/', true ),
+			'public_id'              => $this->get_public_id( $attachment_id ),
+			'context'                => $this->get_context_options( $attachment_id ),
+			'responsive_breakpoints' => $this->get_breakpoint_options( $attachment_id ),
+		);
+
+		/**
+		 * Filter the options to allow other plugins to add requested options for uploading.
+		 *
+		 * @param array    $options The options array.
+		 * @param \WP_Post $post    The attachment post.
+		 * @param \Cloudinary\Sync The sync object instance.
+		 *
+		 * @return array
+		 */
+		$options = apply_filters( 'cloudinary_upload_options', $options, get_post( $attachment_id ), $this );
+
+		return $options;
 	}
 
 	/**
