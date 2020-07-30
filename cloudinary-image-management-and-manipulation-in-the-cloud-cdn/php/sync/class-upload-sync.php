@@ -257,7 +257,7 @@ class Upload_Sync {
 	 *
 	 * @param int $attachment_id The attachment ID.
 	 *
-	 * @return array
+	 * @return array|\WP_Error
 	 */
 	public function upload_asset( $attachment_id ) {
 
@@ -266,12 +266,13 @@ class Upload_Sync {
 		$options = $this->media->get_upload_options( $attachment_id );
 		$result  = $this->connect->api->upload( $file, $options );
 
-		$this->sync->update_signature( $attachment_id, $type );
-		$this->media->update_post_meta( $attachment->ID, Sync::META_KEYS['public_id'], $options['public_id'] );
+		if ( ! is_wp_error( $result ) ) {
+			$this->sync->update_signature( $attachment_id, $type );
+			$this->media->update_post_meta( $attachment->ID, Sync::META_KEYS['public_id'], $options['public_id'] );
+			$this->update_breakpoints( $attachment_id, $result );
+		}
 
-		$this->update_breakpoints( $attachment_id, $result );
-
-		return array();
+		return $result;
 	}
 
 	/**
@@ -279,7 +280,7 @@ class Upload_Sync {
 	 *
 	 * @param int $attachment_id The attachment ID.
 	 *
-	 * @return array
+	 * @return array|\WP_Error
 	 */
 	public function context_update( $attachment_id ) {
 		// dynamic sync type..
@@ -287,8 +288,12 @@ class Upload_Sync {
 		$options = $this->media->get_upload_options( $attachment_id );
 		$result  = $this->connect->api->context( $options );
 
-		$this->sync->update_signature( $attachment_id, $type );
-		$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['public_id'], $options['public_id'] );
+		if ( ! is_wp_error( $result ) ) {
+			$this->sync->update_signature( $attachment_id, $type );
+			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['public_id'], $options['public_id'] );
+		}
+
+		return $result;
 	}
 
 	/**
@@ -296,7 +301,7 @@ class Upload_Sync {
 	 *
 	 * @param int $attachment_id The attachment ID.
 	 *
-	 * @return array
+	 * @return array|\WP_Error|bool
 	 */
 	public function explicit_update( $attachment_id ) {
 		// Explicit update.
@@ -304,11 +309,16 @@ class Upload_Sync {
 		$args = $this->media->get_breakpoint_options( $attachment_id );
 		if ( ! empty( $args ) ) {
 			$result = $this->connect->api->explicit( $args );
-			$this->update_breakpoints( $attachment_id, $result );
+			if ( ! is_wp_error( $result ) ) {
+				$this->update_breakpoints( $attachment_id, $result );
+			}
 		} else {
 			$this->update_breakpoints( $attachment_id, array() );
+			$result = true;
 		}
 		$this->sync->update_signature( $attachment_id, $type );
+
+		return $result;
 	}
 
 	/**

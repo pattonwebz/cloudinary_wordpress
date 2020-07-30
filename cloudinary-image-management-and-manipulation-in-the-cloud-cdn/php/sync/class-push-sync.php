@@ -227,9 +227,22 @@ class Push_Sync {
 		// If not a single request, process based on queue.
 		if ( ! empty( $attachments ) ) {
 
+			$stat = array();
 			// If a single specified ID, push and return response.
-			$ids  = array_map( 'intval', $attachments );
-			$stat = $this->push_attachments( $ids );
+			$ids = array_map( 'intval', $attachments );
+			// Handle based on Sync Type.
+			foreach ( $ids as $attachment_id ) {
+				$type = $this->sync->get_sync_type( $attachment_id );
+				if ( ! is_wp_error( $type ) ) {
+					$callback               = $this->sync->get_sync_method( $type );
+					$stat[ $attachment_id ] = call_user_func( $callback, $attachment_id );
+
+					// remove pending.
+					if ( $this->sync->is_pending( $attachment_id ) ) {
+						$this->media->delete_post_meta( $attachment_id, Sync::META_KEYS['pending'] );
+					}
+				}
+			}
 
 			return rest_ensure_response(
 				array(
