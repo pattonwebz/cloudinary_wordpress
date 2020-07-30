@@ -186,7 +186,7 @@ class Api {
 		$transformations      = array_map(
 			function ( $item ) use ( $transformation_index ) {
 				$transform = array();
-				if ( is_string ( $item ) ) {
+				if ( is_string( $item ) ) {
 					return $item;
 				}
 
@@ -239,7 +239,7 @@ class Api {
 			$args['version'] = 'v1';
 		}
 
-		// Determine if we're dealing with a fetched 
+		// Determine if we're dealing with a fetched.
 		// ...or uploaded image and update the URL accordingly.
 		$asset_endpoint = filter_var( $public_id, FILTER_VALIDATE_URL ) ? 'fetch' : 'upload';
 
@@ -448,12 +448,11 @@ class Api {
 	/**
 	 * Context update of an asset.
 	 *
-	 * @param string $file Filename of file. Ignored in this instance since it's a dynamic method call.
-	 * @param array  $args Array of options to update.
+	 * @param array $args Array of options to update.
 	 *
 	 * @return array|\WP_Error
 	 */
-	public function context( $file, $args ) {
+	public function context( $args ) {
 
 		$url     = $this->url( $args['resource_type'], 'context', true );
 		$options = array(

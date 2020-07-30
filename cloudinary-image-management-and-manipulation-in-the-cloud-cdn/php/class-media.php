@@ -617,7 +617,7 @@ class Media implements Setup {
 	 */
 	public function upload_dir( $dirs ) {
 
-		$dirs['cloudinary_folder'] = trailingslashit( $this->get_cloudinary_folder() );
+		$dirs['cloudinary_folder'] = $this->get_cloudinary_folder();
 
 		return $dirs;
 	}
@@ -628,7 +628,7 @@ class Media implements Setup {
 	 * @return string
 	 */
 	public function get_cloudinary_folder() {
-		return $this->cloudinary_folder;
+		return trailingslashit( $this->cloudinary_folder );
 	}
 
 	/**
@@ -646,7 +646,7 @@ class Media implements Setup {
 			// Build a public_id based on cloudinary folder, and filename.
 			$file              = get_attached_file( $attachment_id );
 			$info              = pathinfo( $file );
-			$cloudinary_folder = trailingslashit( $this->get_cloudinary_folder() );
+			$cloudinary_folder = $this->get_cloudinary_folder();
 			$public_id         = $cloudinary_folder . $info['filename'];
 		}
 
@@ -694,6 +694,8 @@ class Media implements Setup {
 		$cloudinary_id = false;
 		if ( $this->plugin->components['sync']->is_synced( $attachment_id ) ) {
 			$cloudinary_id = $this->get_cloudinary_id( $attachment_id );
+		} else {
+			$this->plugin->components['sync']->maybe_prepare_sync( $attachment_id );
 		}
 
 		/**
@@ -1333,8 +1335,10 @@ class Media implements Setup {
 	 */
 	public function get_breakpoint_options( $attachment_id ) {
 		// Add breakpoints if we have an image.
-		$breakpoints = false;
-		if ( wp_attachment_is_image( $attachment_id ) ) {
+		$breakpoints     = array();
+		$has_breakpoints = $this->plugin->config['settings']['global_transformations']['enable_breakpoints'];
+
+		if ( 'off' !== $has_breakpoints && wp_attachment_is_image( $attachment_id ) ) {
 			$meta = wp_get_attachment_metadata( $post->ID );
 			// Get meta image size if non exists.
 			if ( empty( $meta ) ) {
@@ -1411,13 +1415,13 @@ class Media implements Setup {
 	 * @return array
 	 */
 	public function get_upload_options( $attachment_id ) {
+
 		// Prepare upload options.
 		$options = array(
-			'unique_filename'        => false,
-			'resource_type'          => strstr( get_post_mime_type( $attachment_id ), '/', true ),
-			'public_id'              => $this->get_public_id( $attachment_id ),
-			'context'                => $this->get_context_options( $attachment_id ),
-			'responsive_breakpoints' => $this->get_breakpoint_options( $attachment_id ),
+			'unique_filename' => false,
+			'resource_type'   => strstr( get_post_mime_type( $attachment_id ), '/', true ),
+			'public_id'       => $this->get_public_id( $attachment_id ),
+			'context'         => $this->get_context_options( $attachment_id ),
 		);
 
 		/**

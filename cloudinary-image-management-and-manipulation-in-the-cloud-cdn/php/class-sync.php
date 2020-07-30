@@ -44,6 +44,20 @@ class Sync implements Setup, Assets {
 	protected $sync_base_struct;
 
 	/**
+	 * Contains the sync types and  callbacks.
+	 *
+	 * @var array
+	 */
+	protected $sync_types;
+
+	/**
+	 * Holds a list of unsynced images to push on end.
+	 *
+	 * @var array
+	 */
+	private $to_sync = array();
+
+	/**
 	 * Holds the meta keys for sync meta to maintain consistency.
 	 */
 	const META_KEYS = array(
@@ -132,24 +146,23 @@ class Sync implements Setup, Assets {
 	 * @return string|bool
 	 */
 	public function generate_signature( $attachment_id ) {
-		// Check if has an error (ususally due to file quotas).
-		$can_sync = $this->can_sync( $attachment_id );
-		if ( is_wp_error( $can_sync ) ) {
-			$this->plugin->components['media']->get_post_meta( $attachment_id, self::META_KEYS['sync_error'], $can_sync->get_error_message() );
+		static $signatures = array(); // cache signatures.
+		if ( ! empty( $signatures[ $attachment_id ] ) ) {
+			$return = $signatures[ $attachment_id ];
+		} else {
+			$sync_base                    = $this->sync_base( $attachment_id );
+			$return                       = array_map(
+				function ( $item ) {
+					if ( is_array( $item ) ) {
+						$item = wp_json_encode( $item );
+					}
 
-			return false;
+					return md5( $item );
+				},
+				$sync_base
+			);
+			$signatures[ $attachment_id ] = $return;
 		}
-		$sync_base = $this->sync_base( $attachment_id );
-		$return    = array_map(
-			function ( $item ) {
-				if ( is_array( $item ) ) {
-					$item = wp_json_encode( $item );
-				}
-
-				return md5( $item );
-			},
-			$sync_base
-		);
 
 		return $return;
 	}
@@ -157,11 +170,12 @@ class Sync implements Setup, Assets {
 	/**
 	 * Check if an asset can be synced.
 	 *
-	 * @param int $attachment_id The attachment ID to check if it  can be synced.
+	 * @param int    $attachment_id The attachment ID to check if it  can be synced.
+	 * @param string $type          The type of sync to attempt.
 	 *
 	 * @return bool
 	 */
-	public function can_sync( $attachment_id ) {
+	public function can_sync( $attachment_id, $type = 'file' ) {
 
 		/**
 		 * Filter to allow changing if an asset is allowed to be synced.
@@ -171,28 +185,28 @@ class Sync implements Setup, Assets {
 		 *
 		 * @return bool|\WP_Error
 		 */
-		return apply_filters( 'cloudinary_can_sync_asset', true, $attachment_id );
+		return apply_filters( 'cloudinary_can_sync_asset', true, $attachment_id, $type );
 	}
 
 	/**
 	 * Get the current sync signature of an asset.
 	 *
-	 * @param int $post_id The post ID.
+	 * @param int $attachment_id The attachment ID.
 	 *
 	 * @return array|bool
 	 */
-	public function get_signature( $post_id ) {
+	public function get_signature( $attachment_id ) {
 		static $signatures = array(); // Cache signatures already fetched.
 
-		$return = false;
-		if ( ! empty( $signatures[ $post_id ] ) ) {
-			$return = $signatures[ $post_id ];
+		$return = array();
+		if ( ! empty( $signatures[ $attachment_id ] ) ) {
+			$return = $signatures[ $attachment_id ];
 		} else {
-			$signature = $this->plugin->components['media']->get_post_meta( $post_id, self::META_KEYS['signature'], true );
+			$signature = $this->managers['media']->get_post_meta( $attachment_id, self::META_KEYS['signature'], true );
 			if ( ! empty( $signature ) ) {
-				$base_signatures        = $this->generate_signature( $post_id );
-				$signatures[ $post_id ] = wp_parse_args( $signature, $base_signatures );
-				$return                 = $signatures[ $post_id ];
+				$base_signatures              = $this->generate_signature( $attachment_id );
+				$signatures[ $attachment_id ] = wp_parse_args( $signature, $base_signatures );
+				$return                       = $signatures[ $attachment_id ];
 			}
 		}
 
@@ -272,22 +286,126 @@ class Sync implements Setup, Assets {
 
 	/**
 	 * Get the sync_setup_base of part callbacks.
-	 *
-	 * @return array
 	 */
 	public function setup_sync_base_struct() {
 
 		$base_struct = array(
-			'file'        => 'get_attached_file',
-			'folder'      => array( $this->managers['media'], 'get_cloudinary_folder' ),
-			'public_id'   => array( $this->managers['media'], 'get_public_id' ),
-			'suffix'      => array( $this, 'get_suffix_maybe' ),
-			'breakpoints' => array( $this->managers['media'], 'get_breakpoint_options' ),
-			'options'     => array( $this->managers['media'], 'get_upload_options' ),
-			'cloud_name'  => array( 'Media', 'get_cloud_name' ),
+			'file'        => array(
+				'generate' => 'get_attached_file',
+				'sync'     => array(
+					'priority' => 0,
+					'callback' => array( $this->managers['upload'], 'upload_asset' ),
+				),
+			),
+			'folder'      => array(
+				'generate' => array( $this->managers['media'], 'get_cloudinary_folder' ),
+				'sync'     => array(
+					'priority' => 10,
+					'callback' => array( $this->managers['upload'], 'upload_asset' ),
+				),
+			),
+			'public_id'   => array(
+				'generate' => array( $this->managers['media'], 'get_public_id' ),
+				'sync'     => array(
+					'priority' => 20,
+					'callback' => array( $this->managers['push'], 'push_attachments' ), // Rename
+				),
+			),
+			'suffix'      => array(
+				'generate' => array( $this, 'get_suffix_maybe' ),
+				'sync'     => array(
+					'priority' => 10,
+					'callback' => array( $this->managers['upload'], 'upload_asset' ),
+				),
+			),
+			'breakpoints' => array(
+				'generate' => array( $this->managers['media'], 'get_breakpoint_options' ),
+				'sync'     => array(
+					'priority' => 25,
+					'callback' => array( $this->managers['upload'], 'explicit_update' ),
+				),
+			),
+			'options'     => array(
+				'generate' => array( $this->managers['media'], 'get_upload_options' ),
+				'sync'     => array(
+					'priority' => 30,
+					'callback' => array( $this->managers['upload'], 'context_update' ),
+				),
+			),
+			'cloud_name'  => array(
+				'generate' => array( $this->managers['connect'], 'get_cloud_name' ),
+				'sync'     => array(
+					'priority' => 5,
+					'callback' => array( $this->managers['upload'], 'upload_asset' ),
+				),
+			),
 		);
 
-		return apply_filters( 'cloudinary_sync_base_struct', $base_struct );
+		/**
+		 * Filter the sync base structure to allow other plugins to sync component callbacks.
+		 *
+		 * @param array $base_struct The base sync structure.
+		 *
+		 * @return array
+		 */
+		$base_struct = apply_filters( 'cloudinary_sync_base_struct', $base_struct );
+
+		// Apply a default to ensure parts exist.s
+		$structs = array_map(
+			function ( $component ) {
+				$sync_default = array(
+					'priority' => 50,
+					'callback' => '__return_null',
+				);
+				$default      = array(
+					'generate' => '__return_null',
+					'sync'     => array(),
+				);
+
+				// Ensure correct struct.
+				$component                     = wp_parse_args( $component, $default );
+				$component['sync']             = wp_parse_args( $component['sync'], $sync_default );
+				$component['sync']['priority'] = is_int( $component['sync']['priority'] ) ? (int) $component['sync']['priority'] : 50;
+
+				return $component;
+			},
+			$base_struct
+		);
+
+		$this->sync_base_struct = $structs;
+	}
+
+	/**
+	 * Setup the sync types in priority order based on sync struct.
+	 */
+	public function setup_sync_types() {
+
+		$sync_types = array();
+		foreach ( $this->sync_base_struct as $type => $struct ) {
+			if ( is_callable( $struct['sync']['callback'] ) ) {
+				$sync_types[ $type ] = $struct['sync']['priority'];
+			}
+		}
+
+		asort( $sync_types );
+
+		$this->sync_types = $sync_types;
+	}
+
+	/**
+	 * Get the method to do a sync for the specified type.
+	 *
+	 * @param $type
+	 *
+	 * @return bool|mixed
+	 */
+	public function get_sync_method( $type ) {
+		$method = false;
+		if ( isset( $this->sync_base_struct[ $type ]['sync']['callback'] ) ) {
+			$method = $this->sync_base_struct[ $type ]['sync']['callback'];
+		}
+
+		return $method;
 	}
 
 	/**
@@ -304,10 +422,12 @@ class Sync implements Setup, Assets {
 		}
 
 		$return = array();
-		foreach ( $this->sync_base_struct as $key => $callback ) {
-			$return[ $key ] = null;
-			if ( is_callable( $callback ) ) {
-				$return[ $key ] = call_user_func( $callback, $post );
+		foreach ( $this->sync_base_struct as $key => $struct ) {
+			if ( isset( $struct['generate'] ) ) {
+				$return[ $key ] = null;
+				if ( is_callable( $struct['generate'] ) ) {
+					$return[ $key ] = call_user_func( $struct['generate'], $post );
+				}
 			}
 		}
 
@@ -326,17 +446,172 @@ class Sync implements Setup, Assets {
 	}
 
 	/**
+	 * Prepare an asset to be synced, maybe.
+	 *
+	 * @param int $attachment_id The attachment ID.
+	 *
+	 * @return void
+	 */
+	public function maybe_prepare_sync( $attachment_id ) {
+
+		$type = $this->get_sync_type( $attachment_id );
+		// Check if has an error (ususally due to file quotas).
+		$can_sync = $this->can_sync( $attachment_id, $type );
+		if ( is_wp_error( $can_sync ) ) {
+			$this->managers['media']->get_post_meta( $attachment_id, self::META_KEYS['sync_error'], $can_sync->get_error_message() );
+
+			return;
+		}
+
+		$this->add_to_sync( $attachment_id );
+	}
+
+	/**
+	 * Get the type of sync, with the lowest priority for this asset.
+	 *
+	 * @param $attachment_id
+	 *
+	 * @return mixed|string|\WP_Error
+	 */
+	public function get_sync_type( $attachment_id ) {
+		$attachment_signature = $this->get_signature( $attachment_id );
+		// Set default sync type.
+		$type = array_shift( array_keys( $this->sync_types ) ); // Lowest sync type should always be a full sync.
+		if ( ! empty( $attachment_signature ) ) {
+			// Has signature find differences and use specific sync method.
+			$required_signature = $this->generate_signature( $attachment_id );
+			if ( is_array( $required_signature ) ) {
+				$sync_items = array_diff( $required_signature, $attachment_signature );
+				$ordered    = array_intersect_key( $this->sync_types, $sync_items );
+				$type       = array_shift( array_keys( $ordered ) );
+			}
+		}
+
+		// Nothing to sync.
+		if ( empty( $type ) ) {
+			$type = new \WP_Error( 'attachment_synced', __( 'Attachment is already fully synced.', 'cloudinary' ) );
+		}
+
+		return $type;
+	}
+
+	/**
+	 * Checks the status of the media item.
+	 *
+	 * @param array $status        Array of state and note.
+	 * @param int   $attachment_id The attachment id.
+	 *
+	 * @return array
+	 */
+	public function filter_status( $status, $attachment_id ) {
+
+		if ( $this->is_pending( $attachment_id ) ) {
+			$status['state'] = 'warning';
+			$status['note']  = __( 'Upload sync pending', 'cloudinary' );
+		}
+
+		// Check if there's an error.
+		$has_error = $this->managers['media']->get_post_meta( $attachment_id, Sync::META_KEYS['sync_error'], true );
+		if ( ! empty( $has_error ) ) {
+			$status['state'] = 'error';
+			$status['note']  = $has_error;
+		}
+
+		return $status;
+	}
+
+	/**
+	 * Check if the attachment is pending an upload sync.
+	 *
+	 * @param int $attachment_id The attachment ID to check.
+	 *
+	 * @return bool
+	 */
+	public function is_pending( $attachment_id ) {
+		// Check if it's not already in the to sync array.
+		if ( ! in_array( $attachment_id, $this->to_sync, true ) ) {
+			$is_pending = $this->managers['media']->get_post_meta( $attachment_id, Sync::META_KEYS['pending'], true );
+			if ( empty( $is_pending ) || $is_pending < time() - 5 * 60 ) {
+				// No need to delete pending meta, since it will be updated with the new timestamp anyway.
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Add an attachment ID to the to_sync array.
+	 *
+	 * @param int $attachment_id The attachment ID to add.
+	 */
+	public function add_to_sync( $attachment_id ) {
+		if ( ! in_array( $attachment_id, $this->to_sync, true ) && ! $this->is_pending( $attachment_id ) ) {
+			// Flag image as pending to prevent duplicate upload.
+			$this->managers['media']->update_post_meta( $attachment_id, Sync::META_KEYS['pending'], time() );
+			//$this->managers['media']->update_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], true );
+			$this->to_sync[] = $attachment_id;
+		}
+	}
+
+	/**
+	 * Update a part of the signature based on type.
+	 *
+	 * @param int    $attachment_id The attachment ID.
+	 * @param string $type          The type of sync.
+	 */
+	public function update_signature( $attachment_id, $type ) {
+
+		$current_signature   = $this->get_signature( $attachment_id );
+		$expecting           = $this->generate_signature( $attachment_id );
+		$current_sync_method = $this->sync_base_struct[ $type ]['sync']['callback'];
+		$meta                = wp_get_attachment_metadata( $attachment_id, true );
+
+		// Go over all other types that share the same sync method and include them here.
+		foreach ( $this->sync_base_struct as $sync_type => $struct ) {
+			if ( $struct['sync']['callback'] === $current_sync_method ) {
+				$current_signature[ $sync_type ] = $expecting[ $sync_type ];
+			}
+		}
+		$meta[ Sync::META_KEYS['cloudinary'] ][ Sync::META_KEYS['signature'] ] = $current_signature;
+		wp_update_attachment_metadata( $attachment_id, $meta );
+
+	}
+
+	/**
+	 * Initialize the background sync on requested images needing to be synced.
+	 */
+	public function init_background_upload() {
+		if ( ! empty( $this->to_sync ) ) {
+			$params = array(
+				'attachment_ids' => $this->to_sync,
+			);
+			$this->managers['api']->background_request( 'process', $params );
+		}
+	}
+
+	/**
 	 * Additional component setup.
 	 */
 	public function setup() {
 		if ( $this->plugin->config['connect'] ) {
+
+			// Show sync status.
+			add_filter( 'cloudinary_media_status', array( $this, 'filter_status' ), 10, 2 );
+			// Hook for on demand upload push.
+			add_action( 'shutdown', array( $this, 'init_background_upload' ) );
+
 			$this->managers['upload']->setup();
 			$this->managers['delete']->setup();
 			$this->managers['push']->setup();
 			// Setup additional components.
-			$this->managers['media'] = $this->plugin->components['media'];
+			$this->managers['media']   = $this->plugin->components['media'];
+			$this->managers['connect'] = $this->plugin->components['connect'];
+			$this->managers['api']     = $this->plugin->components['api'];
 			// Setup the sync_base_structure.
-			$this->sync_base_struct = $this->setup_sync_base_struct();
+			$this->setup_sync_base_struct();
+			// Setup sync types.
+			$this->setup_sync_types();
 		}
 	}
 }
