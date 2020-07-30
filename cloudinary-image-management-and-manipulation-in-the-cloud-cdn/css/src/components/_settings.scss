@@ -219,9 +219,9 @@
 }
 
 .field-radio {
-	input[type=radio] {
+	input[type=radio].cld-field {
 		margin: 0;
-		margin-right: 5px !important;
+		margin-right: 5px;
 	}
 
 	label {
@@ -230,7 +230,7 @@
 }
 
 .settings-tab-section h2 {
-	margin: 0 !important;
+	margin: 0;
 }
 
 hr {
