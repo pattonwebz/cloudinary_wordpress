@@ -577,7 +577,10 @@ class Filter {
 			return $content;
 		}
 
-		$dom = new \DOMDocument();                
+		$dom = new \DOMDocument();       
+		
+		// Suppress errors here as we are not supplying a full-fledged
+		// HTML document, which will cause loadHTML to throw errors.
 		@$dom->loadHTML( $content, LIBXML_HTML_NODEFDTD );
 		$imgs = $dom->getElementsByTagName( 'img' );
 
