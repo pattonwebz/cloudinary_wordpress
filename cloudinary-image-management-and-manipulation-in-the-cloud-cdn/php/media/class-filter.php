@@ -551,7 +551,7 @@ class Filter {
 
 		$shortcodes = $attrs = array();
 
-		preg_match_all( '/' . get_shortcode_regex() . '/', $content, $shortcodes );
+		preg_match_all( '/' . get_shortcode_regex( array( 'video' ) ) . '/', $content, $shortcodes );
 
 		for ( $i = 0; $i < count( $shortcodes[3] ); $i++ ) {
 			preg_match_all( '/(mp4|id)="([^"]*)"/i', $shortcodes[3][$i], $attrs );
@@ -559,7 +559,7 @@ class Filter {
 			// @TODO: Find a way to generate a video block
 			$video = '<!-- wp:video {"id":' . $attrs[2][1] . '} --><figure class="wp-block-video"><video autoplay src="' . $attrs[2][0] . '"></video></figure><!-- /wp:video -->';
 	
-			$content = str_replace( [ '<p>' . $shortcodes[0][$i] . '</p>', $shortcodes[0][$i] ], $video, $content );
+			$content = str_replace( array( '<p>' . $shortcodes[0][$i] . '</p>', $shortcodes[0][$i] ), $video, $content );
 		}
 
 		return $content;
