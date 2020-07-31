@@ -585,13 +585,15 @@ class Filter {
 		$imgs = $dom->getElementsByTagName( 'img' );
 
 		foreach ($imgs as $img) {
-			// Ensure we're dealing with a proper <img> tag
-			if ( false === strpos( $img->getAttribute( 'class' ), 'wp-image-' ) ) {
+			$class_list = $img->getAttribute( 'class' );
+			
+			// Ensure we're dealing with a proper <img> tag that came from Classic Editor
+			if ( false === strpos( $class_list, 'wp-image-' ) || '' === $img->getAttribute( 'width' ) ) {
 				continue;
 			}
 
-			$img_id = preg_replace( '/[^0-9]/', '', $img->getAttribute( 'class' ) );
-			
+			list( $img_id, $size, $align, $json ) = $this->prepare_image_block_classes( $class_list );
+
 			// Prep the <img> node
 			$img_clone = $img->cloneNode( true );
 			$img_clone->removeAttribute( 'width' );
@@ -601,11 +603,11 @@ class Filter {
 			// Prep the <figure> node
 			$img_fig = $dom->createElement( 'figure' );
 			$img_fig->appendChild( $img_clone );
-			$img_fig->setAttribute( 'class', 'wp-block-image' );
+			$img_fig->setAttribute( 'class', 'wp-block-image size-' . $size . ( $align ? ' align' . $align : '' ) );
 			
 			// Surround <figure> with block comments
 			$fragment = $dom->createDocumentFragment();
-			$fragment->appendChild( $dom->createComment( ' wp:image {"id":' . $img_id . ',"sizeSlug":"large"} ' ) );
+			$fragment->appendChild( $dom->createComment( ' wp:image ' . $json . ' ' ) );
 			$fragment->appendChild( $img_fig );
 			$fragment->appendChild( $dom->createComment( ' /wp:image ' ) );
 
@@ -613,9 +615,52 @@ class Filter {
 		}
 
 		$front = strpos( $dom->saveHTML(),'<body>' ) + 6;
-		$end = ( strrpos ($dom->saveHTML(), '</body>' ) ) - strlen( $dom->saveHTML() );
+		$end   = ( strrpos ($dom->saveHTML(), '</body>' ) ) - strlen( $dom->saveHTML() );
 
 		return substr( $dom->saveHTML(), $front, $end );
+	}
+
+	/**
+	 * Prepare image components which are important for the conversion.
+	 * Fetch: image id, size and alignment
+	 * 
+	 * @param string $class_list The string which represents all classes on this image.
+	 * 
+	 * @return array
+	 */
+	protected function prepare_image_block_classes( $class_list ) {
+		$results = array();
+
+		// Fetch image id
+		preg_match( '/wp-image-([0-9]+)/', $class_list, $matches );
+		$results[] = $id = isset( $matches[1] ) ? (int) $matches[1] : null;
+
+		// Fetch image size
+		$results[] = $size = 'large';
+		if ( false !== strpos( $class_list, 'size-' ) ) {
+			preg_match( '/size-([A-Za-z0-9-_]+)/', $class_list, $matches );
+
+			$all_sizes = get_intermediate_image_sizes();
+			$results[1] = $size = isset( $matches[1] ) && in_array( $matches[1], $all_sizes ) ? $matches[1] : $size;
+		}
+
+		// Fetch image alignment
+		$results[] = $align = null;
+		if ( false !== strpos( $class_list, 'align' ) && false === strpos( $class_list, 'alignnone' ) ) {
+			preg_match( '/align([a-z]+)/', $class_list, $matches );
+			$results[2] = $align = isset( $matches[1] ) ? $matches[1] : null;
+		}
+
+		// Prep json for block comment
+		$results[] = json_encode( 
+			array(
+				'id' 	   => $id,
+				'sizeSlug' => $size,
+				'align'    => $align,
+			)	
+		);
+
+		return $results;
 	}
 
 	/**
