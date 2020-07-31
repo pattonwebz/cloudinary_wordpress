@@ -146,52 +146,59 @@ class Upgrade {
 	 */
 	public function convert_cloudinary_version( $attachment_id ) {
 
-		$file  = get_post_meta( $attachment_id, '_wp_attached_file', true );
-		$path  = wp_parse_url( $file, PHP_URL_PATH );
-		$media = $this->media;
-		$parts = explode( '/', $path );
-		$parts = array_map(
-			function ( $val ) use ( $media ) {
+		$file = get_post_meta( $attachment_id, '_wp_attached_file', true );
+		if ( wp_http_validate_url( $file ) ) {
+			// Version 1 upgrade.
+			$path                  = wp_parse_url( $file, PHP_URL_PATH );
+			$media                 = $this->media;
+			$parts                 = explode( '/', ltrim( $path, '/' ) );
+			$cloud_name            = null;
+			$asset_version         = 1;
+			$asset_transformations = array();
+			$id_parts              = array();
+			foreach ( $parts as $val ) {
 				if ( empty( $val ) ) {
-					return false;
+					continue;
 				}
-				if ( $val === $media->credentials['cloud_name'] ) {
-					return false;
+				if ( is_null( $cloud_name ) ) {
+					// Cloudname will always be the first item.
+					$cloud_name = md5( $val );
+					continue;
 				}
 				if ( in_array( $val, [ 'image', 'video', 'upload' ], true ) ) {
-					return false;
+					continue;
 				}
 				$transformation_maybe = $media->get_transformations_from_string( $val );
 				if ( ! empty( $transformation_maybe ) ) {
-					return false;
+					$asset_transformations = $transformation_maybe;
+					continue;
 				}
 				if ( substr( $val, 0, 1 ) === 'v' && is_numeric( substr( $val, 1 ) ) ) {
-					return false;
+					$asset_version = substr( $val, 1 );
+					continue;
 				}
 
-				return $val;
-			},
-			$parts
-		);
-		// Build public_id.
-		$parts     = array_filter( $parts );
-		$public_id = implode( '/', $parts );
-		// Remove extension.
-		$path      = pathinfo( $public_id );
-		$public_id = strstr( $public_id, '.' . $path['extension'], true );
-		$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['public_id'], $public_id );
-
-		// Flag the download
-		update_post_meta( $attachment_id, Sync::META_KEYS['downloading'], true );
-		delete_post_meta( $attachment_id, Sync::META_KEYS['syncing'] );
-
-		if ( ! wp_next_scheduled( 'cloudinary_resume_upgrade' ) ) {
-			wp_schedule_single_event( time() + $this->cron_frequency, 'cloudinary_resume_upgrade' );
+				$id_parts[] = $val;
+			}
+			// Build public_id.
+			$parts     = array_filter( $id_parts );
+			$public_id = implode( '/', $parts );
+			// Remove extension.
+			$path      = pathinfo( $public_id );
+			$public_id = str_replace( $path['basename'], $path['filename'], $public_id );
+			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['public_id'], $public_id );
+			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['version'], $asset_version );
+			if ( ! empty( $asset_transformations ) ) {
+				$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['transformation'], $asset_transformations );
+			}
+			$this->sync->set_signature_item( $attachment_id, 'cloud_name', $cloud_name );
+		} else {
+			// v2 upgrade.
+			$public_id = $this->media->get_public_id( $attachment_id );
 		}
-
-		if ( ! defined( 'DOING_BULK_SYNC' ) ) {
-			$this->sync->managers['upload']->add_to_sync( $attachment_id ); // Auto sync if upgrading outside of bulk sync.
-		}
+		$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['plugin_version'], $this->media->plugin->version );
+		$this->sync->set_signature_item( $attachment_id, 'upgrade' );
+		$this->sync->set_signature_item( $attachment_id, 'public_id' );
 
 		return $public_id;
 	}
@@ -227,10 +234,10 @@ class Upgrade {
 	 * Setup hooks for the filters.
 	 */
 	public function setup_hooks() {
-		add_filter( 'validate_cloudinary_id', array( $this, 'check_cloudinary_version' ), 10, 2 ); // Priority 10, to allow prep_on_demand_upload.
+		//add_filter( 'validate_cloudinary_id', array( $this, 'check_cloudinary_version' ), 10, 2 ); // Priority 10, to allow prep_on_demand_upload.
 
 		// Show sync status.
-		add_filter( 'cloudinary_media_status', array( $this, 'filter_status' ), 20, 2 );
+		//add_filter( 'cloudinary_media_status', array( $this, 'filter_status' ), 20, 2 );
 
 		// Add a redirection to the new plugin settings, from the old plugin.
 		if ( is_admin() ) {

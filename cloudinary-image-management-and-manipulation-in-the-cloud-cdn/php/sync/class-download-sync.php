@@ -26,6 +26,20 @@ class Download_Sync {
 	private $plugin;
 
 	/**
+	 * Holds the Media component.
+	 *
+	 * @var \Cloudinary\Media
+	 */
+	protected $media;
+
+	/**
+	 * Holds the Sync component.
+	 *
+	 * @var \Cloudinary\Sync
+	 */
+	protected $sync;
+
+	/**
 	 * Download_Sync constructor.
 	 *
 	 * @param \Cloudinary\Plugin $plugin The plugin.
@@ -174,6 +188,74 @@ class Download_Sync {
 	/**
 	 * Download an attachment source to the file system.
 	 *
+	 * @param int $attachment_id The attachment ID.
+	 *
+	 * @return array|\WP_Error
+	 */
+	public function download_asset( $attachment_id ) {
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+		$source    = $this->media->cloudinary_url( $attachment_id );
+		$file_name = basename( $source );
+		try {
+			// Prime a file to stream to.
+			$upload = wp_upload_bits( $file_name, null, 'temp' );
+			if ( ! empty( $upload['error'] ) ) {
+				return new \WP_Error( 'download_error', $upload['error'] );
+			}
+			// Stream file to primed file.
+			$response = wp_safe_remote_get(
+				$source,
+				array(
+					'timeout'  => 300, // phpcs:ignore
+					'stream'   => true,
+					'filename' => $upload['file'],
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+			if ( 200 !== $response['response']['code'] ) {
+				$header_error = wp_remote_retrieve_header( $response, 'x-cld-error' );
+				if ( ! empty( $header_error ) ) {
+					$error = $header_error;
+				} else {
+					$error = __( 'Could not download the Cloudinary asset.', 'cloudinary' );
+				}
+
+				return new \WP_Error( 'download_error', $error );
+			}
+
+			// Prepare the asset.
+			update_attached_file( $attachment_id, $upload['file'] );
+			$old_meta = wp_get_attachment_metadata( $attachment_id );
+			ob_start(); // Catch possible errors in WordPress's ID3 module when setting meta for transformed videos.
+			$meta                                  = wp_generate_attachment_metadata( $attachment_id, $upload['file'] );
+			$captured_errors                       = ob_get_clean();
+			$meta[ Sync::META_KEYS['cloudinary'] ] = $old_meta[ Sync::META_KEYS['cloudinary'] ];
+			wp_update_attachment_metadata( $attachment_id, $meta );
+			$this->sync->set_signature_item( $attachment_id, 'download' );
+			$this->sync->set_signature_item( $attachment_id, 'file' );
+			$this->sync->set_signature_item( $attachment_id, 'folder' );
+			// Update the folder synced flag.
+			$public_id         = $this->media->get_public_id( $attachment_id );
+			$asset_folder      = strpos( $public_id, '/' ) ? dirname( $public_id ) : '/';
+			$cloudinary_folder = $this->media->get_cloudinary_folder();
+			if ( $asset_folder === $cloudinary_folder ) {
+				$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], true );
+			}
+
+		} catch ( \Exception $e ) {
+			return new \WP_Error( 'download_error', $e->getMessage() );
+		}
+
+		return $source;
+	}
+
+	/**
+	 * Download an attachment source to the file system.
+	 *
 	 * @param int        $attachment_id The attachment ID.
 	 * @param string     $file_path     The path of the file.
 	 * @param string     $file_name     The filename.
@@ -181,7 +263,7 @@ class Download_Sync {
 	 *
 	 * @return array|\WP_Error
 	 */
-	public function download_asset( $attachment_id, $file_path, $file_name, $transformations = null ) {
+	public function download_asset_old( $attachment_id, $file_path, $file_name, $transformations = null ) {
 
 		// Get the image and update the attachment.
 		require_once ABSPATH . WPINC . '/class-http.php';
@@ -256,5 +338,14 @@ class Download_Sync {
 		);
 
 		return $response;
+	}
+
+	/**
+	 * Setup this component.
+	 */
+	public function setup() {
+		// Setup components.
+		$this->media = $this->plugin->components['media'];
+		$this->sync  = $this->plugin->components['sync'];
 	}
 }

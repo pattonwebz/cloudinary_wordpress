@@ -232,16 +232,20 @@ class Push_Sync {
 			$ids = array_map( 'intval', $attachments );
 			// Handle based on Sync Type.
 			foreach ( $ids as $attachment_id ) {
-				$type = $this->sync->get_sync_type( $attachment_id );
-				if ( ! is_wp_error( $type ) ) {
-					$callback               = $this->sync->get_sync_method( $type );
-					$stat[ $attachment_id ] = call_user_func( $callback, $attachment_id );
-
-					// remove pending.
-					if ( $this->sync->is_pending( $attachment_id ) ) {
-						$this->media->delete_post_meta( $attachment_id, Sync::META_KEYS['pending'] );
+				while ( $type = $this->sync->get_sync_type( $attachment_id, false ) ) {
+					if ( isset( $stat[ $attachment_id ][ $type ] ) ) {
+						// Loop prevention.
+						break;
 					}
+					$callback                        = $this->sync->get_sync_method( $type );
+					$stat[ $attachment_id ][ $type ] = call_user_func( $callback, $attachment_id );
 				}
+				// remove pending.
+				if ( $this->sync->is_pending( $attachment_id ) ) {
+					$this->media->delete_post_meta( $attachment_id, Sync::META_KEYS['pending'] );
+				}
+				// Record Process log.
+				$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['process_log'], $stat[ $attachment_id ] );
 			}
 
 			return rest_ensure_response(

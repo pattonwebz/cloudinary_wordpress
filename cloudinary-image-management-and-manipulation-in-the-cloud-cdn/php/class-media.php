@@ -467,6 +467,11 @@ class Media implements Setup {
 			if ( false !== $cloudinary_id ) {
 				$url = $this->cloudinary_url( $attachment_id );
 			}
+			// Previous v1.
+			$previous_url = strpos( $url, untrailingslashit( $this->base_url ) );
+			if ( false !== $previous_url ) {
+				$url = substr( $url, $previous_url );
+			}
 		}
 
 		return $url;
@@ -642,12 +647,7 @@ class Media implements Setup {
 		// Check for a public_id.
 		$public_id = $this->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true );
 		if ( empty( $public_id ) ) {
-			// No public_id is an up-sync (WP->CLD).
-			// Build a public_id based on cloudinary folder, and filename.
-			$file              = get_attached_file( $attachment_id );
-			$info              = pathinfo( $file );
-			$cloudinary_folder = $this->get_cloudinary_folder();
-			$public_id         = $cloudinary_folder . $info['filename'];
+			$public_id = false;
 		}
 
 		return $public_id;
@@ -663,16 +663,18 @@ class Media implements Setup {
 	public function get_cloudinary_id( $attachment_id ) {
 
 		// A cloudinary_id is a public_id with a file extension.
-		$public_id   = $this->get_public_id( $attachment_id );
-		$suffix_data = $this->get_post_meta( $attachment_id, Sync::META_KEYS['suffix'], true );
-		if ( is_array( $suffix_data ) && ! empty( $suffix_data['suffix'] ) && $suffix_data['public_id'] === $public_id ) {
-			$public_id = $public_id . $suffix_data['suffix'];
+		$public_id = $this->get_public_id( $attachment_id );
+		if ( ! empty( $public_id ) ) {
+			$suffix_data = $this->get_post_meta( $attachment_id, Sync::META_KEYS['suffix'], true );
+			if ( is_array( $suffix_data ) && ! empty( $suffix_data['suffix'] ) && $suffix_data['public_id'] === $public_id ) {
+				$public_id = $public_id . $suffix_data['suffix'];
+			}
+			$file      = get_attached_file( $attachment_id );
+			$info      = pathinfo( $file );
+			$public_id = $public_id . '.' . $info['extension'];
 		}
-		$file          = get_attached_file( $attachment_id );
-		$info          = pathinfo( $file );
-		$cloudinary_id = $public_id . '.' . $info['extension'];
 
-		return $cloudinary_id;
+		return $public_id;
 	}
 
 	/**
@@ -688,15 +690,14 @@ class Media implements Setup {
 			return false;
 		}
 		// Return cached ID if we've already gotten it before.
-		if ( ! empty( $this->cloudinary_ids[ $attachment_id ] ) ) {
+		if ( isset( $this->cloudinary_ids[ $attachment_id ] ) ) {
 			return $this->cloudinary_ids[ $attachment_id ];
 		}
-		$cloudinary_id = false;
-		if ( $this->plugin->components['sync']->is_synced( $attachment_id ) ) {
-			$cloudinary_id = $this->get_cloudinary_id( $attachment_id );
-		} else {
+		if ( ! $this->plugin->components['sync']->is_synced( $attachment_id ) && ! defined( 'REST_REQUEST' ) ) {
 			$this->plugin->components['sync']->maybe_prepare_sync( $attachment_id );
 		}
+
+		$cloudinary_id = $this->get_cloudinary_id( $attachment_id );
 
 		/**
 		 * Filter to  validate the Cloudinary ID to allow extending it's availability.
@@ -716,9 +717,7 @@ class Media implements Setup {
 		 */
 		do_action( 'cloudinary_id', $cloudinary_id, $attachment_id );
 		// Cache ID to prevent multiple lookups.
-		if ( false !== $cloudinary_id ) {
-			$this->cloudinary_ids[ $attachment_id ] = $cloudinary_id;
-		}
+		$this->cloudinary_ids[ $attachment_id ] = $cloudinary_id;
 
 		return $cloudinary_id;
 	}
@@ -1300,13 +1299,16 @@ class Media implements Setup {
 	 */
 	public function update_post_meta( $post_id, $key, $data ) {
 		$meta_data = wp_get_attachment_metadata( $post_id, true );
-		if ( is_array( $meta_data ) && isset( $meta_data[ Sync::META_KEYS['cloudinary'] ] ) && is_array( $meta_data[ Sync::META_KEYS['cloudinary'] ] ) ) {
-			// Only do this side if has been set before.
+		if ( is_array( $meta_data ) ) {
+			if ( ! isset( $meta_data[ Sync::META_KEYS['cloudinary'] ] ) ) {
+				$meta_data[ Sync::META_KEYS['cloudinary'] ] = array();
+			}
 			$meta_data[ Sync::META_KEYS['cloudinary'] ][ $key ] = $data;
 			wp_update_attachment_metadata( $post_id, $meta_data );
+		} else {
+			// Update core mete data for consistency.
+			update_post_meta( $post_id, $key, $data );
 		}
-		// Update core mete data for consistency.
-		update_post_meta( $post_id, $key, $data );
 	}
 
 	/**
@@ -1388,7 +1390,7 @@ class Media implements Setup {
 		);
 
 		// Check if this asset is a folder sync.
-		$folder_sync = $this->get_post_meta( $post->ID, Sync::META_KEYS['folder_sync'], true );
+		$folder_sync = $this->get_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], true );
 		if ( ! empty( $folder_sync ) ) {
 			$context_options['wp_id'] = $attachment_id;
 		}
