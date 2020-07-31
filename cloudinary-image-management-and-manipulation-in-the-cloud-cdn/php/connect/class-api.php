@@ -402,7 +402,7 @@ class Api {
 			if ( false !== strpos( $error, 'ERR_DNS_FAIL' ) ) {
 				// URLS are not remotely available, try again as a file.
 				set_transient( '_cld_disable_http_upload', true, 300 );
-				$result = $this->upload( $attachment_id, $args, $headers );
+				return $this->upload( $attachment_id, $args, $headers );
 			}
 		}
 		if ( true === $tempfile ) {

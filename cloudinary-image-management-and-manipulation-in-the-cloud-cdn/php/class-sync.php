@@ -131,7 +131,7 @@ class Sync implements Setup, Assets {
 	 */
 	public function been_synced( $attachment_id ) {
 
-		$public_id = $this->managers['media']->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true );
+		$public_id = $this->managers['media']->has_public_id( $attachment_id );
 		$meta      = wp_get_attachment_metadata( $attachment_id );
 
 		return ! empty( $public_id ) || ! empty( $meta['cloudinary'] ); // From v1.
@@ -147,7 +147,8 @@ class Sync implements Setup, Assets {
 	public function is_synced( $post_id ) {
 		$signature = $this->get_signature( $post_id );
 		$expecting = $this->generate_signature( $post_id );
-
+		ksort( $signature );
+		ksort( $expecting );
 		if ( ! empty( $signature ) && ! empty( $expecting ) && $expecting === $signature ) {
 			return true;
 		}
@@ -230,11 +231,11 @@ class Sync implements Setup, Assets {
 			$return = $signatures[ $attachment_id ];
 		} else {
 			$signature = $this->managers['media']->get_post_meta( $attachment_id, self::META_KEYS['signature'], true );
-			if ( ! empty( $signature ) ) {
-				//$base_signatures              = $this->generate_signature( $attachment_id );
-				$signatures[ $attachment_id ] = $signature;
-				$return                       = $signature;
+			if ( empty( $signature ) ) {
+				$signature = array();
 			}
+			$signatures[ $attachment_id ] = $return;
+			$return                       = wp_parse_args( $signature, $this->sync_types );
 		}
 
 		return $return;
@@ -319,6 +320,7 @@ class Sync implements Setup, Assets {
 		$base_struct = array(
 			'upgrade'     => array(
 				'generate' => array( $this, 'get_sync_version' ),
+				'validate' => array( $this, 'been_synced' ),
 				'sync'     => array(
 					'priority' => 0,
 					'callback' => array( $this->managers['media']->upgrade, 'convert_cloudinary_version' ),
@@ -330,6 +332,11 @@ class Sync implements Setup, Assets {
 			),
 			'download'    => array(
 				'generate' => '__return_false',
+				'validate' => function ( $attachment_id ) {
+					$file = get_attached_file( $attachment_id );
+
+					return ! file_exists( $file );
+				},
 				'sync'     => array(
 					'priority' => 1,
 					'callback' => array( $this->managers['download'], 'download_asset' ),
@@ -365,6 +372,10 @@ class Sync implements Setup, Assets {
 			),
 			'public_id'   => array(
 				'generate' => array( $this->managers['media'], 'get_public_id' ),
+				'validate' => function ( $attachment_id ) {
+					$public_id = $this->managers['media']->has_public_id( $attachment_id );
+					return false === $public_id;
+				},
 				'sync'     => array(
 					'priority' => 20,
 					'callback' => array( $this->managers['push'], 'push_attachments' ), // Rename
@@ -555,17 +566,28 @@ class Sync implements Setup, Assets {
 	 * @return mixed|string|\WP_Error
 	 */
 	public function get_sync_type( $attachment_id, $cached = true ) {
+		$type                 = false;
+		$required_signature   = $this->generate_signature( $attachment_id, $cached );
 		$attachment_signature = $this->get_signature( $attachment_id, $cached );
-		// Set default sync type.
-		$types = array_keys( $this->sync_types );
-		$type  = array_shift( $types ); // Lowest sync type should always be a full sync.
-		if ( ! empty( $attachment_signature ) ) {
-			// Has signature find differences and use specific sync method.
-			$required_signature = $this->generate_signature( $attachment_id, $cached );
-			if ( is_array( $required_signature ) ) {
-				$sync_items = array_diff( $required_signature, $attachment_signature );
-				$ordered    = array_intersect_key( $this->sync_types, $sync_items );
-				$type       = array_shift( array_keys( $ordered ) );
+		if ( is_array( $required_signature ) ) {
+			$sync_items = array_filter(
+				$attachment_signature,
+				function ( $item, $key ) use ( $required_signature ) {
+					return $item !== $required_signature[ $key ];
+				},
+				ARRAY_FILTER_USE_BOTH
+			);
+			$ordered    = array_intersect_key( $this->sync_types, $sync_items );
+			if ( ! empty( $ordered ) ) {
+				$type = array_shift( array_keys( $ordered ) );
+				// Validate that this sync type applied (for optional types like upgrade).
+				if ( isset( $this->sync_base_struct[ $type ]['validate'] ) && is_callable( $this->sync_base_struct[ $type ]['validate'] ) ) {
+					if ( ! call_user_func( $this->sync_base_struct[ $type ]['validate'], $attachment_id ) ) {
+						$this->set_signature_item( $attachment_id, $type );
+
+						return $this->get_sync_type( $attachment_id, $cached );
+					}
+				}
 			}
 		}
 
@@ -582,17 +604,26 @@ class Sync implements Setup, Assets {
 	 */
 	public function filter_status( $status, $attachment_id ) {
 
-		if ( $this->been_synced( $attachment_id ) ) {
+		if ( $this->been_synced( $attachment_id ) || $this->is_pending( $attachment_id ) ) {
 			$sync_type = $this->get_sync_type( $attachment_id );
 			if ( ! empty( $sync_type ) && isset( $this->sync_base_struct[ $sync_type ] ) ) {
-				$status = $this->sync_base_struct[ $sync_type ]['status'];
-				if ( is_callable( $status['note'] ) ) {
-					$status['note'] = call_user_func( $status['note'] );
+				// check process log in case theres an error.
+				$log = $this->managers['media']->get_post_meta( $attachment_id, Sync::META_KEYS['process_log'] );
+				if ( ! empty( $log[ $sync_type ] ) && is_wp_error( $log[ $sync_type ] ) ) {
+					// Use error instead of sync note.
+					$status['state'] = 'error';
+					$status['note']  = $log[ $sync_type ]->get_error_message();
+				} else {
+					$status = $this->sync_base_struct[ $sync_type ]['status'];
+					if ( is_callable( $status['note'] ) ) {
+						$status['note'] = call_user_func( $status['note'] );
+					}
 				}
 			}
 
 
 			// Check if there's an error.
+			$log       = $this->managers['media']->get_post_meta( $attachment_id, Sync::META_KEYS['pending'] );
 			$has_error = $this->managers['media']->get_post_meta( $attachment_id, Sync::META_KEYS['sync_error'], true );
 			if ( ! empty( $has_error ) ) {
 				$status['state'] = 'error';
@@ -632,6 +663,9 @@ class Sync implements Setup, Assets {
 		// Check if it's not already in the to sync array.
 		if ( ! in_array( $attachment_id, $this->to_sync, true ) ) {
 			$is_pending = $this->managers['media']->get_post_meta( $attachment_id, Sync::META_KEYS['pending'], true );
+			if ( ! empty( $is_pending ) ) {
+				$this->get_sync_type( $attachment_id );
+			}
 			if ( empty( $is_pending ) || $is_pending < time() - 5 * 60 ) {
 				// No need to delete pending meta, since it will be updated with the new timestamp anyway.
 				return false;

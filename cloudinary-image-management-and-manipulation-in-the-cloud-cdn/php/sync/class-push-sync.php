@@ -57,7 +57,7 @@ class Push_Sync {
 	/**
 	 * Holds the sync component.
 	 *
-	 * @var \Cloudinary\Sync\
+	 * @var \Cloudinary\Sync
 	 */
 	protected $sync;
 
@@ -222,8 +222,17 @@ class Push_Sync {
 		$last_result = $request->get_param( 'last_result' );
 
 		// Get attachment_id in case this is a single direct request to upload.
-		$attachments = $request->get_param( 'attachment_ids' );
+		$attachments        = $request->get_param( 'attachment_ids' );
+		$background_process = false;
 
+		if ( empty( $attachments ) ) {
+			// No attachments posted. Pull from the queue.
+			$attachments        = array();
+			$background_process = true;
+			$attachments[]      = $this->sync->managers['queue']->get_post();
+
+			$attachments = array_filter( $attachments );
+		}
 		// If not a single request, process based on queue.
 		if ( ! empty( $attachments ) ) {
 
@@ -246,6 +255,19 @@ class Push_Sync {
 				}
 				// Record Process log.
 				$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['process_log'], $stat[ $attachment_id ] );
+
+				if ( true === $background_process ) {
+					$this->sync->managers['queue']->mark( $attachment_id, 'done' );
+				}
+			}
+
+			// Continue;
+			if ( true === $background_process ) {
+				// Stopped.
+				if ( ! $this->sync->managers['queue']->is_running() ) {
+					return $this->rest_get_queue_status();
+				}
+				$this->api->background_request( 'process', array() );
 			}
 
 			return rest_ensure_response(
@@ -255,6 +277,12 @@ class Push_Sync {
 				)
 			);
 		}
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+			)
+		);
 
 		// Process queue based.
 		if ( ! empty( $last_id ) && ! empty( $last_result ) ) {

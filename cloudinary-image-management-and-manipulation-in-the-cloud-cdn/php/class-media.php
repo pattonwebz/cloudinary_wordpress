@@ -647,10 +647,21 @@ class Media implements Setup {
 		// Check for a public_id.
 		$public_id = $this->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true );
 		if ( empty( $public_id ) ) {
-			$public_id = false;
+			$public_id = $this->plugin->components['sync']->generate_public_id( $attachment_id );
 		}
 
 		return $public_id;
+	}
+
+	/**
+	 * Check if an attachment has a public ID.
+	 *
+	 * @param int $attachment_id The Attachment ID.
+	 *
+	 * @return bool
+	 */
+	public function has_public_id( $attachment_id ) {
+		return ! empty( $this->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true ) );
 	}
 
 	/**
@@ -662,9 +673,10 @@ class Media implements Setup {
 	 */
 	public function get_cloudinary_id( $attachment_id ) {
 
+		$public_id = false;
 		// A cloudinary_id is a public_id with a file extension.
-		$public_id = $this->get_public_id( $attachment_id );
-		if ( ! empty( $public_id ) ) {
+		if ( $this->has_public_id( $attachment_id ) ) {
+			$public_id = $this->get_public_id( $attachment_id );
 			$suffix_data = $this->get_post_meta( $attachment_id, Sync::META_KEYS['suffix'], true );
 			if ( is_array( $suffix_data ) && ! empty( $suffix_data['suffix'] ) && $suffix_data['public_id'] === $public_id ) {
 				$public_id = $public_id . $suffix_data['suffix'];

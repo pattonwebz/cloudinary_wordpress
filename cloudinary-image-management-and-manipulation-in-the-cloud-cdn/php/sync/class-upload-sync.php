@@ -152,11 +152,6 @@ class Upload_Sync {
 		switch ( $action ) {
 			case 'cloudinary-push' :
 				foreach ( $post_ids as $post_id ) {
-					$this->media->delete_post_meta( $post_id, Sync::META_KEYS['sync_error'] );
-					$this->media->delete_post_meta( $post_id, Sync::META_KEYS['public_id'] );
-					$this->media->delete_post_meta( $post_id, Sync::META_KEYS['pending'] );
-					$this->media->delete_post_meta( $post_id, Sync::META_KEYS['downloading'] );
-					$this->media->delete_post_meta( $post_id, Sync::META_KEYS['syncing'] );
 					$file = get_attached_file( $post_id );
 					wp_generate_attachment_metadata( $post_id, $file );
 					$this->sync->add_to_sync( $post_id );
@@ -331,6 +326,7 @@ class Upload_Sync {
 		if ( ! empty( $this->plugin->config['settings']['global_transformations']['enable_breakpoints'] ) ) {
 			if ( ! empty( $breakpoints['responsive_breakpoints'] ) ) { // Images only.
 				$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['breakpoints'], $breakpoints['responsive_breakpoints'][0]['breakpoints'] );
+				$this->sync->set_signature_item( $attachment_id, 'breakpoints' );
 			} elseif ( wp_attachment_is_image( $attachment_id ) ) {
 				$this->media->delete_post_meta( $attachment_id, Sync::META_KEYS['breakpoints'] );
 			}
