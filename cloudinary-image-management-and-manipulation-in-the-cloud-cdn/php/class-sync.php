@@ -374,6 +374,7 @@ class Sync implements Setup, Assets {
 				'generate' => array( $this->managers['media'], 'get_public_id' ),
 				'validate' => function ( $attachment_id ) {
 					$public_id = $this->managers['media']->has_public_id( $attachment_id );
+
 					return false === $public_id;
 				},
 				'sync'     => array(
@@ -732,10 +733,12 @@ class Sync implements Setup, Assets {
 	 */
 	public function init_background_upload() {
 		if ( ! empty( $this->to_sync ) ) {
-			$params = array(
-				'attachment_ids' => $this->to_sync,
-			);
-			$this->managers['api']->background_request( 'process', $params );
+			foreach ( $this->to_sync as $id ) {
+				$params = array(
+					'attachment_ids' => array( $id ),
+				);
+				$this->managers['api']->background_request( 'process', $params );
+			}
 		}
 	}
 
