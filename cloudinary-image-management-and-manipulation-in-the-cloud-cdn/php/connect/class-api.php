@@ -375,7 +375,8 @@ class Api {
 		$url                 = $this->url( $resource, 'upload', true );
 		$args                = $this->clean_args( $args );
 		$disable_https_fetch = get_transient( '_cld_disable_http_upload' );
-		// Validate URL.
+
+		// Check if we can try http file upload.
 		if ( empty( $disable_https_fetch ) ) {
 			$args['file'] = wp_get_attachment_url( $attachment_id );
 		} else {
