@@ -300,7 +300,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 				foreach ( $field['choices'] as $key => $option ) :
 				?>
 					<input type="<?php echo esc_attr( $type ); ?>" class="cld-field regular-<?php echo esc_attr( $type ); ?>" id="<?php echo esc_attr( $field['label_for'] . '_' . $key ); ?>" name="<?php echo esc_attr( $setting_slug ); ?>[<?php echo esc_attr( $field['slug'] ); ?>]" <?php if ( ! empty( $field['pattern'] ) ) : ?>pattern="<?php echo esc_attr( $field['pattern'] ); ?>"<?php endif; ?> data-condition="<?php echo esc_attr( $condition ); ?>" data-context="<?php echo esc_attr( $context ); ?>" <?php echo esc_attr( $required ); ?> <?php checked( $key, $value ); ?> value="<?php echo esc_attr( $key ); ?>"> 
-					<label for="<?php echo esc_attr( $field['label_for'] . '_' . $key ); ?>"><?php echo $option; ?></label>
+					<label for="<?php echo esc_attr( $field['label_for'] . '_' . $key ); ?>"><?php esc_html( $option ); ?></label>
 				<?php
 				endforeach;
 				break;
