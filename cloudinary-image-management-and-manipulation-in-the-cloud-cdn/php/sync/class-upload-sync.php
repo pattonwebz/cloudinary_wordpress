@@ -152,14 +152,14 @@ class Upload_Sync {
 		switch ( $action ) {
 			case 'cloudinary-push' :
 				foreach ( $post_ids as $post_id ) {
-					delete_post_meta( $post_id, Sync::META_KEYS['sync_error'] );
-					delete_post_meta( $post_id, Sync::META_KEYS['public_id'] );
-					delete_post_meta( $post_id, Sync::META_KEYS['pending'] );
-					delete_post_meta( $post_id, Sync::META_KEYS['downloading'] );
-					delete_post_meta( $post_id, Sync::META_KEYS['syncing'] );
+					$this->media->delete_post_meta( $post_id, Sync::META_KEYS['sync_error'] );
+					$this->media->delete_post_meta( $post_id, Sync::META_KEYS['public_id'] );
+					$this->media->delete_post_meta( $post_id, Sync::META_KEYS['pending'] );
+					$this->media->delete_post_meta( $post_id, Sync::META_KEYS['downloading'] );
+					$this->media->delete_post_meta( $post_id, Sync::META_KEYS['syncing'] );
 					$file = get_attached_file( $post_id );
 					wp_generate_attachment_metadata( $post_id, $file );
-					$this->prep_upload( $post_id );
+					$this->sync->add_to_sync( $post_id );
 				}
 				break;
 		}
@@ -262,13 +262,12 @@ class Upload_Sync {
 	public function upload_asset( $attachment_id ) {
 
 		$type    = $this->sync->get_sync_type( $attachment_id );
-		$file    = get_attached_file( $attachment_id );
 		$options = $this->media->get_upload_options( $attachment_id );
-		$result  = $this->connect->api->upload( $file, $options );
+		$result  = $this->connect->api->upload( $attachment_id, $options );
 
 		if ( ! is_wp_error( $result ) ) {
 			$this->sync->update_signature( $attachment_id, $type );
-			$this->media->update_post_meta( $attachment->ID, Sync::META_KEYS['public_id'], $options['public_id'] );
+			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['public_id'], $options['public_id'] );
 			$this->update_breakpoints( $attachment_id, $result );
 		}
 

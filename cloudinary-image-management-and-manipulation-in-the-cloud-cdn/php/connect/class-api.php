@@ -356,13 +356,13 @@ class Api {
 	/**
 	 * Upload an asset.
 	 *
-	 * @param string $file    Path to the file.
-	 * @param array  $args    Array of upload options.
-	 * @param array  $headers Additional headers to use in upload.
+	 * @param int   $attachment_id Attachment ID to upload.
+	 * @param array $args          Array of upload options.
+	 * @param array $headers       Additional headers to use in upload.
 	 *
 	 * @return array|\WP_Error
 	 */
-	public function upload( $file, $args, $headers = array() ) {
+	public function upload( $attachment_id, $args, $headers = array() ) {
 		$tempfile = false;
 		if ( false !== strpos( $file, 'vip://' ) ) {
 			$file = $this->create_local_copy( $file );
@@ -371,15 +371,22 @@ class Api {
 			}
 			$tempfile = true;
 		}
-		$resource = ! empty( $args['resource_type'] ) ? $args['resource_type'] : 'image';
-		$url      = $this->url( $resource, 'upload', true );
-		$args     = $this->clean_args( $args );
-		// Attach File.
-		if ( function_exists( 'curl_file_create' ) ) {
-			$args['file'] = curl_file_create( $file ); // phpcs:ignore
-			$args['file']->setPostFilename( $file );
+		$resource            = ! empty( $args['resource_type'] ) ? $args['resource_type'] : 'image';
+		$url                 = $this->url( $resource, 'upload', true );
+		$args                = $this->clean_args( $args );
+		$disable_https_fetch = get_transient( '_cld_disable_http_upload' );
+		// Validate URL.
+		if ( empty( $disable_https_fetch ) ) {
+			$args['file'] = wp_get_attachment_url( $attachment_id );
 		} else {
-			$args['file'] = '@' . $file;
+			$file = get_attached_file( $attachment_id );
+			// Attach File.
+			if ( function_exists( 'curl_file_create' ) ) {
+				$args['file'] = curl_file_create( $file ); // phpcs:ignore
+				$args['file']->setPostFilename( $file );
+			} else {
+				$args['file'] = '@' . $file;
+			}
 		}
 
 		$call_args = array(
@@ -388,6 +395,15 @@ class Api {
 		);
 
 		$result = $this->call( $url, $call_args, 'post' );
+		// Hook in flag to allow for non accessible URLS.
+		if ( is_wp_error( $result ) ) {
+			$error = $result->get_error_message();
+			if ( false !== strpos( $error, 'ERR_DNS_FAIL' ) ) {
+				// URLS are not remotely available, try again as a file.
+				set_transient( '_cld_disable_http_upload', true, 300 );
+				$result = $this->upload( $attachment_id, $args, $headers );
+			}
+		}
 		if ( true === $tempfile ) {
 			unlink( $file ); //phpcs:ignore
 		}

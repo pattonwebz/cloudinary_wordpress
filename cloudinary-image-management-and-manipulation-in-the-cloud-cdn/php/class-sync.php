@@ -462,8 +462,9 @@ class Sync implements Setup, Assets {
 
 			return;
 		}
-
-		$this->add_to_sync( $attachment_id );
+		if ( ! $this->is_pending( $attachment_id ) && apply_filters( 'cloudinary_on_demand_sync_enabled', $this->enabled, $attachment_id ) ) {
+			$this->add_to_sync( $attachment_id );
+		}
 	}
 
 	/**
