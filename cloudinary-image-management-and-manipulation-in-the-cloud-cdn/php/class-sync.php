@@ -249,13 +249,13 @@ class Sync implements Setup, Assets {
 	 * @return string|null
 	 */
 	public function generate_public_id( $attachment_id ) {
-		$settings   = $this->plugin->config['settings'];
-		$cld_folder = trailingslashit( $settings['sync_media']['cloudinary_folder'] );
+
+		$cld_folder = $this->managers['media']->get_cloudinary_folder();
 		$file       = get_attached_file( $attachment_id );
 		$file_info  = pathinfo( $file );
 		$public_id  = $cld_folder . $file_info['filename'];
 
-		return $public_id;
+		return ltrim( $public_id, '/' );
 	}
 
 	/**
