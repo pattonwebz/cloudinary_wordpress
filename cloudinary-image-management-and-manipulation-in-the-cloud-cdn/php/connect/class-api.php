@@ -286,17 +286,21 @@ class Api {
 	/**
 	 * Upload a large asset in chunks.
 	 *
-	 * @param string $file Path to the file.
-	 * @param array  $args Array of upload options.
+	 * @param int   $attachment_id The attachment ID.
+	 * @param array $args          Array of upload options.
 	 *
 	 * @return array|\WP_Error
 	 */
-	public function upload_large( $file, $args ) {
+	public function upload_large( $attachment_id, $args ) {
+		// Ensure we have the right file.
+		if ( empty( $args['file'] ) ) {
+			$args['file'] = get_attached_file( $attachment_id );
+		}
 		$tempfile = false;
-		if ( false !== strpos( $file, 'vip://' ) ) {
-			$file = $this->create_local_copy( $file );
-			if ( is_wp_error( $file ) ) {
-				return $file;
+		if ( false !== strpos( $args['file'], 'vip://' ) ) {
+			$args['file'] = $this->create_local_copy( $args['file'] );
+			if ( is_wp_error( $args['file'] ) ) {
+				return $args['file'];
 			}
 			$tempfile = true;
 		}
@@ -313,12 +317,12 @@ class Api {
 		}
 
 		// Since WP_Filesystem doesn't have a fread, we need to do it manually. However we'll still use it for writing.
-		$src            = fopen( $file, 'r' ); // phpcs:ignore
-		$temp_file_name = wp_tempnam( uniqid( time() ) . '.' . pathinfo( $file, PATHINFO_EXTENSION ) );
+		$src            = fopen( $args['file'], 'r' ); // phpcs:ignore
+		$temp_file_name = wp_tempnam( uniqid( time() ) . '.' . pathinfo( $args['file'], PATHINFO_EXTENSION ) );
 		$upload_id      = substr( sha1( uniqid( $this->credentials['api_secret'] . wp_rand() ) ), 0, 16 );
 		$chunk_size     = 20000000;
 		$index          = 0;
-		$file_size      = filesize( $file );
+		$file_size      = filesize( $args['file'] );
 		while ( ! feof( $src ) ) {
 			$current_loc = $index * $chunk_size;
 			if ( $current_loc >= $file_size ) {
@@ -336,7 +340,7 @@ class Api {
 				'Content-Range'      => $range,
 				'X-Unique-Upload-Id' => $upload_id,
 			);
-
+			$args['file'] = $temp_file_name;
 			$result = $this->upload( $temp_file_name, $args, $headers );
 			if ( is_wp_error( $result ) ) {
 				break;
@@ -346,7 +350,7 @@ class Api {
 		fclose( $src ); //phpcs:ignore
 		unlink( $temp_file_name ); //phpcs:ignore
 		if ( true === $tempfile ) {
-			unlink( $file ); //phpcs:ignore
+			unlink( $args['file'] ); //phpcs:ignore
 		}
 
 		return $result;
@@ -363,30 +367,41 @@ class Api {
 	 * @return array|\WP_Error
 	 */
 	public function upload( $attachment_id, $args, $headers = array() ) {
-		$tempfile = false;
-		if ( false !== strpos( $file, 'vip://' ) ) {
-			$file = $this->create_local_copy( $file );
-			if ( is_wp_error( $file ) ) {
-				return $file;
-			}
-			$tempfile = true;
-		}
+
 		$resource            = ! empty( $args['resource_type'] ) ? $args['resource_type'] : 'image';
 		$url                 = $this->url( $resource, 'upload', true );
 		$args                = $this->clean_args( $args );
 		$disable_https_fetch = get_transient( '_cld_disable_http_upload' );
 
 		// Check if we can try http file upload.
-		if ( empty( $disable_https_fetch ) ) {
+		if ( empty( $headers ) && empty( $disable_https_fetch ) ) {
 			$args['file'] = wp_get_attachment_url( $attachment_id );
 		} else {
-			$file = get_attached_file( $attachment_id );
+			// We should have the file in args at this point, but if the transient was set, it will be defaulting here.
+			if ( empty( $args['file'] ) ) {
+				$args['file'] = get_attached_file( $attachment_id );
+			}
+			// Headers indicate chunked upload.
+			if ( empty( $headers ) ) {
+				$size = filesize( $args['file'] );
+				if ( 'video' === $resource || $size > 100000000 ) {
+					return $this->upload_large( $attachment_id, $args );
+				}
+			}
+			$tempfile = false;
+			if ( false !== strpos( $args['file'], 'vip://' ) ) {
+				$args['file'] = $this->create_local_copy( $args['file'] );
+				if ( is_wp_error( $args['file'] ) ) {
+					return $args['file'];
+				}
+				$tempfile = true;
+			}
 			// Attach File.
 			if ( function_exists( 'curl_file_create' ) ) {
-				$args['file'] = curl_file_create( $file ); // phpcs:ignore
-				$args['file']->setPostFilename( $file );
+				$args['file'] = curl_file_create( $args['file'] ); // phpcs:ignore
+				$args['file']->setPostFilename( $args['file'] );
 			} else {
-				$args['file'] = '@' . $file;
+				$args['file'] = '@' . $args['file'];
 			}
 		}
 
@@ -402,11 +417,12 @@ class Api {
 			if ( false !== strpos( $error, 'ERR_DNS_FAIL' ) ) {
 				// URLS are not remotely available, try again as a file.
 				set_transient( '_cld_disable_http_upload', true, 300 );
-				return $this->upload( $attachment_id, $args, $headers );
+
+				return $this->upload( $attachment_id, $args );
 			}
 		}
 		if ( true === $tempfile ) {
-			unlink( $file ); //phpcs:ignore
+			unlink( $args['file'] ); //phpcs:ignore
 		}
 
 		return $result;

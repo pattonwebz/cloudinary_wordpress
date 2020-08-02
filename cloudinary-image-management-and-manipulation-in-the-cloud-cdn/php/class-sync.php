@@ -147,6 +147,7 @@ class Sync implements Setup, Assets {
 	public function is_synced( $post_id ) {
 		$signature = $this->get_signature( $post_id );
 		$expecting = $this->generate_signature( $post_id );
+		// Sort to align orders for comparison.
 		ksort( $signature );
 		ksort( $expecting );
 		if ( ! empty( $signature ) && ! empty( $expecting ) && $expecting === $signature ) {
@@ -234,6 +235,9 @@ class Sync implements Setup, Assets {
 			if ( empty( $signature ) ) {
 				$signature = array();
 			}
+
+			// Remove any old or outdated signature items. against the expected.
+			$signature                    = array_intersect_key( $signature, $this->sync_types );
 			$signatures[ $attachment_id ] = $return;
 			$return                       = wp_parse_args( $signature, $this->sync_types );
 		}
@@ -719,7 +723,7 @@ class Sync implements Setup, Assets {
 		if ( is_null( $value ) ) {
 			// Generate a new value based on generator.
 			$new_value = call_user_func( $this->sync_base_struct[ $type ]['generate'], $attachment_id );
-			if ( is_array( $value ) ) {
+			if ( is_array( $new_value ) ) {
 				$new_value = wp_json_encode( $new_value );
 			}
 			$value = md5( $new_value );
@@ -733,9 +737,12 @@ class Sync implements Setup, Assets {
 	 */
 	public function init_background_upload() {
 		if ( ! empty( $this->to_sync ) ) {
-			foreach ( $this->to_sync as $id ) {
+
+			$parts = array_chunk( $this->to_sync, 10 );
+
+			foreach ( $parts as $ids ) {
 				$params = array(
-					'attachment_ids' => array( $id ),
+					'attachment_ids' => $ids,
 				);
 				$this->managers['api']->background_request( 'process', $params );
 			}

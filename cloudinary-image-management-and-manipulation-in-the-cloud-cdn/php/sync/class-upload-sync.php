@@ -152,8 +152,7 @@ class Upload_Sync {
 		switch ( $action ) {
 			case 'cloudinary-push' :
 				foreach ( $post_ids as $post_id ) {
-					$file = get_attached_file( $post_id );
-					wp_generate_attachment_metadata( $post_id, $file );
+					$this->sync->set_signature_item( $post_id, 'file', '' );
 					$this->sync->add_to_sync( $post_id );
 				}
 				break;
@@ -256,14 +255,22 @@ class Upload_Sync {
 	 */
 	public function upload_asset( $attachment_id ) {
 
-		$type    = $this->sync->get_sync_type( $attachment_id );
-		$options = $this->media->get_upload_options( $attachment_id );
-		$result  = $this->connect->api->upload( $attachment_id, $options );
+		$type      = $this->sync->get_sync_type( $attachment_id );
+		$options   = $this->media->get_upload_options( $attachment_id );
+		$public_id = $options['public_id'];
+		$result    = $this->connect->api->upload( $attachment_id, $options );
 
 		if ( ! is_wp_error( $result ) ) {
+			// Set public_id.
+			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['public_id'], $public_id );
+			// Update signature for all that use the same method.
 			$this->sync->update_signature( $attachment_id, $type );
-			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['public_id'], $options['public_id'] );
+			// Update options and public_id as well (full sync)
+			$this->sync->set_signature_item( $attachment_id, 'options' );
+			$this->sync->set_signature_item( $attachment_id, 'public_id' );
+
 			$this->update_breakpoints( $attachment_id, $result );
+			$this->update_content( $attachment_id );
 		}
 
 		return $result;
@@ -283,7 +290,7 @@ class Upload_Sync {
 		$result  = $this->connect->api->context( $options );
 
 		if ( ! is_wp_error( $result ) ) {
-			$this->sync->update_signature( $attachment_id, $type );
+			$this->sync->set_signature_item( $attachment_id, $type );
 			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['public_id'], $options['public_id'] );
 		}
 
@@ -310,7 +317,7 @@ class Upload_Sync {
 			$this->update_breakpoints( $attachment_id, array() );
 			$result = true;
 		}
-		$this->sync->update_signature( $attachment_id, $type );
+		$this->sync->set_signature_item( $attachment_id, $type );
 
 		return $result;
 	}
@@ -326,10 +333,10 @@ class Upload_Sync {
 		if ( ! empty( $this->plugin->config['settings']['global_transformations']['enable_breakpoints'] ) ) {
 			if ( ! empty( $breakpoints['responsive_breakpoints'] ) ) { // Images only.
 				$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['breakpoints'], $breakpoints['responsive_breakpoints'][0]['breakpoints'] );
-				$this->sync->set_signature_item( $attachment_id, 'breakpoints' );
 			} elseif ( wp_attachment_is_image( $attachment_id ) ) {
 				$this->media->delete_post_meta( $attachment_id, Sync::META_KEYS['breakpoints'] );
 			}
+			$this->sync->set_signature_item( $attachment_id, 'breakpoints' );
 		}
 	}
 
@@ -354,4 +361,19 @@ class Upload_Sync {
 		}
 	}
 
+	/**
+	 * Trigger an update on content that contains the same attachment ID to allow filters to capture and process.
+	 *
+	 * @param int $attachment_id The attachment id to find and init an update.
+	 */
+	private function update_content( $attachment_id ) {
+		// Search and update link references in content.
+		$content_search = new \WP_Query( array( 's' => 'wp-image-' . $attachment_id, 'fields' => 'ids', 'posts_per_page' => 1000 ) );
+		if ( ! empty( $content_search->found_posts ) ) {
+			$content_posts = array_unique( $content_search->get_posts() ); // ensure post only gets updated once.
+			foreach ( $content_posts as $content_id ) {
+				wp_update_post( array( 'ID' => $content_id ) ); // Trigger an update, internal filters will filter out remote URLS.
+			}
+		}
+	}
 }
