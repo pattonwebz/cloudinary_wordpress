@@ -302,7 +302,7 @@ class Push_Sync {
 		if ( $this->sync->managers['queue']->is_running() ) {
 			$queue = $this->sync->managers['queue']->get_queue();
 			if ( ! empty( $queue['pending'] ) ) {
-				wp_schedule_single_event( time() + 5, 'cloudinary_run_queue' );
+				wp_schedule_single_event( time() + 20, 'cloudinary_run_queue' );
 				if ( ! empty( $queue['last_update'] ) ) {
 					if ( $queue['last_update'] > current_time( 'timestamp' ) - 60 ) {
 						return;
