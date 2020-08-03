@@ -226,7 +226,6 @@ class Push_Sync {
 			// Flag attachment as being processed.
 			update_post_meta( $attachment_id, Sync::META_KEYS['syncing'], time() );
 			while ( $type = $this->sync->get_sync_type( $attachment_id, false ) ) {
-				error_log( 'syncing ' . $type );
 				if ( isset( $stat[ $attachment_id ][ $type ] ) ) {
 					// Loop prevention.
 					break;
@@ -297,32 +296,23 @@ class Push_Sync {
 	/**
 	 * Resume the bulk sync.
 	 *
-	 * @return bool
+	 * @return void
 	 */
 	public function process_queue() {
-		if( $this->sync->managers['queue']->is_running() ) {
+		if ( $this->sync->managers['queue']->is_running() ) {
 			$queue = $this->sync->managers['queue']->get_queue();
 			if ( ! empty( $queue['pending'] ) ) {
 				wp_schedule_single_event( time() + 5, 'cloudinary_run_queue' );
 				if ( ! empty( $queue['last_update'] ) ) {
 					if ( $queue['last_update'] > current_time( 'timestamp' ) - 60 ) {
-						error_log( 'Still running.' );
-
 						return;
 					}
 				}
-				error_log( 'syncing ' . count( $queue['pending'] ) . ' items' );
 				while ( $attachment_id = $this->sync->managers['queue']->get_post() ) {
-					error_log( 'starting ' . $attachment_id );
 					$this->process_assets( $attachment_id );
 					$this->sync->managers['queue']->mark( $attachment_id, 'done' );
 				}
-				error_log( 'Stopping.' );
-			} else {
-				error_log( 'queue is empty. Stopping.' );
 			}
-		} else {
-			error_log( 'Stopped.' );
 		}
 	}
 
