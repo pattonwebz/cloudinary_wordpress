@@ -255,7 +255,8 @@ class Push_Sync {
 				}
 				// Record Process log.
 				$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['process_log'], $stat[ $attachment_id ] );
-
+				// Create synced postmeta as a way to search for synced / unsynced items.
+				update_post_meta( $attachment_id, Sync::META_KEYS['public_id'], $this->media->get_public_id( $attachment_id ) );
 				if ( true === $background_process ) {
 					$this->sync->managers['queue']->mark( $attachment_id, 'done' );
 				}

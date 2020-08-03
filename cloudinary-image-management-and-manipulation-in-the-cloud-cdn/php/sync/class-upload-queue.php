@@ -218,9 +218,21 @@ class Upload_Queue {
 			'post_type'           => 'attachment',
 			'post_mime_type'      => array( 'image', 'video' ),
 			'post_status'         => 'inherit',
-			'posts_per_page'      => -1, // phpcs:ignore
+			'posts_per_page'      => 1000, // phpcs:ignore
 			'fields'              => 'ids',
+			'meta_query'          => array( // phpcs:ignore
+                'relation' => 'AND',
+                array(
+                    'key'     => Sync::META_KEYS['sync_error'],
+                    'compare' => 'NOT EXISTS',
+                ),
+                array(
+                    'key'     => Sync::META_KEYS['public_id'],
+                    'compare' => 'NOT EXISTS',
+                ),
+			),
 			'ignore_sticky_posts' => false,
+			'no_found_rows'       => true,
 		);
 
 		$attachments = new \WP_Query( $args );
