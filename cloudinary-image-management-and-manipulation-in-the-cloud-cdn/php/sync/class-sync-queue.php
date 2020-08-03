@@ -1,6 +1,6 @@
 <?php
 /**
- * Upload Sync to Cloudinary.
+ * Sync queuing to Cloudinary.
  *
  * @package Cloudinary
  */
@@ -10,11 +10,11 @@ namespace Cloudinary\Sync;
 use Cloudinary\Sync;
 
 /**
- * Class Upload_Queue.
+ * Class Sync_Queue.
  *
  * Queue assets for Cloudinary sync.
  */
-class Upload_Queue {
+class Sync_Queue {
 
 	/**
 	 * Holds the plugin instance.
@@ -73,7 +73,7 @@ class Upload_Queue {
 	 * @return void
 	 */
 	public function load_hooks() {
-		add_action( 'cloudinary_resume_queue', array( $this, 'maybe_resume_queue' ) );
+		//add_action( 'cloudinary_resume_queue', array( $this, 'maybe_resume_queue' ) );
 	}
 
 	/**
@@ -82,6 +82,7 @@ class Upload_Queue {
 	 * @return array|mixed
 	 */
 	public function get_queue() {
+		wp_cache_delete( self::$queue_key, 'options' );
 		$queue = get_option( self::$queue_key, array() );
 		if ( empty( $queue ) ) {
 			$queue = $this->build_queue();
@@ -98,7 +99,8 @@ class Upload_Queue {
 	 * @return bool
 	 */
 	public function set_queue( $queue ) {
-		return update_option( self::$queue_key, $queue );
+
+		return update_option( self::$queue_key, $queue, false );
 	}
 
 	/**
@@ -107,7 +109,7 @@ class Upload_Queue {
 	 * @return bool
 	 */
 	public function get_post() {
-		$id = null;
+		$id = false;
 		if ( $this->is_running() ) {
 			$queue = $this->get_queue();
 			if ( ! empty( $queue['pending'] ) ) {
@@ -129,8 +131,9 @@ class Upload_Queue {
 	 * @param string $type The type of marking to apply.
 	 */
 	public function mark( $id, $type = 'done' ) {
-		$queue = $this->get_queue();
-		$key   = array_search( (int) $id, $queue['processing'], true );
+		$queue                = $this->get_queue();
+		$queue['last_update'] = current_time( 'timestamp' );
+		$key                  = array_search( (int) $id, $queue['processing'], true );
 		if ( false !== $key ) {
 			unset( $queue['processing'][ $key ] );
 			if ( 'error' === $type ) {
@@ -147,6 +150,7 @@ class Upload_Queue {
 				}
 			}
 		}
+
 		$this->set_queue( $queue );
 	}
 
@@ -156,12 +160,9 @@ class Upload_Queue {
 	 * @return bool
 	 */
 	public function is_running() {
-		if ( false === $this->running ) {
-			$queue         = $this->get_queue();
-			$this->running = empty( $queue['started'] ) ? false : true;
-		}
+		$queue = $this->get_queue();
 
-		return $this->running;
+		return empty( $queue['started'] ) ? false : true;
 	}
 
 	/**
@@ -221,15 +222,15 @@ class Upload_Queue {
 			'posts_per_page'      => 1000, // phpcs:ignore
 			'fields'              => 'ids',
 			'meta_query'          => array( // phpcs:ignore
-                'relation' => 'AND',
-                array(
-                    'key'     => Sync::META_KEYS['sync_error'],
-                    'compare' => 'NOT EXISTS',
-                ),
-                array(
-                    'key'     => Sync::META_KEYS['public_id'],
-                    'compare' => 'NOT EXISTS',
-                ),
+				'relation' => 'AND',
+				array(
+					'key'     => Sync::META_KEYS['sync_error'],
+					'compare' => 'NOT EXISTS',
+				),
+				array(
+					'key'     => Sync::META_KEYS['public_id'],
+					'compare' => 'NOT EXISTS',
+				),
 			),
 			'ignore_sticky_posts' => false,
 			'no_found_rows'       => true,
@@ -260,11 +261,11 @@ class Upload_Queue {
 		$queue = $this->get_queue();
 		if ( ! empty( $queue['started'] ) ) {
 			unset( $queue['started'] );
+			unset( $queue['last_update'] );
 			$this->set_queue( $queue );
 		}
-		$this->running = false;
 
-		wp_clear_scheduled_hook( 'cloudinary_resume_queue' );
+		wp_unschedule_hook( 'cloudinary_run_queue' );
 	}
 
 	/**
@@ -274,13 +275,16 @@ class Upload_Queue {
 	 */
 	public function start_queue() {
 		$queue            = $this->get_queue();
-		$queue['started'] = $queue['last_update'] = current_time( 'timestamp' );
-		$this->set_queue( $queue );
-		$this->running = true;
-
-		if ( ! wp_next_scheduled( 'cloudinary_resume_queue' ) ) {
-			wp_schedule_single_event( time() + $this->cron_frequency, 'cloudinary_resume_queue' );
+		$queue['started'] = current_time( 'timestamp' );
+		if ( ! empty( $queue['processing'] ) ) {
+			$queue['pending'] = array_merge( $queue['pending'], $queue['processing'] );
 		}
+		$this->set_queue( $queue );
+
+		$instant = microtime( true );
+		wp_unschedule_hook( 'cloudinary_run_queue' );
+		wp_schedule_single_event( $instant, 'cloudinary_run_queue' );
+		spawn_cron( $instant );
 	}
 
 	/**

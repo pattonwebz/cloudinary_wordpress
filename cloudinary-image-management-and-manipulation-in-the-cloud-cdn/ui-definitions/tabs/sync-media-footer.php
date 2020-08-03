@@ -8,7 +8,7 @@
 // Reset if stopped to maintain current state.
 if ( ! $this->plugin->components['sync']->managers['queue']->is_running() ) {
 	// Rebuild on load.
-	//$this->plugin->components['sync']->managers['queue']->build_queue();
+	$this->plugin->components['sync']->managers['queue']->build_queue();
 }
 
 ?>

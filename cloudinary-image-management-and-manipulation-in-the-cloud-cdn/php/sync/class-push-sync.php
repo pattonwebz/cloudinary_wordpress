@@ -113,6 +113,8 @@ class Push_Sync {
 		$this->sync    = $this->plugin->components['sync'];
 		$this->connect = $this->plugin->components['connect'];
 		$this->api     = $this->plugin->components['api'];
+		add_action( 'cloudinary_run_queue', array( $this, 'process_queue' ) );
+		add_action( 'cloudinary_sync_items', array( $this, 'process_assets' ) );
 	}
 
 	/**
@@ -156,6 +158,7 @@ class Push_Sync {
 	 * @return bool
 	 */
 	public function rest_verify_nonce( \WP_REST_Request $request ) {
+		return true;
 		$nonce = $request->get_param( 'nonce' );
 
 		return wp_verify_nonce( $nonce, 'wp_rest' );
@@ -204,9 +207,47 @@ class Push_Sync {
 			return $this->rest_get_queue_status(); // Nothing to sync.
 		}
 		$this->sync->managers['queue']->start_queue();
+	}
 
-		return $this->call_thread();
+	/**
+	 * Process asset sync.
+	 *
+	 * @param int|array $attachments An attachment ID or an array of ID's.
+	 *
+	 * @return array
+	 */
+	public function process_assets( $attachments = array() ) {
 
+		$stat = array();
+		// If a single specified ID, push and return response.
+		$ids = array_map( 'intval', (array) $attachments );
+		// Handle based on Sync Type.
+		foreach ( $ids as $attachment_id ) {
+			// Flag attachment as being processed.
+			update_post_meta( $attachment_id, Sync::META_KEYS['syncing'], time() );
+			while ( $type = $this->sync->get_sync_type( $attachment_id, false ) ) {
+				error_log( 'syncing ' . $type );
+				if ( isset( $stat[ $attachment_id ][ $type ] ) ) {
+					// Loop prevention.
+					break;
+				}
+				$callback                        = $this->sync->get_sync_method( $type );
+				$stat[ $attachment_id ][ $type ] = call_user_func( $callback, $attachment_id );
+			}
+			// remove pending.
+			if ( $this->sync->is_pending( $attachment_id ) ) {
+				$this->media->delete_post_meta( $attachment_id, Sync::META_KEYS['pending'] );
+			}
+			// Record Process log.
+			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['process_log'], $stat[ $attachment_id ] );
+			// Remove processing flag.
+			delete_post_meta( $attachment_id, Sync::META_KEYS['syncing'] );
+
+			// Create synced post meta as a way to search for synced / unsynced items.
+			update_post_meta( $attachment_id, Sync::META_KEYS['public_id'], $this->media->get_public_id( $attachment_id ) );
+		}
+
+		return $stat;
 	}
 
 	/**
@@ -233,107 +274,56 @@ class Push_Sync {
 
 			$attachments = array_filter( $attachments );
 		}
+		$stat = array();
 		// If not a single request, process based on queue.
 		if ( ! empty( $attachments ) ) {
 
-			$stat = array();
 			// If a single specified ID, push and return response.
 			$ids = array_map( 'intval', $attachments );
 			// Handle based on Sync Type.
-			foreach ( $ids as $attachment_id ) {
-				while ( $type = $this->sync->get_sync_type( $attachment_id, false ) ) {
-					if ( isset( $stat[ $attachment_id ][ $type ] ) ) {
-						// Loop prevention.
-						break;
-					}
-					$callback                        = $this->sync->get_sync_method( $type );
-					$stat[ $attachment_id ][ $type ] = call_user_func( $callback, $attachment_id );
-				}
-				// remove pending.
-				if ( $this->sync->is_pending( $attachment_id ) ) {
-					$this->media->delete_post_meta( $attachment_id, Sync::META_KEYS['pending'] );
-				}
-				// Record Process log.
-				$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['process_log'], $stat[ $attachment_id ] );
-				// Create synced postmeta as a way to search for synced / unsynced items.
-				update_post_meta( $attachment_id, Sync::META_KEYS['public_id'], $this->media->get_public_id( $attachment_id ) );
-				if ( true === $background_process ) {
-					$this->sync->managers['queue']->mark( $attachment_id, 'done' );
-				}
-			}
+			$stat = $this->process_assets( $ids );
 
-			// Continue;
-			if ( true === $background_process ) {
-				// Stopped.
-				if ( ! $this->sync->managers['queue']->is_running() ) {
-					return $this->rest_get_queue_status();
-				}
-				$this->api->background_request( 'process', array() );
-			}
-
-			return rest_ensure_response(
-				array(
-					'success' => true,
-					'data'    => $stat,
-				)
-			);
 		}
 
 		return rest_ensure_response(
 			array(
 				'success' => true,
+				'data'    => $stat,
 			)
 		);
 
-		// Process queue based.
-		if ( ! empty( $last_id ) && ! empty( $last_result ) ) {
-			$this->sync->managers['queue']->mark( $last_id, $last_result );
-		}
-
-		if ( ! $this->sync->managers['queue']->is_running() ) { // Check it wasn't stopped.
-			return $this->rest_get_queue_status();
-		}
-
-		$this->post_id = $this->sync->managers['queue']->get_post();
-
-		// No post, end of queue.
-		if ( empty( $this->post_id ) ) {
-			$this->sync->managers['queue']->stop_queue();
-
-			return $this->rest_get_queue_status();
-		}
-
-		add_action( 'shutdown', array( $this, 'resume_queue' ) );
-
-		return $this->rest_get_queue_status();
 	}
 
 	/**
 	 * Resume the bulk sync.
 	 *
-	 * @return bool|\WP_REST_Response
+	 * @return bool
 	 */
-	public function resume_queue() {
-		// Check if there is a Cloudinary ID in case this was synced on-demand before being processed by the queue.
-		add_filter( 'cloudinary_on_demand_sync_enabled', '__return_false' ); // Disable the on-demand sync since we want the status.
-		define( 'DOING_BULK_SYNC', true ); // Define bulk sync in action.
+	public function process_queue() {
+		if( $this->sync->managers['queue']->is_running() ) {
+			$queue = $this->sync->managers['queue']->get_queue();
+			if ( ! empty( $queue['pending'] ) ) {
+				wp_schedule_single_event( time() + 5, 'cloudinary_run_queue' );
+				if ( ! empty( $queue['last_update'] ) ) {
+					if ( $queue['last_update'] > current_time( 'timestamp' ) - 60 ) {
+						error_log( 'Still running.' );
 
-		if ( ! $this->sync->is_synced( $this->post_id ) ) {
-			$stat = $this->push_attachments( array( $this->post_id ) );
-			if ( ! empty( $stat['processed'] ) ) {
-				$result = 'done';
+						return;
+					}
+				}
+				error_log( 'syncing ' . count( $queue['pending'] ) . ' items' );
+				while ( $attachment_id = $this->sync->managers['queue']->get_post() ) {
+					error_log( 'starting ' . $attachment_id );
+					$this->process_assets( $attachment_id );
+					$this->sync->managers['queue']->mark( $attachment_id, 'done' );
+				}
+				error_log( 'Stopping.' );
 			} else {
-				$result = 'error';
+				error_log( 'queue is empty. Stopping.' );
 			}
 		} else {
-			/**
-			 * If a Cloudinary ID was found, set as done.
-			 * In the case of an upgrade, This would have been pushed to a background conversion.
-			 */
-			$result = 'done';
+			error_log( 'Stopped.' );
 		}
-
-		return $this->call_thread( $this->post_id, $result );
 	}
 
 	/**

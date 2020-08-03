@@ -12,7 +12,7 @@ use Cloudinary\Component\Setup;
 use Cloudinary\Sync\Delete_Sync;
 use Cloudinary\Sync\Download_Sync;
 use Cloudinary\Sync\Push_Sync;
-use Cloudinary\Sync\Upload_Queue;
+use Cloudinary\Sync\Sync_Queue;
 use Cloudinary\Sync\Upload_Sync;
 
 /**
@@ -88,7 +88,7 @@ class Sync implements Setup, Assets {
 		$this->managers['upload']   = new Upload_Sync( $this->plugin );
 		$this->managers['download'] = new Download_Sync( $this->plugin );
 		$this->managers['delete']   = new Delete_Sync( $this->plugin );
-		$this->managers['queue']    = new Upload_Queue( $this->plugin );
+		$this->managers['queue']    = new Sync_Queue( $this->plugin );
 	}
 
 	/**
@@ -197,7 +197,13 @@ class Sync implements Setup, Assets {
 	 */
 	public function can_sync( $attachment_id, $type = 'file' ) {
 
-		$can = ( ! $this->is_pending( $attachment_id ) && $this->been_synced( $attachment_id ) ) || $this->is_auto_sync_enabled();
+		$can = $this->is_auto_sync_enabled();
+
+		if ( $this->is_pending( $attachment_id ) ) {
+			$can = false;
+		} elseif ( $this->been_synced( $attachment_id ) ) {
+			$can = true;
+		}
 
 		/**
 		 * Filter to allow changing if an asset is allowed to be synced.
@@ -668,9 +674,6 @@ class Sync implements Setup, Assets {
 		// Check if it's not already in the to sync array.
 		if ( ! in_array( $attachment_id, $this->to_sync, true ) ) {
 			$is_pending = $this->managers['media']->get_post_meta( $attachment_id, Sync::META_KEYS['pending'], true );
-			if ( ! empty( $is_pending ) ) {
-				$this->get_sync_type( $attachment_id );
-			}
 			if ( empty( $is_pending ) || $is_pending < time() - 5 * 60 ) {
 				// No need to delete pending meta, since it will be updated with the new timestamp anyway.
 				return false;
@@ -686,10 +689,9 @@ class Sync implements Setup, Assets {
 	 * @param int $attachment_id The attachment ID to add.
 	 */
 	public function add_to_sync( $attachment_id ) {
-		if ( ! in_array( $attachment_id, $this->to_sync, true ) && ! $this->is_pending( $attachment_id ) ) {
+		if ( ! in_array( $attachment_id, $this->to_sync, true ) ) {
 			// Flag image as pending to prevent duplicate upload.
 			$this->managers['media']->update_post_meta( $attachment_id, Sync::META_KEYS['pending'], time() );
-			//$this->managers['media']->update_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], true );
 			$this->to_sync[] = $attachment_id;
 		}
 	}
@@ -738,14 +740,12 @@ class Sync implements Setup, Assets {
 	public function init_background_upload() {
 		if ( ! empty( $this->to_sync ) ) {
 
-			$parts = array_chunk( $this->to_sync, 10 );
-
-			foreach ( $parts as $ids ) {
-				$params = array(
-					'attachment_ids' => $ids,
-				);
-				$this->managers['api']->background_request( 'process', $params );
-			}
+			$params  = array(
+				'attachment_ids' => $this->to_sync,
+			);
+			$instant = microtime( true );
+			wp_schedule_single_event( $instant, 'cloudinary_sync_items', $params );
+			spawn_cron( $instant );
 		}
 	}
 

@@ -336,12 +336,12 @@ class Api {
 			$temp_file_size = filesize( $temp_file_name );
 			$range          = 'bytes ' . $current_loc . '-' . ( $current_loc + $temp_file_size - 1 ) . '/' . $file_size;
 
-			$headers = array(
+			$headers      = array(
 				'Content-Range'      => $range,
 				'X-Unique-Upload-Id' => $upload_id,
 			);
 			$args['file'] = $temp_file_name;
-			$result = $this->upload( $temp_file_name, $args, $headers );
+			$result       = $this->upload( $temp_file_name, $args, $headers );
 			if ( is_wp_error( $result ) ) {
 				break;
 			}
@@ -398,8 +398,9 @@ class Api {
 			}
 			// Attach File.
 			if ( function_exists( 'curl_file_create' ) ) {
-				$args['file'] = curl_file_create( $args['file'] ); // phpcs:ignore
-				$args['file']->setPostFilename( $args['file'] );
+				$file         = $args['file'];
+				$args['file'] = curl_file_create( $file ); // phpcs:ignore
+				$args['file']->setPostFilename( $file );
 			} else {
 				$args['file'] = '@' . $args['file'];
 			}
@@ -417,7 +418,8 @@ class Api {
 			if ( false !== strpos( $error, 'ERR_DNS_FAIL' ) ) {
 				// URLS are not remotely available, try again as a file.
 				set_transient( '_cld_disable_http_upload', true, 300 );
-
+				// Remove URL file.
+				unset( $args['file'] );
 				return $this->upload( $attachment_id, $args );
 			}
 		}
