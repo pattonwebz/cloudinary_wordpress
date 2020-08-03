@@ -270,20 +270,6 @@ class Api {
 	}
 
 	/**
-	 * Get the details of an asset by public ID.
-	 *
-	 * @param string $public_id The public_id to check.
-	 * @param string $type      The asset type.
-	 *
-	 * @return array|\WP_Error
-	 */
-	public function get_asset_details( $public_id, $type ) {
-		$url = $this->url( 'resources', $type . '/upload/' . $public_id, true );
-
-		return $this->call( $url, array( 'body' => $args ), 'get' );
-	}
-
-	/**
 	 * Upload a large asset in chunks.
 	 *
 	 * @param string $file Path to the file.
