@@ -640,7 +640,7 @@ class Filter {
 		if ( false !== strpos( $class_list, 'size-' ) ) {
 			preg_match( '/size-([A-Za-z0-9-_]+)/', $class_list, $matches );
 
-			$all_sizes = get_intermediate_image_sizes();
+			$all_sizes = wp_get_additional_image_sizes();
 			$results[1] = $size = isset( $matches[1] ) && in_array( $matches[1], $all_sizes ) ? $matches[1] : $size;
 		}
 
@@ -652,11 +652,11 @@ class Filter {
 		}
 
 		// Prep json for block comment
-		$results[] = json_encode( 
+		$results[] = wp_json_encode( 
 			array(
-				'id' 	   => $id,
-				'sizeSlug' => $size,
-				'align'    => $align,
+				'id'		=> $id,
+				'sizeSlug'	=> $size,
+				'align'		=> $align,
 			)	
 		);
 
