@@ -155,16 +155,15 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		$setting_slug = $this->setting_slug( $tab['slug'] );
 		$title        = ! empty( $tab['heading'] ) ? $tab['heading'] : null;
 		$args         = array();
+
 		if ( ! empty( $tab['sanitize_callback'] ) && is_callable( $tab['sanitize_callback'] ) ) {
 			$args['sanitize_callback'] = $tab['sanitize_callback'];
 		}
+
 		register_setting( $setting_slug, $setting_slug, $args );
+
 		add_filter( 'pre_update_site_option_' . $setting_slug, array( $this, 'set_notices' ), 10, 3 );
 		add_filter( 'pre_update_option_' . $setting_slug, array( $this, 'set_notices' ), 10, 3 );
-
-		if ( ! empty( $tab['javascript_i18n'] ) ) {
-			wp_localize_script( 'jquery', 'cloudinaryJsData', $tab['javascript_i18n'] );
-		}
 
 		add_settings_section(
 			$setting_slug,
@@ -172,6 +171,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 			array( $this, 'load_section_content' ),
 			$setting_slug
 		);
+		
 		$this->register_section_fields( $tab, $setting_slug );
 	}
 
