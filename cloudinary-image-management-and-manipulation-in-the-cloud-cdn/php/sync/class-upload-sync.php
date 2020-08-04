@@ -107,7 +107,7 @@ class Upload_Sync {
 	 * @return array
 	 */
 	function add_inline_action( $actions, $post ) {
-		if ( current_user_can( 'delete_post', $post->ID ) ) {
+		if ( $this->media->is_media( $post->ID ) && current_user_can( 'delete_post', $post->ID ) ) {
 			$action_url = add_query_arg(
 				array(
 					'action'   => 'cloudinary-push',
@@ -121,7 +121,7 @@ class Upload_Sync {
 					'<a href="%s" aria-label="%s">%s</a>',
 					$action_url,
 					/* translators: %s: Attachment title. */
-					esc_attr( sprintf( __( 'Push to Cloudinary &#8220;%s&#8221;' ), 'asd' ) ),
+					esc_attr( __( 'Push to Cloudinary' ) ),
 					__( 'Push to Cloudinary', 'cloudinary' )
 				);
 			} else {
@@ -129,7 +129,7 @@ class Upload_Sync {
 					'<a href="%s" aria-label="%s">%s</a>',
 					$action_url,
 					/* translators: %s: Attachment title. */
-					esc_attr( sprintf( __( 'Push to Cloudinary &#8220;%s&#8221;' ), 'asd' ) ),
+					esc_attr( __( 'Re-sync to Cloudinary', 'cloudinary' ) ),
 					__( 'Re-sync to Cloudinary', 'cloudinary' )
 				);
 			}

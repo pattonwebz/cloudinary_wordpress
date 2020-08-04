@@ -91,6 +91,13 @@ class Media implements Setup {
 	public $video;
 
 	/**
+	 * Sync instance.
+	 *
+	 * @var \Cloudinary\Sync
+	 */
+	public $sync;
+
+	/**
 	 * Flag if in image_downsize function to prevent overload.
 	 *
 	 * @var bool
@@ -130,7 +137,7 @@ class Media implements Setup {
 			 *
 			 * @return array
 			 */
-			$media_types = apply_filters( 'cloudinary_media_types', array( 'image', 'video', 'audio', 'application' ) );
+			$media_types = apply_filters( 'cloudinary_media_types', array( 'image', 'video', 'audio' ) );
 			$type        = $this->get_media_type( $attachment );
 			$is_media    = in_array( $type, $media_types );
 		}
@@ -668,7 +675,7 @@ class Media implements Setup {
 		// Check for a public_id.
 		$public_id = $this->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true );
 		if ( empty( $public_id ) ) {
-			$public_id = $this->plugin->components['sync']->generate_public_id( $attachment_id );
+			$public_id = $this->sync->generate_public_id( $attachment_id );
 		}
 
 		return $public_id;
@@ -727,8 +734,8 @@ class Media implements Setup {
 		if ( isset( $this->cloudinary_ids[ $attachment_id ] ) ) {
 			return $this->cloudinary_ids[ $attachment_id ];
 		}
-		if ( ! $this->plugin->components['sync']->is_synced( $attachment_id ) && ! defined( 'REST_REQUEST' ) ) {
-			$this->plugin->components['sync']->maybe_prepare_sync( $attachment_id );
+		if ( ! $this->sync->is_synced( $attachment_id ) && ! defined( 'REST_REQUEST' ) ) {
+			$this->sync->maybe_prepare_sync( $attachment_id );
 		}
 
 		$cloudinary_id = $this->get_cloudinary_id( $attachment_id );
@@ -1480,9 +1487,12 @@ class Media implements Setup {
 	public function setup() {
 		if ( $this->plugin->config['connect'] ) {
 
-			$this->base_url               = $this->plugin->components['connect']->api->cloudinary_url( '/' );
-			$this->credentials            = $this->plugin->components['connect']->get_credentials();
-			$this->cloudinary_folder      = $this->plugin->config['settings']['sync_media']['cloudinary_folder'] ? $this->plugin->config['settings']['sync_media']['cloudinary_folder'] : '';
+			$this->base_url          = $this->plugin->components['connect']->api->cloudinary_url( '/' );
+			$this->credentials       = $this->plugin->components['connect']->get_credentials();
+			$this->cloudinary_folder = $this->plugin->config['settings']['sync_media']['cloudinary_folder'] ? $this->plugin->config['settings']['sync_media']['cloudinary_folder'] : '';
+			$this->sync              = $this->plugin->components['sync'];
+
+			// Internal components.
 			$this->filter                 = new Filter( $this );
 			$this->upgrade                = new Upgrade( $this );
 			$this->global_transformations = new Global_Transformations( $this );

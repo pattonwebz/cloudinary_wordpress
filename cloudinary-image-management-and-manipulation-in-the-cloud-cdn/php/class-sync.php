@@ -582,6 +582,9 @@ class Sync implements Setup, Assets {
 	 * @return mixed|string|\WP_Error
 	 */
 	public function get_sync_type( $attachment_id, $cached = true ) {
+		if ( ! $this->managers['media']->is_media( $attachment_id ) ) {
+			return false; // Ignore non media items.
+		}
 		$type                 = false;
 		$required_signature   = $this->generate_signature( $attachment_id, $cached );
 		$attachment_signature = $this->get_signature( $attachment_id, $cached );

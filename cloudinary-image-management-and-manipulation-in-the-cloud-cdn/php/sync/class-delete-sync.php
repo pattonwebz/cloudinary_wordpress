@@ -57,7 +57,7 @@ class Delete_Sync {
 			// The args are indexed, list them in named variables to better understand.
 			list( $request_cap, , $post_id ) = $args;
 
-			if ( 'delete_post' === $request_cap && ! empty( $all_caps['delete_posts'] ) && 'attachment' === get_post_type( $post_id ) ) {
+			if ( $this->plugin->components['media']->is_media( $post_id ) && 'delete_post' === $request_cap && ! empty( $all_caps['delete_posts'] ) ) {
 
 				// Check if is pending.
 				if ( ! $this->plugin->components['sync']->is_synced( $post_id ) && $this->plugin->components['sync']->is_pending( $post_id ) ) {
