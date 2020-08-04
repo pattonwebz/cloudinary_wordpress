@@ -158,7 +158,6 @@ class Push_Sync {
 	 * @return bool
 	 */
 	public function rest_verify_nonce( \WP_REST_Request $request ) {
-		return true;
 		$nonce = $request->get_param( 'nonce' );
 
 		return wp_verify_nonce( $nonce, 'wp_rest' );
