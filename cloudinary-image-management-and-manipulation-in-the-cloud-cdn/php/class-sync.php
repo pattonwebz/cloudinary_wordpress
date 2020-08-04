@@ -725,6 +725,13 @@ class Sync implements Setup, Assets {
 
 	}
 
+	/**
+	 * Set an item to the signature set.
+	 *
+	 * @param int    $attachment_id The attachment ID.
+	 * @param string $type          The sync type.
+	 * @param null   $value
+	 */
 	public function set_signature_item( $attachment_id, $type, $value = null ) {
 
 		// Get the core meta.
@@ -749,12 +756,15 @@ class Sync implements Setup, Assets {
 	public function init_background_upload() {
 		if ( ! empty( $this->to_sync ) ) {
 
-			$params  = array(
-				'attachment_ids' => $this->to_sync,
-			);
-			$instant = microtime( true );
-			wp_schedule_single_event( $instant, 'cloudinary_sync_items', $params );
-			spawn_cron( $instant );
+			$threads = ceil( count( $this->to_sync ) / 3 ); // Max of 3 threads to prevent server overload.
+			$chunks  = array_chunk( $this->to_sync, $threads );
+			foreach ( $chunks as $thread ) {
+				$params = array(
+					'process_key' => uniqid(),
+				);
+				set_transient( $params['process_key'], $thread, 120 );
+				$this->plugin->components['api']->background_request( 'process', $params );
+			}
 		}
 	}
 

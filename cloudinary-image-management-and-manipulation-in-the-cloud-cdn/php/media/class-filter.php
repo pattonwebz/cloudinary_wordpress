@@ -379,7 +379,7 @@ class Filter {
 	 * @return array
 	 */
 	public function filter_attachment_for_js( $attachment ) {
-		$cloudinary_id = $this->media->cloudinary_id( $attachment['id'] );
+		$cloudinary_id = $this->media->get_cloudinary_id( $attachment['id'] );
 
 		if ( false !== $cloudinary_id ) {
 			$transformations = array();
@@ -396,7 +396,7 @@ class Filter {
 
 		if ( empty( $attachment['transformations'] ) ) {
 			$transformations = $this->media->get_transformation_from_meta( $attachment['id'] );
-	
+
 			if ( $transformations ) {
 				$attachment['transformations'] = $transformations;
 			}
@@ -424,11 +424,11 @@ class Filter {
 		if ( false !== $cloudinary_id ) {
 			$attachment->data['source_url'] = $this->media->cloudinary_url( $attachment->data['id'], false );
 		}
-		
+
 		if ( $has_transformations = ! empty( $this->media->get_transformation_from_meta( $attachment->data['id'] ) ) ) {
 			$attachment->data['transformations'] = $has_transformations;
 		}
- 
+
 		return $attachment;
 	}
 

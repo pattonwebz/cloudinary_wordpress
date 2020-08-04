@@ -1447,7 +1447,7 @@ class Media implements Setup {
 		 */
 		$context_options = apply_filters( 'cloudinary_context_options', $context_options, get_post( $attachment_id ), $this );
 
-		return http_build_query( $context_options, null, '|' );;
+		return http_build_query( $context_options, null, '|' );
 	}
 
 	/**

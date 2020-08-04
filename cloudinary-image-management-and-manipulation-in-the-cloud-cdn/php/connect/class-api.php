@@ -231,7 +231,10 @@ class Api {
 			'resource_type' => 'image',
 		);
 		$args     = wp_parse_args( array_filter( $args ), $defaults );
-
+		// Correct Audio to Video.
+		if ( 'audio' === $args['resource_type'] ) {
+			$args['resource_type'] = 'video';
+		}
 		// check for version.
 		if ( ! empty( $args['version'] ) && is_numeric( $args['version'] ) ) {
 			$args['version'] = 'v' . $args['version'];
@@ -420,6 +423,7 @@ class Api {
 				set_transient( '_cld_disable_http_upload', true, 300 );
 				// Remove URL file.
 				unset( $args['file'] );
+
 				return $this->upload( $attachment_id, $args );
 			}
 		}
