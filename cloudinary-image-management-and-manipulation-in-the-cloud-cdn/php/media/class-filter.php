@@ -640,7 +640,7 @@ class Filter {
 		if ( false !== strpos( $class_list, 'size-' ) ) {
 			preg_match( '/size-([A-Za-z0-9-_]+)/', $class_list, $matches );
 
-			$all_sizes = wp_get_additional_image_sizes();
+			$all_sizes = $this->get_intermediate_image_sizes();
 			$results[1] = $size = isset( $matches[1] ) && in_array( $matches[1], $all_sizes ) ? $matches[1] : $size;
 		}
 
@@ -661,6 +661,22 @@ class Filter {
 		);
 
 		return $results;
+	}
+
+	/**
+	 * Fetch all available image sizes, incl. WP defaults.
+	 *
+	 * @return array
+	 */
+	protected function get_intermediate_image_sizes() {
+		$default_sizes    = array( 'thumbnail', 'medium', 'medium_large', 'large' );
+		$additional_sizes = wp_get_additional_image_sizes();
+	
+		if ( ! empty( $additional_sizes ) ) {
+			$default_sizes = array_merge( $default_sizes, array_keys( $additional_sizes ) );
+		}
+
+		return $default_sizes;
 	}
 
 	/**
