@@ -345,12 +345,19 @@ class Filter {
 			if ( $url === $cloudinary_url ) {
 				continue;
 			}
+			
 			// Replace old tag.
 			$new_tag = str_replace( $url, $cloudinary_url, $asset );
+
 			// Check if there is a class set. ( for srcset images in case of a manual url added ).
 			if ( false === strpos( $new_tag, ' class=' ) && ! is_admin() ) {
 				// Add in the class name.
 				$new_tag = str_replace( '/>', ' class="wp-image-' . $attachment_id . '"/>', $new_tag );
+			}
+
+			// Apply lazy loading attribute
+			if ( apply_filters( 'wp_lazy_loading_enabled', true ) ) {
+				$new_tag = str_replace( '/>', ' loading="lazy" />', $new_tag );
 			}
 
 			// If Cloudinary player is active, this is replaced there.
