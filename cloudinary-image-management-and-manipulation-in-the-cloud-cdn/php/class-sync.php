@@ -145,13 +145,16 @@ class Sync implements Setup, Assets {
 	 * @return bool
 	 */
 	public function is_synced( $post_id ) {
-		$signature = $this->get_signature( $post_id );
 		$expecting = $this->generate_signature( $post_id );
-		// Sort to align orders for comparison.
-		ksort( $signature );
-		ksort( $expecting );
-		if ( ! empty( $signature ) && ! empty( $expecting ) && $expecting === $signature ) {
-			return true;
+
+		if ( ! is_wp_error( $expecting ) ) {
+			$signature = $this->get_signature( $post_id );
+			// Sort to align orders for comparison.
+			ksort( $signature );
+			ksort( $expecting );
+			if ( ! empty( $signature ) && ! empty( $expecting ) && $expecting === $signature ) {
+				return true;
+			}
 		}
 
 		return false;
@@ -167,21 +170,23 @@ class Sync implements Setup, Assets {
 	 */
 	public function generate_signature( $attachment_id, $cache = true ) {
 		static $signatures = array(); // cache signatures.
-		if ( ! empty( $signatures[ $attachment_id ] && true === $cache ) ) {
+		if ( ! empty( $signatures[ $attachment_id ] ) && true === $cache ) {
 			$return = $signatures[ $attachment_id ];
 		} else {
-			$sync_base                    = $this->sync_base( $attachment_id );
-			$return                       = array_map(
-				function ( $item ) {
-					if ( is_array( $item ) ) {
-						$item = wp_json_encode( $item );
-					}
+			$return = $this->sync_base( $attachment_id );
+			if ( ! is_wp_error( $return ) ) {
+				$return                       = array_map(
+					function ( $item ) {
+						if ( is_array( $item ) ) {
+							$item = wp_json_encode( $item );
+						}
 
-					return md5( $item );
-				},
-				$sync_base
-			);
-			$signatures[ $attachment_id ] = $return;
+						return md5( $item );
+					},
+					$return
+				);
+				$signatures[ $attachment_id ] = $return;
+			}
 		}
 
 		return $return;
@@ -363,7 +368,7 @@ class Sync implements Setup, Assets {
 					'callback' => array( $this->managers['upload'], 'upload_asset' ),
 				),
 				'status'   => array(
-					'state' => 'info syncing',
+					'state' => 'info',
 					'note'  => __( 'Uploading to Cloudinary', 'cloudinary' ),
 				),
 			),
@@ -590,7 +595,8 @@ class Sync implements Setup, Assets {
 			);
 			$ordered    = array_intersect_key( $this->sync_types, $sync_items );
 			if ( ! empty( $ordered ) ) {
-				$type = array_shift( array_keys( $ordered ) );
+				$types = array_keys( $ordered );
+				$type  = array_shift( $types );
 				// Validate that this sync type applied (for optional types like upgrade).
 				if ( isset( $this->sync_base_struct[ $type ]['validate'] ) && is_callable( $this->sync_base_struct[ $type ]['validate'] ) ) {
 					if ( ! call_user_func( $this->sync_base_struct[ $type ]['validate'], $attachment_id ) ) {

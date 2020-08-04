@@ -121,14 +121,35 @@ class Media implements Setup {
 	 * @return bool
 	 */
 	public function is_media( $attachment ) {
-		$media_types = array( 'image', 'video' );
-		$is_media    = false;
+		$is_media = false;
 		if ( 'attachment' === get_post_type( $attachment ) ) {
-			$type     = strstr( get_post_mime_type( $attachment ), '/', true );
-			$is_media = in_array( $type, apply_filters( 'cloudinary_media_types', $media_types ) );
+			/**
+			 * Filter the default Cloudinary Media Types.
+			 *
+			 * @param array $types The default media types array.
+			 *
+			 * @return array
+			 */
+			$media_types = apply_filters( 'cloudinary_media_types', array( 'image', 'video', 'audio', 'application' ) );
+			$type        = $this->get_media_type( $attachment );
+			$is_media    = in_array( $type, $media_types );
 		}
 
 		return $is_media;
+	}
+
+	/**
+	 * Get a resource type based on file.(Cloudinary v1 remove mime type in post data).
+	 *
+	 * @param \WP_Post|int $attachment_id The attachment ID or object.
+	 *
+	 * @return string
+	 */
+	public function get_media_type( $attachment_id ) {
+		$file = pathinfo( get_attached_file( $attachment_id ), PATHINFO_BASENAME );
+		$mime = wp_check_filetype( $file );
+
+		return strstr( $mime['type'], '/', true );
 	}
 
 	/**
@@ -567,7 +588,7 @@ class Media implements Setup {
 			$transformations = $this->get_transformation_from_meta( $attachment_id );
 		}
 		// Get the attachment resource type.
-		$resource_type = wp_attachment_is( 'image', $attachment_id ) ? 'image' : 'video';
+		$resource_type = $this->get_media_type( $attachment_id );
 		// Setup initial args for cloudinary_url.
 		$pre_args = array(
 			'secure'        => is_ssl(),
@@ -665,7 +686,7 @@ class Media implements Setup {
 	}
 
 	/**
-	 * Get a Cloudinary ID.
+	 * Get a Cloudinary ID which includes the file format extension.
 	 *
 	 * @param int $attachment_id The Attachment ID.
 	 *
@@ -676,14 +697,15 @@ class Media implements Setup {
 		$public_id = false;
 		// A cloudinary_id is a public_id with a file extension.
 		if ( $this->has_public_id( $attachment_id ) ) {
-			$public_id = $this->get_public_id( $attachment_id );
+			$public_id   = $this->get_public_id( $attachment_id );
 			$suffix_data = $this->get_post_meta( $attachment_id, Sync::META_KEYS['suffix'], true );
 			if ( is_array( $suffix_data ) && ! empty( $suffix_data['suffix'] ) && $suffix_data['public_id'] === $public_id ) {
 				$public_id = $public_id . $suffix_data['suffix'];
 			}
-			$file      = get_attached_file( $attachment_id );
-			$info      = pathinfo( $file );
-			$public_id = $public_id . '.' . $info['extension'];
+			$file = get_attached_file( $attachment_id );
+			// @todo: Make this use the globals, overrides, and application conversion.
+			$extension = pathinfo( $file, PATHINFO_EXTENSION );
+			$public_id = $public_id . '.' . $extension;
 		}
 
 		return $public_id;
@@ -1433,7 +1455,7 @@ class Media implements Setup {
 		// Prepare upload options.
 		$options = array(
 			'unique_filename' => false,
-			'resource_type'   => strstr( get_post_mime_type( $attachment_id ), '/', true ),
+			'resource_type'   => $this->get_media_type( $attachment_id ),
 			'public_id'       => $this->get_public_id( $attachment_id ),
 			'context'         => $this->get_context_options( $attachment_id ),
 		);
