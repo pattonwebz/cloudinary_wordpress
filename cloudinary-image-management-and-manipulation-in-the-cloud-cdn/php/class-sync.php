@@ -342,7 +342,7 @@ class Sync implements Setup, Assets {
 				),
 				'status'   => array(
 					'state' => 'info syncing',
-					'note'  => __( 'Upgrading from Previous version', 'cloudinary' ),
+					'note'  => __( 'Upgrading from previous version', 'cloudinary' ),
 				),
 			),
 			'download'    => array(
@@ -381,7 +381,7 @@ class Sync implements Setup, Assets {
 				'status'   => array(
 					'state' => 'info syncing',
 					'note'  => function () {
-						return sprintf( __( 'Moving to folder %s.', 'cloudinary' ), $this->managers['media']->get_cloudinary_folder() );
+						return sprintf( __( 'Copying to folder %s.', 'cloudinary' ), untrailingslashit( $this->managers['media']->get_cloudinary_folder() ) );
 					},
 				),
 			),
