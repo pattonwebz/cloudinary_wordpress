@@ -65,7 +65,7 @@ class Push_Sync {
 	 *
 	 * @var \Cloudinary\Sync\Sync_Queue
 	 */
-	protected $queue;
+	public $queue;
 
 	/**
 	 * Push_Sync constructor.

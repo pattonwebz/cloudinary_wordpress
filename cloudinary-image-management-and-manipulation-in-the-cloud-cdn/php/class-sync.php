@@ -755,13 +755,14 @@ class Sync implements Setup, Assets {
 	public function init_background_upload() {
 		if ( ! empty( $this->to_sync ) ) {
 
-			$threads = ceil( count( $this->to_sync ) / 3 ); // Max of 3 threads to prevent server overload.
-			$chunks  = array_chunk( $this->to_sync, $threads );
-			foreach ( $chunks as $thread ) {
+			$threads    = $this->managers['push']->queue->threads;
+			$chunk_size = ceil( count( $this->to_sync ) / count( $threads ) ); // Max of 3 threads to prevent server overload.
+			$chunks     = array_chunk( $this->to_sync, $chunk_size );
+			foreach ( $chunks as $key => $ids ) {
 				$params = array(
-					'process_key' => uniqid(),
+					'process_key' => uniqid( $threads[ $key ] ),
 				);
-				set_transient( $params['process_key'], $thread, 120 );
+				set_transient( $params['process_key'], $ids, 120 );
 				$this->plugin->components['api']->background_request( 'process', $params );
 			}
 		}
