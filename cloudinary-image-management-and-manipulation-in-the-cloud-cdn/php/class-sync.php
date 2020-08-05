@@ -394,7 +394,7 @@ class Sync implements Setup, Assets {
 				},
 				'sync'     => array(
 					'priority' => 20,
-					'callback' => array( $this->managers['push'], 'push_attachments' ), // Rename
+					'callback' => array( $this->managers['media']->upgrade, 'convert_cloudinary_version' ), // Rename
 				),
 				'status'   => array(
 					'state' => 'meta',
