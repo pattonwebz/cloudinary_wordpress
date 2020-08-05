@@ -221,6 +221,13 @@ class Sync implements Setup, Assets {
 		return apply_filters( 'cloudinary_can_sync_asset', $can, $attachment_id, $type );
 	}
 
+	/**
+	 * Get the last version this asset was synced with.
+	 *
+	 * @param int $attachment_id The attachment ID.
+	 *
+	 * @return mixed
+	 */
 	public function get_sync_version( $attachment_id ) {
 		$version = $this->managers['media']->get_post_meta( $attachment_id, self::META_KEYS['plugin_version'], true );
 
