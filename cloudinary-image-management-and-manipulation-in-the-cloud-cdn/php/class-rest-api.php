@@ -73,20 +73,21 @@ class REST_API {
 		if ( is_user_logged_in() ) {
 			// Setup cookie.
 			$logged_cookie = wp_parse_auth_cookie( '', 'logged_in' );
-			array_pop( $logged_cookie ); // remove the scheme.
+			if ( ! empty( $logged_cookie ) ) {
+				array_pop( $logged_cookie ); // remove the scheme.
 
-			// Add logged in cookie to request.
-			$args['cookies'] = array(
-				new \WP_Http_Cookie(
-					array(
-						'name'    => LOGGED_IN_COOKIE,
-						'value'   => implode( '|', $logged_cookie ),
-						'expires' => '+ 1 min', // Expire after a min only.
+				// Add logged in cookie to request.
+				$args['cookies'] = array(
+					new \WP_Http_Cookie(
+						array(
+							'name'    => LOGGED_IN_COOKIE,
+							'value'   => implode( '|', $logged_cookie ),
+							'expires' => '+ 1 min', // Expire after a min only.
+						),
+						$url
 					),
-					$url
-				),
-			);
-
+				);
+			}
 		}
 		$args['headers']['X-WP-Nonce'] = $params['nonce'];
 
