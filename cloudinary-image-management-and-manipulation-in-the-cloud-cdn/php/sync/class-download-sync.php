@@ -179,7 +179,7 @@ class Download_Sync {
 			}
 		}
 
-		return $this->download_asset( $attachment_id, $file, basename( $file ), $media->get_transformations_from_string( $file ) );
+		return $this->download_asset( $attachment_id, $file );
 	}
 
 	/**
@@ -232,7 +232,7 @@ class Download_Sync {
 			$old_meta = wp_get_attachment_metadata( $attachment_id );
 			ob_start(); // Catch possible errors in WordPress's ID3 module when setting meta for transformed videos.
 			$meta            = wp_generate_attachment_metadata( $attachment_id, $upload['file'] );
-			$captured_errors = ob_get_clean();
+			$captured_errors = ob_get_clean(); // Capture issues.
 			// Be sure to record v2 meta.
 			if ( ! empty( $meta[ Sync::META_KEYS['cloudinary'] ] ) ) {
 				$meta[ Sync::META_KEYS['cloudinary'] ] = $old_meta[ Sync::META_KEYS['cloudinary'] ];

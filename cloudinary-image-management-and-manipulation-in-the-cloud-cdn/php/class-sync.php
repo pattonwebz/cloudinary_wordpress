@@ -164,7 +164,7 @@ class Sync implements Setup, Assets {
 	 * Generate a signature based on whats required for a full sync.
 	 *
 	 * @param int  $attachment_id The Attachment id to generate a signature for.
-	 * @param bool $cached        Flag to specify if a cached signature is to be used or build a new one.
+	 * @param bool $cache         Flag to specify if a cached signature is to be used or build a new one.
 	 *
 	 * @return string|bool
 	 */
@@ -643,7 +643,6 @@ class Sync implements Setup, Assets {
 
 
 			// Check if there's an error.
-			$log       = $this->managers['media']->get_post_meta( $attachment_id, Sync::META_KEYS['pending'] );
 			$has_error = $this->managers['media']->get_post_meta( $attachment_id, Sync::META_KEYS['sync_error'], true );
 			if ( ! empty( $has_error ) ) {
 				$status['state'] = 'error';

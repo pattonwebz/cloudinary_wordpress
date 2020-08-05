@@ -77,10 +77,6 @@ class Upload_Sync {
 	 * Register any hooks that this component needs.
 	 */
 	private function register_hooks() {
-		// Add action to upload.
-		add_action( 'add_attachment', array( $this, 'push_on_upload' ), 10 );
-		// Action Cloudinary id for on-demand upload sync.
-		//		add_action( 'cloudinary_id', array( $this, 'prep_on_demand_upload' ), 9, 2 );
 		// Hook into auto upload sync.
 		add_filter( 'cloudinary_on_demand_sync_enabled', array( $this, 'auto_sync_enabled' ), 10, 2 );
 		// Handle bulk and inline actions.
@@ -184,24 +180,6 @@ class Upload_Sync {
 	}
 
 	/**
-	 * Push new attachment to Cloudinary on upload.
-	 *
-	 * @param int $post_id The post.
-	 */
-	public function push_on_upload( $post_id ) {
-
-		// Only if this is a media file and feature is enabled.
-		if ( $this->plugin->components['media']->is_media( $post_id ) && apply_filters( 'cloudinary_upload_sync_enabled', $this->enabled ) ) {
-			// Lets do the background upload to keep the upload window as fast as possible.
-			update_post_meta( $post_id, '_cloudinary_pending', time() ); // Make sure it doesn't get resynced.
-			$params = array(
-				'attachment_ids' => array( $post_id ),
-			);
-			$this->plugin->components['api']->background_request( 'process', $params );
-		}
-	}
-
-	/**
 	 * Setup this component.
 	 */
 	public function setup() {
@@ -212,38 +190,6 @@ class Upload_Sync {
 			$this->media   = $this->plugin->components['media'];
 		}
 		$this->register_hooks();
-	}
-
-	/**
-	 * Prepare an attachment without a cloudinary id, for background, on-demand push.
-	 *
-	 * @param string|bool $cloudinary_id The public ID for a cloudinary asset.
-	 * @param int         $attachment_id The local attachment ID.
-	 *
-	 * @return string
-	 */
-	public function prep_on_demand_upload( $cloudinary_id, $attachment_id ) {
-		$attachment_id = intval( $attachment_id );
-		if ( $attachment_id && false === $cloudinary_id ) {
-			// Check that this has not already been prepared for upload.
-			if ( ! $this->is_pending( $attachment_id ) && apply_filters( 'cloudinary_on_demand_sync_enabled', $this->enabled, $attachment_id ) ) {
-				$max_size = ( wp_attachment_is_image( $attachment_id ) ? 'max_image_size' : 'max_video_size' );
-				$file     = get_attached_file( $attachment_id );
-				// Get the file size to make sure it can exist in cloudinary.
-				if ( ! empty( $this->plugin->components['connect']->usage[ $max_size ] ) && file_exists( $file ) && filesize( $file ) < $this->plugin->components['connect']->usage[ $max_size ] ) {
-					$this->add_to_sync( $attachment_id );
-				} else {
-					// Check if the src is a url.
-					$file = get_post_meta( $attachment_id, '_wp_attached_file', true );
-					if ( $this->plugin->components['media']->is_cloudinary_url( $file ) ) {
-						// Download sync.
-						$this->add_to_sync( $attachment_id );
-					}
-				}
-			}
-		}
-
-		return $cloudinary_id;
 	}
 
 	/**
@@ -337,27 +283,6 @@ class Upload_Sync {
 				$this->media->delete_post_meta( $attachment_id, Sync::META_KEYS['breakpoints'] );
 			}
 			$this->sync->set_signature_item( $attachment_id, 'breakpoints' );
-		}
-	}
-
-	/**
-	 * Prep an attachment for upload.
-	 *
-	 * @param int $attachment_id The attachment ID to prep for upload.
-	 */
-	public function prep_upload( $attachment_id ) {
-		$max_size = ( wp_attachment_is_image( $attachment_id ) ? 'max_image_size' : 'max_video_size' );
-		$file     = get_attached_file( $attachment_id );
-		// Get the file size to make sure it can exist in cloudinary.
-		if ( file_exists( $file ) && filesize( $file ) < $this->plugin->components['connect']->usage[ $max_size ] ) {
-			$this->add_to_sync( $attachment_id );
-		} else {
-			// Check if the src is a url.
-			$file = get_post_meta( $attachment_id, '_wp_attached_file', true );
-			if ( $this->plugin->components['media']->is_cloudinary_url( $file ) ) {
-				// Download sync.
-				$this->add_to_sync( $attachment_id );
-			}
 		}
 	}
 

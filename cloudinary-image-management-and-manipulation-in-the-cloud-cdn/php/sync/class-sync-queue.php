@@ -33,13 +33,6 @@ class Sync_Queue {
 	private static $queue_key = '_cloudinary_sync_queue';
 
 	/**
-	 * Holds flag to make the queue run.
-	 *
-	 * @var     bool
-	 */
-	private $running = false;
-
-	/**
 	 * The cron frequency to ensure that the queue is progressing.
 	 *
 	 * @var int
@@ -54,6 +47,13 @@ class Sync_Queue {
 	protected $cron_start_offset;
 
 	/**
+	 * Holds the thread ID's
+	 *
+	 * @var array
+	 */
+	public $threads;
+
+	/**
 	 * Upload_Queue constructor.
 	 *
 	 * @param \Cloudinary\Plugin $plugin The plugin.
@@ -63,7 +63,7 @@ class Sync_Queue {
 
 		$this->cron_frequency    = apply_filters( 'cloudinary_cron_frequency', 10 * MINUTE_IN_SECONDS );
 		$this->cron_start_offset = apply_filters( 'cloudinary_cron_start_offset', MINUTE_IN_SECONDS );
-
+		$this->threads           = apply_filters( 'cloudinary_queue_threads', array( 'thread_0', 'thread_1', 'thread_2' ) );
 		$this->load_hooks();
 	}
 
@@ -73,7 +73,7 @@ class Sync_Queue {
 	 * @return void
 	 */
 	public function load_hooks() {
-		//add_action( 'cloudinary_resume_queue', array( $this, 'maybe_resume_queue' ) );
+		add_action( 'cloudinary_resume_queue', array( $this, 'maybe_resume_queue' ) );
 	}
 
 	/**
@@ -106,16 +106,25 @@ class Sync_Queue {
 	/**
 	 * Get a set of pending items.
 	 *
+	 * @param string $thread The thread ID.
+	 *
 	 * @return bool
 	 */
-	public function get_post() {
+	public function get_post( $thread ) {
 		$id = false;
-		if ( $this->is_running() ) {
+		if ( $this->is_running() && in_array( $thread, $this->threads, true ) ) {
 			$queue = $this->get_queue();
-			if ( ! empty( $queue['pending'] ) ) {
-				$id                    = array_shift( $queue['pending'] );
+			if ( ! empty( $queue[ $thread ] ) ) {
+				$id                    = array_shift( $queue[ $thread ] );
 				$queue['processing'][] = $id;
 				$queue['last_update']  = current_time( 'timestamp' );
+
+				if ( ! empty( $queue['run_status'][ $thread ]['last_update'] ) ) {
+					$queue['run_status'][ $thread ]['posts'][] = current_time( 'timestamp' ) - $queue['run_status'][ $thread ]['last_update'];
+					$queue['run_status'][ $thread ]['average'] = round( array_sum( $queue['run_status'][ $thread ]['posts'] ) / count( $queue['run_status'][ $thread ]['posts'] ), 2 );
+				}
+				$queue['run_status'][ $thread ]['last_update'] = current_time( 'timestamp' );
+
 				$this->set_queue( $queue );
 			}
 		}
@@ -123,6 +132,25 @@ class Sync_Queue {
 		return $id;
 	}
 
+	/**
+	 * Check if a thread is running.
+	 *
+	 * @param string $thread Thread ID to check.
+	 *
+	 * @return bool
+	 */
+	protected function thread_running( $thread ) {
+		$running = false;
+		if ( in_array( $thread, $this->threads, true ) ) {
+			$queue = $this->get_queue();
+			$now   = current_time( 'timestamp' );
+			if ( $this->is_running() && ! empty( $queue[ $thread ] ) && $now - $queue['run_status'][ $thread ]['last_update'] < $this->cron_start_offset ) {
+				$running = true;
+			}
+		}
+
+		return $running;
+	}
 
 	/**
 	 * Mark an id as done or error.
@@ -136,19 +164,10 @@ class Sync_Queue {
 		$key                  = array_search( (int) $id, $queue['processing'], true );
 		if ( false !== $key ) {
 			unset( $queue['processing'][ $key ] );
-			if ( 'error' === $type ) {
-				$state = $this->plugin->components['sync']->managers['push']->prepare_upload( $id );
-				if ( is_wp_error( $state ) ) {
-					$file             = get_attached_file( $id );
-					$queue[ $type ][] = '<div>' . basename( $file ) . ': ' . $state->get_error_message() . '</div>';
-					// Add a flag that this file had an error as to not try process it again.
-					update_post_meta( $id, Sync::META_KEYS['sync_error'], $state->get_error_message() );
-				}
-			} else {
-				if ( ! in_array( $id, $queue[ $type ], true ) ) {
-					$queue[ $type ][] = $id;
-				}
+			if ( ! in_array( $id, $queue[ $type ], true ) ) {
+				$queue[ $type ][] = $id;
 			}
+
 		}
 
 		$this->set_queue( $queue );
@@ -171,8 +190,11 @@ class Sync_Queue {
 	 * @return array
 	 */
 	public function get_queue_status() {
-		$queue      = $this->get_queue();
-		$pending    = count( $queue['pending'] );
+		$queue   = $this->get_queue();
+		$pending = 0;
+		foreach ( $this->threads as $thread ) {
+			$pending += count( $queue[ $thread ] );
+		}
 		$done       = count( $queue['done'] );
 		$processing = count( $queue['processing'] );
 		$error      = count( $queue['error'] );
@@ -222,15 +244,15 @@ class Sync_Queue {
 			'posts_per_page'      => 1000, // phpcs:ignore
 			'fields'              => 'ids',
 			'meta_query'          => array( // phpcs:ignore
-				'relation' => 'AND',
-				array(
-					'key'     => Sync::META_KEYS['sync_error'],
-					'compare' => 'NOT EXISTS',
-				),
-				array(
-					'key'     => Sync::META_KEYS['public_id'],
-					'compare' => 'NOT EXISTS',
-				),
+			                                'relation' => 'AND',
+			                                array(
+				                                'key'     => Sync::META_KEYS['sync_error'],
+				                                'compare' => 'NOT EXISTS',
+			                                ),
+			                                array(
+				                                'key'     => Sync::META_KEYS['public_id'],
+				                                'compare' => 'NOT EXISTS',
+			                                ),
 			),
 			'ignore_sticky_posts' => false,
 			'no_found_rows'       => true,
@@ -240,18 +262,38 @@ class Sync_Queue {
 		$ids         = $attachments->get_posts();
 		// Transform attachments.
 		$return = array(
-			'pending'    => array(),
 			'done'       => array(),
 			'processing' => array(),
 			'error'      => array(),
+			'run_status' => array(),
 		);
+		foreach ( $this->threads as $thread ) {
+			$return[ $thread ]               = array();
+			$return['run_status'][ $thread ] = array();
+		}
 
 		// Add items to pending queue.
-		$return['pending'] = $ids;
+		if ( ! empty( $ids ) ) {
+			$chunk_size = ceil( count( $ids ) / count( $this->threads ) );
+			$chunks     = array_chunk( $ids, $chunk_size );
+			foreach ( $chunks as $index => $chunk ) {
+				$return[ $this->threads[ $index ] ] = $chunk;
+			}
+		}
 
 		$this->set_queue( $return );
 
 		return $return;
+	}
+
+	/**
+	 * Maybe stop the queue.
+	 */
+	public function stop_maybe() {
+		$status = $this->get_queue_status();
+		if ( empty( $status['pending'] ) ) {
+			$this->stop_queue();
+		}
 	}
 
 	/**
@@ -265,26 +307,77 @@ class Sync_Queue {
 			$this->set_queue( $queue );
 		}
 
-		wp_unschedule_hook( 'cloudinary_run_queue' );
+		wp_unschedule_hook( 'cloudinary_resume_queue' );
 	}
 
 	/**
 	 * Start the queue by setting the started flag.
 	 *
-	 * @return void
+	 * @return array
 	 */
 	public function start_queue() {
-		$queue            = $this->get_queue();
-		$queue['started'] = current_time( 'timestamp' );
+		$queue = $this->get_queue();
 		if ( ! empty( $queue['processing'] ) ) {
-			$queue['pending'] = array_merge( $queue['pending'], $queue['processing'] );
+			// In case it stopped mid process, push back to the  first thread.
+			$queue['thread_0'] = array_merge( $queue['thread_0'], $queue['processing'] );
 		}
+		// Count how many are pending.
+		$status = $this->get_queue_status();
+		if ( empty( $status['pending'] ) ) {
+			// Dont start if theres nothing pending.
+			return $status;
+		}
+		// Mark as started.
+		$queue['started']     = current_time( 'timestamp' );
+		$queue['last_update'] = current_time( 'timestamp' );
+
 		$this->set_queue( $queue );
 
-		$instant = microtime( true );
-		wp_unschedule_hook( 'cloudinary_run_queue' );
-		wp_schedule_single_event( $instant, 'cloudinary_run_queue' );
-		spawn_cron( $instant );
+		foreach ( $this->threads as $thread ) {
+			if ( ! empty( $queue[ $thread ] ) ) {
+				$this->start_thread( $thread );
+				sleep( 2 ); // Slight pause to prevent server overload.
+			}
+		}
+		$this->schedule_resume();
+
+		return $status;
+	}
+
+	/**
+	 * Start a thread to process.
+	 *
+	 * @param int $thread Thread ID.
+	 */
+	public function start_thread( $thread ) {
+
+		$this->plugin->components['api']->background_request( 'queue', array( 'thread' => $thread ) );
+	}
+
+
+	/**
+	 * Get a threads queue.
+	 *
+	 * @param int $thread Thread ID.
+	 *
+	 * @return array
+	 */
+	public function get_thread_queue( $thread ) {
+		$queue  = $this->get_queue();
+		$return = array();
+		if ( in_array( $thread, $this->threads, true ) && ! empty( $queue[ $thread ] ) ) {
+			$return = $queue[ $thread ];
+		}
+
+		return $return;
+	}
+
+	/**
+	 * Schedule a resume queue check.
+	 */
+	protected function schedule_resume() {
+		$now = current_time( 'timestamp' );
+		wp_schedule_single_event( $now + $this->cron_frequency, 'cloudinary_resume_queue' );
 	}
 
 	/**
@@ -294,13 +387,29 @@ class Sync_Queue {
 	 * @return void
 	 */
 	public function maybe_resume_queue() {
-		$now   = current_time( 'timestamp' );
-		$queue = $this->get_queue();
+		$stopped = array();
+		if ( $this->is_running() ) {
+			// Check each thread.
+			foreach ( $this->threads as $thread ) {
+				if ( ! $this->thread_running( $thread ) ) {
+					// Possible that thread has stopped.
+					$stopped[] = $thread;
+				}
+			}
 
-		if ( $now - $queue['last_update'] > $this->cron_start_offset && $this->is_running() ) {
-			$this->plugin->components['api']->background_request( 'process', array() );
+			if ( count( $stopped ) === count( $this->threads ) ) {
+				// All threads have stopped. Stop Queue to prevent overload in case of a slow sync.
+				$this->stop_queue();
+				sleep( 5 ); // give it 5 seconds to allow the stop and maybe threads to catchup.
+				// Start a new sync.
+				$this->start_queue();
+			} elseif ( ! empty( $stopped ) ) {
+				// Just start the threads that have stopped.
+				array_map( array( $this, 'start_thread' ), $stopped );
+				$this->schedule_resume();
+			} else {
+				$this->schedule_resume();
+			}
 		}
-
-		wp_schedule_single_event( $now + $this->cron_frequency, 'cloudinary_resume_queue' );
 	}
 }

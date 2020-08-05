@@ -7,7 +7,6 @@
 
 namespace Cloudinary\Sync;
 
-use Cloudinary\Connect\Api;
 use Cloudinary\Sync;
 
 /**
@@ -62,6 +61,13 @@ class Push_Sync {
 	protected $api;
 
 	/**
+	 * Holds the sync queue object.
+	 *
+	 * @var \Cloudinary\Sync\Sync_Queue
+	 */
+	protected $queue;
+
+	/**
 	 * Push_Sync constructor.
 	 *
 	 * @param \Cloudinary\Plugin $plugin Global instance of the main plugin.
@@ -87,6 +93,8 @@ class Push_Sync {
 		$this->sync    = $this->plugin->components['sync'];
 		$this->connect = $this->plugin->components['connect'];
 		$this->api     = $this->plugin->components['api'];
+		$this->queue   = $this->sync->managers['queue'];
+
 		add_action( 'cloudinary_run_queue', array( $this, 'process_queue' ) );
 		add_action( 'cloudinary_sync_items', array( $this, 'process_assets' ) );
 	}
@@ -120,6 +128,12 @@ class Push_Sync {
 			'args'     => array(),
 		);
 
+		$endpoints['queue'] = array(
+			'method'   => \WP_REST_Server::CREATABLE,
+			'callback' => array( $this, 'process_queue' ),
+			'args'     => array(),
+		);
+
 		return $endpoints;
 	}
 
@@ -144,7 +158,7 @@ class Push_Sync {
 		return rest_ensure_response(
 			array(
 				'success' => true,
-				'data'    => $this->sync->managers['queue']->get_queue_status(),
+				'data'    => $this->queue->get_queue_status(),
 			)
 		);
 	}
@@ -154,19 +168,21 @@ class Push_Sync {
 	 *
 	 * @param \WP_REST_Request $request The request.
 	 *
-	 * @return mixed|\WP_REST_Response
+	 * @return \WP_REST_Response
 	 */
 	public function rest_start_sync( \WP_REST_Request $request ) {
 
-		$stop  = $request->get_param( 'stop' );
-		$queue = $this->sync->managers['queue']->get_queue();
-		if ( empty( $queue['pending'] ) || ! empty( $stop ) ) {
-			$this->sync->managers['queue']->stop_queue();
+		$stop   = $request->get_param( 'stop' );
+		$status = $this->queue->get_queue_status();
+		if ( empty( $status['pending'] ) || ! empty( $stop ) ) {
+			$this->queue->stop_queue();
 
 			return $this->rest_get_queue_status(); // Nothing to sync.
 		}
 
-		return $this->sync->managers['queue']->start_queue();
+		$this->queue->start_queue();
+
+		return $this->rest_get_queue_status();
 	}
 
 	/**
@@ -243,73 +259,22 @@ class Push_Sync {
 	}
 
 	/**
-	 * Pushes attachments via WP REST API.
+	 * Resume the bulk sync.
 	 *
 	 * @param \WP_REST_Request $request The request.
 	 *
-	 * @return mixed|\WP_REST_Response
-	 */
-	public function rest_push_attachments( \WP_REST_Request $request ) {
-
-
-		$option_key = $request->get_param( 'synckey' );
-		$data       = get_transient( $option_key );
-		// Get thread ID.
-		$last_id     = $request->get_param( 'last_id' );
-		$last_result = $request->get_param( 'last_result' );
-
-		// Get attachment_id in case this is a single direct request to upload.
-		$attachments        = $request->get_param( 'attachment_ids' );
-		$background_process = false;
-
-		if ( empty( $attachments ) ) {
-			// No attachments posted. Pull from the queue.
-			$attachments        = array();
-			$background_process = true;
-			$attachments[]      = $this->sync->managers['queue']->get_post();
-
-			$attachments = array_filter( $attachments );
-		}
-		$stat = array();
-		// If not a single request, process based on queue.
-		if ( ! empty( $attachments ) ) {
-
-			// If a single specified ID, push and return response.
-			$ids = array_map( 'intval', $attachments );
-			// Handle based on Sync Type.
-			$stat = $this->process_assets( $ids );
-
-		}
-
-		return rest_ensure_response(
-			array(
-				'success' => true,
-				'data'    => $stat,
-			)
-		);
-
-	}
-
-	/**
-	 * Resume the bulk sync.
-	 *
 	 * @return void
 	 */
-	public function process_queue() {
-		if ( $this->sync->managers['queue']->is_running() ) {
-			$queue = $this->sync->managers['queue']->get_queue();
-			if ( ! empty( $queue['pending'] ) ) {
-				wp_schedule_single_event( time() + 20, 'cloudinary_run_queue' );
-				if ( ! empty( $queue['last_update'] ) ) {
-					if ( $queue['last_update'] > current_time( 'timestamp' ) - 60 ) {
-						return;
-					}
-				}
-				while ( $attachment_id = $this->sync->managers['queue']->get_post() ) {
-					$this->process_assets( $attachment_id );
-					$this->sync->managers['queue']->mark( $attachment_id, 'done' );
-				}
+	public function process_queue( \WP_REST_Request $request ) {
+		$thread = $request->get_param( 'thread' );
+		$queue  = $this->queue->get_thread_queue( $thread );
+
+		if ( ! empty( $queue ) && $this->queue->is_running() ) {
+			while ( $attachment_id = $this->queue->get_post( $thread ) ) {
+				$this->process_assets( $attachment_id );
+				$this->queue->mark( $attachment_id, 'done' );
 			}
+			$this->queue->stop_maybe();
 		}
 	}
 }

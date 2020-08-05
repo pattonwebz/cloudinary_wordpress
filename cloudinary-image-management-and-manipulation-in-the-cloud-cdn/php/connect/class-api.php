@@ -177,7 +177,8 @@ class Api {
 	/**
 	 * Generate a transformation string.
 	 *
-	 * @param array $options The transformation options to generate from.
+	 * @param array  $options The transformation options to generate from.
+	 * @param string $type    The asset Type.
 	 *
 	 * @return string
 	 */
@@ -283,7 +284,7 @@ class Api {
 	public function get_asset_details( $public_id, $type ) {
 		$url = $this->url( 'resources', $type . '/upload/' . $public_id, true );
 
-		return $this->call( $url, array( 'body' => $args ), 'get' );
+		return $this->call( $url, array( 'body' => array() ), 'get' );
 	}
 
 	/**

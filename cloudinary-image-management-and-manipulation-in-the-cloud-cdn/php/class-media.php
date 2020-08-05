@@ -1382,7 +1382,7 @@ class Media implements Setup {
 		$has_breakpoints = $this->plugin->config['settings']['global_transformations']['enable_breakpoints'];
 
 		if ( 'off' !== $has_breakpoints && wp_attachment_is_image( $attachment_id ) ) {
-			$meta = wp_get_attachment_metadata( $post->ID );
+			$meta = wp_get_attachment_metadata( $attachment_id );
 			// Get meta image size if non exists.
 			if ( empty( $meta ) ) {
 				$meta          = array();
