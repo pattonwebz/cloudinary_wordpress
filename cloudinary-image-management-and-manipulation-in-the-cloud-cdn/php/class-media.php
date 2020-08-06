@@ -585,11 +585,11 @@ class Media implements Setup {
 	 */
 	public function cloudinary_url( $attachment_id, $size = array(), $transformations = array(), $cloudinary_id = null, $overwrite_transformations = false, $clean = false ) {
 
-		if ( empty( $cloudinary_id ) ) {
+		if ( ! ( $cloudinary_id ) ) {
 			$cloudinary_id = $this->cloudinary_id( $attachment_id );
-		}
-		if ( false === $cloudinary_id ) {
-			return false;
+			if ( ! $cloudinary_id ) {
+				return null;
+			}
 		}
 		if ( empty( $transformations ) ) {
 			$transformations = $this->get_transformation_from_meta( $attachment_id );
@@ -723,12 +723,12 @@ class Media implements Setup {
 	 *
 	 * @param int $attachment_id The ID to get Cloudinary id for.
 	 *
-	 * @return string|bool the ID or false if not existing.
+	 * @return string|null the ID or false if not existing.
 	 */
 	public function cloudinary_id( $attachment_id ) {
 
 		if ( ! $this->is_media( $attachment_id ) ) {
-			return false;
+			return null;
 		}
 		// Return cached ID if we've already gotten it before.
 		if ( isset( $this->cloudinary_ids[ $attachment_id ] ) ) {
