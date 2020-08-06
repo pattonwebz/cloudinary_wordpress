@@ -278,49 +278,21 @@ class Sync implements Setup, Assets {
 	 *
 	 * @return string The public ID.
 	 */
-	public function add_suffix_maybe( $public_id, $attachment_id, $suffix = null ) {
+	public function get_suffix( $attachment_id ) {
 
-		// Test if asset exists by calling just the head on the asset url, to prevent API rate limits.
-		$url         = $this->plugin->components['connect']->api->cloudinary_url( $public_id . $suffix );
-		$req         = wp_remote_head( $url, array( 'body' => array( 'rdm' => wp_rand( 100, 999 ) ) ) );
-		$asset_error = strtolower( wp_remote_retrieve_header( $req, 'x-cld-error' ) );
-		$code        = wp_remote_retrieve_response_code( $req );
+		$suffixed = '';
 
-		// If the request is not a 404 & does not have a cld-error header stating resource not found, it exists and should be checked that it's not a resync or generate a prefixed ID.
-		if ( 404 !== $code && false === strpos( $asset_error, 'resource not found' ) ) {
-
-			// Get the attachment type.
-			if ( wp_attachment_is( 'image', $attachment_id ) ) {
-				$type = 'image';
-			} elseif ( wp_attachment_is( 'video', $attachment_id ) ) {
-				$type = 'video';
-			} elseif ( wp_attachment_is( 'audio', $attachment_id ) ) {
-				$type = 'audio';
-			} else {
-				// not supported.
-				return null;
-			}
-			$cld_asset = $this->plugin->components['connect']->api->get_asset_details( $public_id, $type );
-			if ( ! is_wp_error( $cld_asset ) && ! empty( $cld_asset['public_id'] ) ) {
-				$context_id = null;
-
-				// Exists, check to see if this asset originally belongs to this ID.
-				if ( ! empty( $cld_asset['context'] ) && ! empty( $cld_asset['context']['custom'] ) && ! empty( $cld_asset['context']['custom']['wp_id'] ) ) {
-					$context_id = (int) $cld_asset['context']['custom']['wp_id'];
-				}
-
-				// Generate new ID only if context ID is not related.
-				if ( $context_id !== $attachment_id ) {
-					// Generate a new ID with a uniqueID prefix.
-					$suffix = '-' . uniqid();
-
-					// Return new potential suffixed ID.
-					return $this->add_suffix_maybe( $public_id, $attachment_id, $suffix );
-				}
-			}
+		$options    = $this->managers['media']->get_upload_options( $attachment_id ); // Filtered, upload options.
+		$cld_folder = $this->managers['media']->get_cloudinary_folder();
+		$public_id  = $options['public_id'];
+		if ( $this->managers['media']->is_folder_synced( $attachment_id ) ) {
+			$public_id = $cld_folder . $public_id;
 		}
+		// Add suffix.
+		$public_id .= $this->managers['media']->get_post_meta( $attachment_id, Sync::META_KEYS['suffix'], true );
 
-		return $suffix;
+
+		return $suffixed;
 	}
 
 	/**
