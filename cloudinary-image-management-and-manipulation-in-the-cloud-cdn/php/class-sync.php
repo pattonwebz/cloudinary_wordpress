@@ -174,20 +174,8 @@ class Sync implements Setup, Assets {
 			$return = $signatures[ $attachment_id ];
 		} else {
 			$return = $this->sync_base( $attachment_id );
-			if ( ! is_wp_error( $return ) ) {
-				$return = array_map(
-					function ( $item ) {
-						if ( is_array( $item ) ) {
-							$item = wp_json_encode( $item );
-						}
-
-						return md5( $item );
-					},
-					$return
-				);
-				// Add to signature cache.
-				$signatures[ $attachment_id ] = $return;
-			}
+			// Add to signature cache.
+			$signatures[ $attachment_id ] = $return;
 		}
 
 		return $return;
@@ -391,6 +379,7 @@ class Sync implements Setup, Assets {
 				'sync'     => array( $this->managers['media']->upgrade, 'convert_cloudinary_version' ),
 				'state'    => 'info syncing',
 				'note'     => __( 'Upgrading from previous version', 'cloudinary' ),
+				'realtime' => true,
 			),
 			'download'    => array(
 				'generate' => '__return_false',
@@ -495,23 +484,68 @@ class Sync implements Setup, Assets {
 	}
 
 	/**
-	 * Get the method to do a sync for the specified type.
+	 * Get a method from a sync type.
 	 *
-	 * @param $type
+	 * @param string $type   The sync type to get from.
+	 * @param string $method The method to get from the sync type.
 	 *
-	 * @return bool|mixed
+	 * @return callable|null
 	 */
-	public function get_sync_method( $type ) {
-		$method = false;
-		if ( isset( $this->sync_base_struct[ $type ]['sync'] ) ) {
-			$method = $this->sync_base_struct[ $type ]['sync'];
+	public function get_sync_type_method( $type, $method ) {
+		$return = null;
+		if ( isset( $this->sync_base_struct[ $type ][ $method ] ) && is_callable( $this->sync_base_struct[ $type ][ $method ] ) ) {
+			$return = $this->sync_base_struct[ $type ][ $method ];
 		}
 
-		return $method;
+		return $return;
 	}
 
 	/**
-	 * Get the core Sync Base.
+	 * Run a sync method on and attachment_id.
+	 *
+	 * @param string $type          The sync type to run.
+	 * @param string $method        The method to run.
+	 * @param int    $attachment_id The attachment ID to run method against.
+	 *
+	 * @return mixed
+	 */
+	public function run_sync_method( $type, $method, $attachment_id ) {
+		$return     = null;
+		$run_method = $this->get_sync_type_method( $type, $method );
+		if ( $run_method ) {
+			$return = call_user_func( $run_method, $attachment_id );
+		}
+
+		return $return;
+	}
+
+	/**
+	 * Generate a single sync type signature for an asset.
+	 *
+	 * @param string $type          The sync type to run.
+	 * @param int    $attachment_id The attachment ID to run method against.
+	 *
+	 * @return mixed
+	 */
+	public function generate_type_signature( $type, $attachment_id ) {
+		$return     = null;
+		$run_method = $this->get_sync_type_method( $type, 'generate' );
+		if ( $run_method ) {
+			$value = call_user_func( $run_method, $attachment_id );
+			if ( ! is_wp_error( $value ) ) {
+				if ( is_array( $value ) ) {
+					$value = wp_json_encode( $value );
+				}
+				$return = md5( $value );
+			}
+		}
+
+		return $return;
+	}
+
+	/**
+	 * Prepares and asset for sync comparison by getting all sync types
+	 * and running the generate methods for each type.
 	 *
 	 * @param int|\WP_Post $post The attachment to prepare.
 	 *
@@ -524,13 +558,8 @@ class Sync implements Setup, Assets {
 		}
 
 		$return = array();
-		foreach ( $this->sync_base_struct as $key => $struct ) {
-			if ( isset( $struct['generate'] ) ) {
-				$return[ $key ] = null;
-				if ( is_callable( $struct['generate'] ) ) {
-					$return[ $key ] = call_user_func( $struct['generate'], $post );
-				}
-			}
+		foreach ( array_keys( $this->sync_types ) as $type ) {
+			$return[ $type ] = $this->generate_type_signature( $type, $post );
 		}
 
 		/**
@@ -557,7 +586,7 @@ class Sync implements Setup, Assets {
 	public function maybe_prepare_sync( $attachment_id ) {
 
 		$type = $this->get_sync_type( $attachment_id );
-		if ( $this->can_sync( $attachment_id, $type ) ) {
+		if ( $type && $this->can_sync( $attachment_id, $type ) ) {
 			$this->add_to_sync( $attachment_id );
 		}
 	}
@@ -568,13 +597,13 @@ class Sync implements Setup, Assets {
 	 * @param int  $attachment_id The attachment ID.
 	 * @param bool $cached        Flag to specify if a cached signature is to be used or build a new one.
 	 *
-	 * @return mixed|string|\WP_Error
+	 * @return string|null
 	 */
 	public function get_sync_type( $attachment_id, $cached = true ) {
 		if ( ! $this->managers['media']->is_media( $attachment_id ) ) {
-			return false; // Ignore non media items.
+			return null; // Ignore non media items.
 		}
-		$type                 = false;
+		$return               = null;
 		$required_signature   = $this->generate_signature( $attachment_id, $cached );
 		$attachment_signature = $this->get_signature( $attachment_id, $cached );
 		if ( is_array( $required_signature ) ) {
@@ -587,16 +616,35 @@ class Sync implements Setup, Assets {
 			);
 			$ordered    = array_intersect_key( $this->sync_types, $sync_items );
 			if ( ! empty( $ordered ) ) {
-				$types = array_keys( $ordered );
-				$type  = array_shift( $types );
-				// Validate that this sync type applied (for optional types like upgrade).
-				if ( isset( $this->sync_base_struct[ $type ]['validate'] ) && is_callable( $this->sync_base_struct[ $type ]['validate'] ) ) {
-					if ( ! call_user_func( $this->sync_base_struct[ $type ]['validate'], $attachment_id ) ) {
-						$this->set_signature_item( $attachment_id, $type );
+				$types  = array_keys( $ordered );
+				$type   = array_shift( $types );
+				$return = $this->validate_sync_type( $type, $attachment_id );
+			}
+		}
 
-						return $this->get_sync_type( $attachment_id, $cached );
-					}
-				}
+		return $return;
+	}
+
+	/**
+	 * Validate the asset needs the sync type to be run, and generate a valid signature if not.
+	 *
+	 * @param string $type          The sync type to validate.
+	 * @param int    $attachment_id The attachment ID to validate against.
+	 *
+	 * @return string|null
+	 */
+	public function validate_sync_type( $type, $attachment_id ) {
+		// Validate that this sync type applied (for optional types like upgrade).
+		if ( false === $this->run_sync_method( $type, 'validate', $attachment_id ) ) {
+			// If invalid, save the new signature
+			$this->set_signature_item( $attachment_id, $type );
+
+			$type = $this->get_sync_type( $attachment_id, false ); // Set cache to false to get the new signature.
+		} else {
+			// Check if this is a realtime process.
+			if ( ! empty( $this->sync_base_struct[ $type ]['realtime'] ) ) {
+				$this->run_sync_method( $type, 'sync', $attachment_id );
+				$type = $this->get_sync_type( $attachment_id, false ); // Set cache to false to get the new signature.
 			}
 		}
 
@@ -695,23 +743,20 @@ class Sync implements Setup, Assets {
 	}
 
 	/**
-	 * Update a part of the signature based on type.
+	 * Update signatures of types that match the specified types sync method. This prevents running the same method repeatedly.
 	 *
 	 * @param int    $attachment_id The attachment ID.
 	 * @param string $type          The type of sync.
 	 */
-	public function update_signature( $attachment_id, $type ) {
-
-		$expecting           = $this->generate_signature( $attachment_id );
+	public function sync_signature_by_type( $attachment_id, $type ) {
 		$current_sync_method = $this->sync_base_struct[ $type ]['sync'];
 
 		// Go over all other types that share the same sync method and include them here.
 		foreach ( $this->sync_base_struct as $sync_type => $struct ) {
 			if ( $struct['sync'] === $current_sync_method ) {
-				$this->set_signature_item( $attachment_id, $sync_type, $expecting[ $sync_type ] );
+				$this->set_signature_item( $attachment_id, $sync_type );
 			}
 		}
-
 	}
 
 	/**
@@ -729,11 +774,7 @@ class Sync implements Setup, Assets {
 		// Set the specific value.
 		if ( is_null( $value ) ) {
 			// Generate a new value based on generator.
-			$new_value = call_user_func( $this->sync_base_struct[ $type ]['generate'], $attachment_id );
-			if ( is_array( $new_value ) ) {
-				$new_value = wp_json_encode( $new_value );
-			}
-			$value = md5( $new_value );
+			$value = $this->generate_type_signature( $type, $attachment_id );
 		}
 		$meta[ Sync::META_KEYS['cloudinary'] ][ Sync::META_KEYS['signature'] ][ $type ] = $value;
 		wp_update_attachment_metadata( $attachment_id, $meta );

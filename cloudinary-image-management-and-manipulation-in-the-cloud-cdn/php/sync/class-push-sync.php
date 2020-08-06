@@ -206,8 +206,7 @@ class Push_Sync {
 					// Loop prevention.
 					break;
 				}
-				$callback                        = $this->sync->get_sync_method( $type );
-				$stat[ $attachment_id ][ $type ] = call_user_func( $callback, $attachment_id );
+				$stat[ $attachment_id ][ $type ] = $this->sync->run_sync_method( $type, 'sync', $attachment_id );
 			}
 			// remove pending.
 			if ( $this->sync->is_pending( $attachment_id ) ) {
