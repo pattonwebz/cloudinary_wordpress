@@ -697,11 +697,11 @@ class Media implements Setup {
 	 *
 	 * @param int $attachment_id The Attachment ID.
 	 *
-	 * @return string A cloudinary id.
+	 * @return string|null
 	 */
 	public function get_cloudinary_id( $attachment_id ) {
 
-		$public_id = false;
+		$public_id = null;
 		// A cloudinary_id is a public_id with a file extension.
 		if ( $this->has_public_id( $attachment_id ) ) {
 			$public_id   = $this->get_public_id( $attachment_id );
@@ -1378,10 +1378,10 @@ class Media implements Setup {
 	 */
 	public function get_breakpoint_options( $attachment_id ) {
 		// Add breakpoints if we have an image.
-		$breakpoints     = array();
-		$has_breakpoints = $this->plugin->config['settings']['global_transformations']['enable_breakpoints'];
+		$breakpoints = array();
+		$settings    = $this->plugin->config['settings']['global_transformations'];
 
-		if ( 'off' !== $has_breakpoints && wp_attachment_is_image( $attachment_id ) ) {
+		if ( 'off' !== $settings['enable_breakpoints'] && wp_attachment_is_image( $attachment_id ) ) {
 			$meta = wp_get_attachment_metadata( $attachment_id );
 			// Get meta image size if non exists.
 			if ( empty( $meta ) ) {
@@ -1390,27 +1390,25 @@ class Media implements Setup {
 				$meta['width'] = $imagesize[0] ? $imagesize[0] : 0;
 			}
 			$max_width = $this->get_max_width();
-			$settings  = $this->plugin->config['settings'];
 			// Add breakpoints request options.
-			if ( ! empty( $settings['global_transformations']['enable_breakpoints'] ) ) {
-				$breakpoint_options = array(
-					'create_derived' => true,
-					'bytes_step'     => $settings['global_transformations']['bytes_step'],
-					'max_images'     => $settings['global_transformations']['breakpoints'],
-					'max_width'      => $meta['width'] < $max_width ? $meta['width'] : $max_width,
-					'min_width'      => $settings['global_transformations']['min_width'],
-				);
-				$transformations    = $this->get_transformation_from_meta( $attachment_id );
-				if ( ! empty( $transformations ) ) {
-					$breakpoints['transformation'] = Api::generate_transformation_string( $transformations );
-				}
-				$breakpoints = array(
-					'public_id'              => $this->get_public_id( $attachment_id ),
-					'type'                   => 'upload',
-					'responsive_breakpoints' => $breakpoint_options,
-					'context'                => $this->get_context_options( $attachment_id ),
-				);
+			$breakpoint_options = array(
+				'create_derived' => true,
+				'bytes_step'     => $settings['bytes_step'],
+				'max_images'     => $settings['breakpoints'],
+				'max_width'      => $meta['width'] < $max_width ? $meta['width'] : $max_width,
+				'min_width'      => $settings['min_width'],
+			);
+			$transformations    = $this->get_transformation_from_meta( $attachment_id );
+			if ( ! empty( $transformations ) ) {
+				$breakpoints['transformation'] = Api::generate_transformation_string( $transformations );
 			}
+			$breakpoints = array(
+				'public_id'              => $this->get_public_id( $attachment_id ),
+				'type'                   => 'upload',
+				'responsive_breakpoints' => $breakpoint_options,
+				'context'                => $this->get_context_options( $attachment_id ),
+			);
+
 		}
 
 		return $breakpoints;

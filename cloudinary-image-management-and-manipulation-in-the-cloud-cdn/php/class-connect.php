@@ -259,10 +259,10 @@ class Connect implements Config, Setup, Notice {
 	/**
 	 * Get the cloud name if set.
 	 *
-	 * @return bool|mixed
+	 * @return string|null
 	 */
 	public function get_cloud_name() {
-		return $this->credentials['cloud_name'] ? $this->credentials['cloud_name'] : false;
+		return $this->credentials['cloud_name'] ? $this->credentials['cloud_name'] : null;
 	}
 
 	/**
