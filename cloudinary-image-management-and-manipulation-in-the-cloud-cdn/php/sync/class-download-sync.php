@@ -241,7 +241,7 @@ class Download_Sync {
 			// Update the folder synced flag.
 			$public_id         = $this->media->get_public_id( $attachment_id );
 			$asset_folder      = strpos( $public_id, '/' ) ? dirname( $public_id ) : '/';
-			$cloudinary_folder = rtrim( $this->media->get_cloudinary_folder(), '/' );
+			$cloudinary_folder = untrailingslashit( $this->media->get_cloudinary_folder() );
 			if ( $asset_folder === $cloudinary_folder ) {
 				$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], true );
 			}

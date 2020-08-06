@@ -1273,29 +1273,6 @@ class Media implements Setup {
 	}
 
 	/**
-	 * Add a full Cloudinary full size with stored file name to the sizes array.
-	 *
-	 * @param array $data    Image meta data array.
-	 * @param int   $post_id Attachment post ID.
-	 *
-	 * @return mixed
-	 */
-	public function add_cloudinary_full_size( $data, $post_id ) {
-		// Add a full Cloudinary filename size.
-		if ( ! empty( $data['file'] ) && ! empty( $data['sizes'] ) ) {
-			$info                       = pathinfo( $data['file'] );
-			$cld_file                   = $this->get_public_id( $post_id ) . '.' . $info['extension'];
-			$data['sizes']['_cld_full'] = array(
-				'file'   => basename( $cld_file ),
-				'width'  => $data['width'],
-				'height' => $data['height'],
-			);
-		}
-
-		return $data;
-	}
-
-	/**
 	 * Get Cloudinary related Post meta.
 	 *
 	 * @param int    $post_id The attachment ID.
@@ -1541,7 +1518,6 @@ class Media implements Setup {
 			// Filter live URLS. (functions that return a URL).
 			add_filter( 'wp_calculate_image_srcset', array( $this, 'image_srcset' ), 10, 5 );
 			add_filter( 'wp_calculate_image_srcset_meta', array( $this, 'match_responsive_sources' ), 10, 4 );
-			//add_filter( 'wp_get_attachment_metadata', array( $this, 'add_cloudinary_full_size' ), 10, 2 );
 			add_filter( 'wp_get_attachment_url', array( $this, 'attachment_url' ), 10, 2 );
 			add_filter( 'image_downsize', array( $this, 'filter_downsize' ), 10, 3 );
 
