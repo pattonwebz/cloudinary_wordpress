@@ -175,7 +175,7 @@ class Sync implements Setup, Assets {
 		} else {
 			$return = $this->sync_base( $attachment_id );
 			if ( ! is_wp_error( $return ) ) {
-				$return                       = array_map(
+				$return = array_map(
 					function ( $item ) {
 						if ( is_array( $item ) ) {
 							$item = wp_json_encode( $item );
@@ -185,6 +185,7 @@ class Sync implements Setup, Assets {
 					},
 					$return
 				);
+				// Add to signature cache.
 				$signatures[ $attachment_id ] = $return;
 			}
 		}
@@ -240,7 +241,7 @@ class Sync implements Setup, Assets {
 	 * @param int  $attachment_id The attachment ID.
 	 * @param bool $cached        Flag to specify if a cached signature is to be used or build a new one.
 	 *
-	 * @return array|bool
+	 * @return array
 	 */
 	public function get_signature( $attachment_id, $cached = true ) {
 		static $signatures = array(); // Cache signatures already fetched.
@@ -335,22 +336,61 @@ class Sync implements Setup, Assets {
 	}
 
 	/**
-	 * Get the sync_setup_base of part callbacks.
+	 * Register a new sync type.
+	 *
+	 * @param string         $type        Sync type key. Must not exceed 20 characters and may
+	 *                                    only contain lowercase alphanumeric characters, dashes,
+	 *                                    and underscores. See sanitize_key()
+	 * @param array          $structure   {
+	 *                                    Array of arguments for registering a sync type.
+	 *
+	 * @type   callable      $generate    Callback method that generates the values to be used to sign a state.
+	 *                                    Returns a string or array.
+	 *
+	 * @type   callable      $validate    Optional Callback method that validates the need to have the sync type applied.
+	 *                                    returns Bool.
+	 *
+	 * @type   int           $priority    Priority in which the type takes place. Lower is higher priority.
+	 *                                    i.e a download should happen before an upload so download is lower in the chain.
+	 *
+	 * @type   callable      $sync        Callback method that handles the sync. i.e uploads the file, adds meta data, etc..
+	 *
+	 * @type   string        $state       State class to be added to the status icon in media library.
+	 *
+	 * @type string|callback $note        The status text displayed next to a syncing asset in the media library.
+	 *                                    Can be a callback if the note needs to be dynamic. see type folder.
+	 *
+	 * }
+	 */
+	public function register_sync_type( $type, $structure ) {
+
+		// Apply a default to ensure parts exist.
+		$default = array(
+			'generate' => '__return_null',
+			'validate' => null,
+			'priority' => 50,
+			'sync'     => '__return_null',
+			'state'    => 'sync',
+			'note'     => __( 'Synchronizing asset with Cloudinary', 'cloudinary' ),
+		);
+
+		$this->sync_base_struct[ $type ] = wp_parse_args( $structure, $default );
+	}
+
+	/**
+	 * Get built-in structures that form an assets entire sync state. This holds methods for building signatures for each state of synchronization.
+	 * These can be extended via 3rd parties by adding to the structures with custom types and generation and sync methods.
 	 */
 	public function setup_sync_base_struct() {
 
 		$base_struct = array(
 			'upgrade'     => array(
-				'generate' => array( $this, 'get_sync_version' ),
+				'generate' => array( $this, 'get_sync_version' ), // Method to generate a signature. Which
 				'validate' => array( $this, 'been_synced' ),
-				'sync'     => array(
-					'priority' => 0,
-					'callback' => array( $this->managers['media']->upgrade, 'convert_cloudinary_version' ),
-				),
-				'status'   => array(
-					'state' => 'info syncing',
-					'note'  => __( 'Upgrading from previous version', 'cloudinary' ),
-				),
+				'priority' => 0,
+				'sync'     => array( $this->managers['media']->upgrade, 'convert_cloudinary_version' ),
+				'state'    => 'info syncing',
+				'note'     => __( 'Upgrading from previous version', 'cloudinary' ),
 			),
 			'download'    => array(
 				'generate' => '__return_false',
@@ -359,38 +399,26 @@ class Sync implements Setup, Assets {
 
 					return ! file_exists( $file );
 				},
-				'sync'     => array(
-					'priority' => 1,
-					'callback' => array( $this->managers['download'], 'download_asset' ),
-				),
-				'status'   => array(
-					'state' => 'info downloading',
-					'note'  => __( 'Downloading from Cloudinary', 'cloudinary' ),
-				),
+				'priority' => 1,
+				'sync'     => array( $this->managers['download'], 'download_asset' ),
+				'state'    => 'info downloading',
+				'note'     => __( 'Downloading from Cloudinary', 'cloudinary' ),
 			),
 			'file'        => array(
 				'generate' => 'get_attached_file',
-				'sync'     => array(
-					'priority' => 5,
-					'callback' => array( $this->managers['upload'], 'upload_asset' ),
-				),
-				'status'   => array(
-					'state' => 'info',
-					'note'  => __( 'Uploading to Cloudinary', 'cloudinary' ),
-				),
+				'priority' => 5,
+				'sync'     => array( $this->managers['upload'], 'upload_asset' ),
+				'state'    => 'info',
+				'note'     => __( 'Uploading to Cloudinary', 'cloudinary' ),
 			),
 			'folder'      => array(
 				'generate' => array( $this->managers['media'], 'get_cloudinary_folder' ),
-				'sync'     => array(
-					'priority' => 10,
-					'callback' => array( $this->managers['upload'], 'upload_asset' ),
-				),
-				'status'   => array(
-					'state' => 'info syncing',
-					'note'  => function () {
-						return sprintf( __( 'Copying to folder %s.', 'cloudinary' ), untrailingslashit( $this->managers['media']->get_cloudinary_folder() ) );
-					},
-				),
+				'priority' => 10,
+				'sync'     => array( $this->managers['upload'], 'upload_asset' ),
+				'state'    => 'info syncing',
+				'note'     => function () {
+					return sprintf( __( 'Copying to folder %s.', 'cloudinary' ), untrailingslashit( $this->managers['media']->get_cloudinary_folder() ) );
+				},
 			),
 			'public_id'   => array(
 				'generate' => array( $this->managers['media'], 'get_public_id' ),
@@ -399,58 +427,38 @@ class Sync implements Setup, Assets {
 
 					return false === $public_id;
 				},
-				'sync'     => array(
-					'priority' => 20,
-					'callback' => array( $this->managers['media']->upgrade, 'convert_cloudinary_version' ), // Rename
-				),
-				'status'   => array(
-					'state' => 'info syncing',
-					'note'  => __( 'Updating metadata', 'cloudinary' ),
-				),
+				'priority' => 20,
+				'sync'     => array( $this->managers['media']->upgrade, 'convert_cloudinary_version' ), // Rename
+				'state'    => 'info syncing',
+				'note'     => __( 'Updating metadata', 'cloudinary' ),
 			),
 			'suffix'      => array(
 				'generate' => array( $this, 'get_suffix_maybe' ),
-				'sync'     => array(
-					'priority' => 10,
-					'callback' => array( $this->managers['upload'], 'upload_asset' ),
-				),
-				'status'   => array(
-					'state' => 'uploading',
-					'note'  => __( 'Creating unique version', 'cloudinary' ),
-				),
+				'priority' => 10,
+				'sync'     => array( $this->managers['upload'], 'upload_asset' ),
+				'state'    => 'uploading',
+				'note'     => __( 'Creating unique version', 'cloudinary' ),
 			),
 			'breakpoints' => array(
 				'generate' => array( $this->managers['media'], 'get_breakpoint_options' ),
-				'sync'     => array(
-					'priority' => 25,
-					'callback' => array( $this->managers['upload'], 'explicit_update' ),
-				),
-				'status'   => array(
-					'state' => 'info syncing',
-					'note'  => __( 'Updating breakpoints', 'cloudinary' ),
-				),
+				'priority' => 25,
+				'sync'     => array( $this->managers['upload'], 'explicit_update' ),
+				'state'    => 'info syncing',
+				'note'     => __( 'Updating breakpoints', 'cloudinary' ),
 			),
 			'options'     => array(
 				'generate' => array( $this->managers['media'], 'get_upload_options' ),
-				'sync'     => array(
-					'priority' => 30,
-					'callback' => array( $this->managers['upload'], 'context_update' ),
-				),
-				'status'   => array(
-					'state' => 'info syncing',
-					'note'  => __( 'Updating metadata', 'cloudinary' ),
-				),
+				'priority' => 30,
+				'sync'     => array( $this->managers['upload'], 'context_update' ),
+				'state'    => 'info syncing',
+				'note'     => __( 'Updating metadata', 'cloudinary' ),
 			),
 			'cloud_name'  => array(
 				'generate' => array( $this->managers['connect'], 'get_cloud_name' ),
-				'sync'     => array(
-					'priority' => 5,
-					'callback' => array( $this->managers['upload'], 'upload_asset' ),
-				),
-				'status'   => array(
-					'state' => 'uploading',
-					'note'  => __( 'Uploading to new cloud name.', 'cloudinary' ),
-				),
+				'priority' => 5,
+				'sync'     => array( $this->managers['upload'], 'upload_asset' ),
+				'state'    => 'uploading',
+				'note'     => __( 'Uploading to new cloud name.', 'cloudinary' ),
 			),
 		);
 
@@ -463,36 +471,10 @@ class Sync implements Setup, Assets {
 		 */
 		$base_struct = apply_filters( 'cloudinary_sync_base_struct', $base_struct );
 
-		// Apply a default to ensure parts exist.s
-		$structs = array_map(
-			function ( $component ) {
-				$sync_default   = array(
-					'priority' => 50,
-					'callback' => '__return_null',
-				);
-				$status_default = array(
-					'state' => 'sync',
-					'note'  => __( 'Syncronizing asset with Cloudinary', 'cloudinary' ),
-				);
-				$default        = array(
-					'generate' => '__return_null',
-					'sync'     => array(),
-					'status'   => array(),
-				);
-
-				// Ensure correct struct.
-				$component                     = wp_parse_args( $component, $default );
-				$component['sync']             = wp_parse_args( $component['sync'], $sync_default );
-				$component['sync']['priority'] = is_int( $component['sync']['priority'] ) ? (int) $component['sync']['priority'] : 50;
-				$component['status']           = wp_parse_args( $component['status'], $status_default );
-
-
-				return $component;
-			},
-			$base_struct
-		);
-
-		$this->sync_base_struct = $structs;
+		// Register each sync type.
+		foreach ( $base_struct as $type => $structure ) {
+			$this->register_sync_type( $type, $structure );
+		}
 	}
 
 	/**
@@ -502,8 +484,8 @@ class Sync implements Setup, Assets {
 
 		$sync_types = array();
 		foreach ( $this->sync_base_struct as $type => $struct ) {
-			if ( is_callable( $struct['sync']['callback'] ) ) {
-				$sync_types[ $type ] = $struct['sync']['priority'];
+			if ( is_callable( $struct['sync'] ) ) {
+				$sync_types[ $type ] = $struct['priority'];
 			}
 		}
 
@@ -521,8 +503,8 @@ class Sync implements Setup, Assets {
 	 */
 	public function get_sync_method( $type ) {
 		$method = false;
-		if ( isset( $this->sync_base_struct[ $type ]['sync']['callback'] ) ) {
-			$method = $this->sync_base_struct[ $type ]['sync']['callback'];
+		if ( isset( $this->sync_base_struct[ $type ]['sync'] ) ) {
+			$method = $this->sync_base_struct[ $type ]['sync'];
 		}
 
 		return $method;
@@ -641,7 +623,8 @@ class Sync implements Setup, Assets {
 					$status['state'] = 'error';
 					$status['note']  = $log[ $sync_type ]->get_error_message();
 				} else {
-					$status = $this->sync_base_struct[ $sync_type ]['status'];
+					$status['state'] = $this->sync_base_struct[ $sync_type ]['state'];
+					$status['note']  = $this->sync_base_struct[ $sync_type ]['note'];
 					if ( is_callable( $status['note'] ) ) {
 						$status['note'] = call_user_func( $status['note'] );
 					}
@@ -720,11 +703,11 @@ class Sync implements Setup, Assets {
 	public function update_signature( $attachment_id, $type ) {
 
 		$expecting           = $this->generate_signature( $attachment_id );
-		$current_sync_method = $this->sync_base_struct[ $type ]['sync']['callback'];
+		$current_sync_method = $this->sync_base_struct[ $type ]['sync'];
 
 		// Go over all other types that share the same sync method and include them here.
 		foreach ( $this->sync_base_struct as $sync_type => $struct ) {
-			if ( $struct['sync']['callback'] === $current_sync_method ) {
+			if ( $struct['sync'] === $current_sync_method ) {
 				$this->set_signature_item( $attachment_id, $sync_type, $expecting[ $sync_type ] );
 			}
 		}
