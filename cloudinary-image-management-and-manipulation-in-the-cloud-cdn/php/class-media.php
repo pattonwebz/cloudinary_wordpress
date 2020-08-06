@@ -1488,7 +1488,7 @@ class Media implements Setup {
 		$options = array(
 			'unique_filename' => false,
 			'resource_type'   => $this->get_media_type( $attachment_id ),
-			'public_id'       => $this->get_public_id( $attachment_id ),
+			'public_id'       => basename( $this->get_public_id( $attachment_id ) ),
 			'context'         => $this->get_context_options( $attachment_id ),
 		);
 
@@ -1502,6 +1502,10 @@ class Media implements Setup {
 		 * @return array
 		 */
 		$options = apply_filters( 'cloudinary_upload_options', $options, get_post( $attachment_id ), $this );
+		// Add folder to prevent folder contamination.
+		if ( $this->is_folder_synced( $attachment_id ) ) {
+			$options['public_id'] = $this->get_cloudinary_folder() . basename( $options['public_id'] );
+		}
 
 		return $options;
 	}

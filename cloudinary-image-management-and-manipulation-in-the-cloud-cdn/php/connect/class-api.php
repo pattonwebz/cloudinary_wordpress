@@ -239,8 +239,6 @@ class Api {
 		// check for version.
 		if ( ! empty( $args['version'] ) && is_numeric( $args['version'] ) ) {
 			$args['version'] = 'v' . $args['version'];
-		} else {
-			$args['version'] = 'v1';
 		}
 
 		// Determine if we're dealing with a fetched.

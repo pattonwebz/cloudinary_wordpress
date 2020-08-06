@@ -280,8 +280,6 @@ class Sync implements Setup, Assets {
 	 */
 	public function get_suffix( $attachment_id ) {
 
-		$suffixed = '';
-
 		$options    = $this->managers['media']->get_upload_options( $attachment_id ); // Filtered, upload options.
 		$cld_folder = $this->managers['media']->get_cloudinary_folder();
 		$public_id  = $options['public_id'];
@@ -292,7 +290,7 @@ class Sync implements Setup, Assets {
 		$public_id .= $this->managers['media']->get_post_meta( $attachment_id, Sync::META_KEYS['suffix'], true );
 
 
-		return $suffixed;
+		return $public_id;
 	}
 
 	/**
