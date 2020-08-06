@@ -661,7 +661,12 @@ class Media implements Setup {
 	 * @return string
 	 */
 	public function get_cloudinary_folder() {
-		return trailingslashit( $this->cloudinary_folder );
+		$folder = '';
+		if ( ! empty( $this->cloudinary_folder ) ) {
+			$folder = trailingslashit( $this->cloudinary_folder );
+		}
+
+		return $folder;
 	}
 
 	/**
@@ -1426,6 +1431,7 @@ class Media implements Setup {
 		$context_options = array(
 			'caption' => esc_attr( get_the_title( $attachment_id ) ),
 			'alt'     => get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ),
+			'guid'    => md5( get_the_guid( $attachment_id ) ),
 		);
 
 		// Check if this asset is a folder sync.
@@ -1446,6 +1452,23 @@ class Media implements Setup {
 		$context_options = apply_filters( 'cloudinary_context_options', $context_options, get_post( $attachment_id ), $this );
 
 		return http_build_query( $context_options, null, '|' );
+	}
+
+	/**
+	 * Check if an asset is folder synced.
+	 *
+	 * @param int $attachment_id The attachment ID.
+	 *
+	 * @return bool
+	 */
+	public function is_folder_synced( $attachment_id ) {
+
+		$return = true; // By default all assets in WordPress will be synced.
+		if ( $this->sync->been_synced( $attachment_id ) ) {
+			$return = ! empty( $this->get_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], true ) );
+		}
+
+		return $return;
 	}
 
 	/**

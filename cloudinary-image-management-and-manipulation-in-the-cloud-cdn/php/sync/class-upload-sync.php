@@ -299,4 +299,48 @@ class Upload_Sync {
 			}
 		}
 	}
+
+	public function add_suffix_maybe( $attachment_id, $suffix = null ) {
+
+		// Test if asset exists by calling just the head on the asset url, to prevent API rate limits.
+		$options   = $this->media->get_upload_options( $attachment_id );
+		$public_id = $options['public_id'];
+
+		$url         = $this->connect->api->cloudinary_url( $public_id . $suffix );
+		$req         = wp_remote_head( $url, array( 'body' => array( 'rdm' => wp_rand( 100, 999 ) ) ) );
+		$asset_error = strtolower( wp_remote_retrieve_header( $req, 'x-cld-error' ) );
+		$code        = wp_remote_retrieve_response_code( $req );
+
+		// If the request is not a 404 & does not have a cld-error header stating resource not found, it exists and should be checked that it's not a resync or generate a prefixed ID.
+		if ( 404 !== $code && false === strpos( $asset_error, 'resource not found' ) ) {
+
+			// Get the attachment type.
+			$type      = $this->media->get_media_type( $attachment_id );
+			$cld_asset = $this->plugin->components['connect']->api->get_asset_details( $public_id . $suffix, $type );
+			if ( ! is_wp_error( $cld_asset ) && ! empty( $cld_asset['public_id'] ) ) {
+				$context_guid    = null;
+				$attachment_guid = md5( get_the_guid( $attachment_id ) );
+
+				// Exists, check to see if this asset originally belongs to this ID.
+				if ( ! empty( $cld_asset['context'] ) && ! empty( $cld_asset['context']['custom'] ) && ! empty( $cld_asset['context']['custom']['guid'] ) ) {
+					$context_guid = $cld_asset['context']['custom']['guid'];
+				}
+
+				// Generate new ID only if context ID is not related.
+				if ( $context_guid !== $attachment_guid ) {
+					// Generate a new ID with a uniqueID prefix.
+					$suffix = '-' . uniqid( $attachment_id );
+
+					// Return new potential suffixed ID.
+					return $this->add_suffix_maybe( $attachment_id, $suffix );
+				}
+			}
+		}
+		// Save defined suffix.
+		$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['suffix'], $suffix );
+		// Update Signature.
+		$this->sync->set_signature_item( $attachment_id, 'suffix' );
+
+		return $suffix;
+	}
 }

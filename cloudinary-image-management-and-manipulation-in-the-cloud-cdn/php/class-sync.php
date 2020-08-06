@@ -395,13 +395,14 @@ class Sync implements Setup, Assets {
 			),
 			'file'        => array(
 				'generate' => 'get_attached_file',
-				'priority' => 5,
+				'priority' => 5.1,
 				'sync'     => array( $this->managers['upload'], 'upload_asset' ),
 				'state'    => 'info',
 				'note'     => __( 'Uploading to Cloudinary', 'cloudinary' ),
 			),
 			'folder'      => array(
 				'generate' => array( $this->managers['media'], 'get_cloudinary_folder' ),
+				'validate' => array( $this->managers['media'], 'is_folder_synced' ),
 				'priority' => 10,
 				'sync'     => array( $this->managers['upload'], 'upload_asset' ),
 				'state'    => 'info syncing',
@@ -422,9 +423,9 @@ class Sync implements Setup, Assets {
 				'note'     => __( 'Updating metadata', 'cloudinary' ),
 			),
 			'suffix'      => array(
-				'generate' => array( $this, 'get_suffix_maybe' ),
-				'priority' => 10,
-				'sync'     => array( $this->managers['upload'], 'upload_asset' ),
+				'generate' => array( $this, 'get_suffix' ),
+				'priority' => 5.0,
+				'sync'     => array( $this->managers['upload'], 'add_suffix_maybe' ),
 				'state'    => 'uploading',
 				'note'     => __( 'Creating unique version', 'cloudinary' ),
 			),
@@ -444,7 +445,7 @@ class Sync implements Setup, Assets {
 			),
 			'cloud_name'  => array(
 				'generate' => array( $this->managers['connect'], 'get_cloud_name' ),
-				'priority' => 5,
+				'priority' => 5.5,
 				'sync'     => array( $this->managers['upload'], 'upload_asset' ),
 				'state'    => 'uploading',
 				'note'     => __( 'Uploading to new cloud name.', 'cloudinary' ),
@@ -474,7 +475,7 @@ class Sync implements Setup, Assets {
 		$sync_types = array();
 		foreach ( $this->sync_base_struct as $type => $struct ) {
 			if ( is_callable( $struct['sync'] ) ) {
-				$sync_types[ $type ] = $struct['priority'];
+				$sync_types[ $type ] = floatval( $struct['priority'] );
 			}
 		}
 
