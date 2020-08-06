@@ -116,17 +116,15 @@ class Upload_Sync {
 				$actions['cloudinary-push'] = sprintf(
 					'<a href="%s" aria-label="%s">%s</a>',
 					$action_url,
-					/* translators: %s: Attachment title. */
-					esc_attr( __( 'Push to Cloudinary' ) ),
-					__( 'Push to Cloudinary', 'cloudinary' )
+					esc_attr__( 'Push to Cloudinary', 'cloudinary' ),
+					esc_html__( 'Push to Cloudinary', 'cloudinary' )
 				);
 			} else {
 				$actions['cloudinary-push'] = sprintf(
 					'<a href="%s" aria-label="%s">%s</a>',
 					$action_url,
-					/* translators: %s: Attachment title. */
-					esc_attr( __( 'Re-sync to Cloudinary', 'cloudinary' ) ),
-					__( 'Re-sync to Cloudinary', 'cloudinary' )
+					esc_attr__( 'Re-sync to Cloudinary', 'cloudinary' ),
+					esc_html__( 'Re-sync to Cloudinary', 'cloudinary' )
 				);
 			}
 		}

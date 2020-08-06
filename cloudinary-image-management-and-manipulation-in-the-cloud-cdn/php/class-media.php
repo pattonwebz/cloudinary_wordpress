@@ -123,13 +123,13 @@ class Media implements Setup {
 	/**
 	 * Check if the attachment is a media file.
 	 *
-	 * @param int|\WP_Post $attachment The attachment to check.
+	 * @param int $attachment_id The attachment ID to check.
 	 *
 	 * @return bool
 	 */
-	public function is_media( $attachment ) {
+	public function is_media( $attachment_id ) {
 		$is_media = false;
-		if ( 'attachment' === get_post_type( $attachment ) ) {
+		if ( 'attachment' === get_post_type( $attachment_id ) ) {
 			/**
 			 * Filter the default Cloudinary Media Types.
 			 *
@@ -138,7 +138,7 @@ class Media implements Setup {
 			 * @return array
 			 */
 			$media_types = apply_filters( 'cloudinary_media_types', array( 'image', 'video', 'audio' ) );
-			$type        = $this->get_media_type( $attachment );
+			$type        = $this->get_media_type( $attachment_id );
 			$is_media    = in_array( $type, $media_types );
 		}
 

@@ -181,7 +181,7 @@ class Sync_Queue {
 	public function is_running() {
 		$queue = $this->get_queue();
 
-		return empty( $queue['started'] ) ? false : true;
+		return ! empty( $queue['started'] );
 	}
 
 	/**
