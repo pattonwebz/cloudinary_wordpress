@@ -661,20 +661,33 @@ class Media implements Setup {
 	 * @return string
 	 */
 	public function get_cloudinary_folder() {
-		return trailingslashit( $this->cloudinary_folder );
+		$folder = '';
+		if ( ! empty( $this->cloudinary_folder ) ) {
+			$folder = trailingslashit( $this->cloudinary_folder );
+		}
+
+		return $folder;
 	}
 
 	/**
 	 * Get a public ID.
 	 *
-	 * @param int $attachment_id The Attachment ID.
+	 * @param int  $attachment_id The Attachment ID.
+	 * @param bool $suffixed      Flag to get suffixed version of ID.
 	 *
-	 * @return string A cloudinary public id.
+	 * @return string
 	 */
-	public function get_public_id( $attachment_id ) {
+	public function get_public_id( $attachment_id, $suffixed = false ) {
 		// Check for a public_id.
-		$public_id = $this->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true );
-		if ( empty( $public_id ) ) {
+		if ( $this->has_public_id( $attachment_id ) ) {
+			$public_id = $this->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true );
+			if ( $this->is_folder_synced( $attachment_id ) ) {
+				$public_id = $this->get_cloudinary_folder() . pathinfo( $public_id, PATHINFO_BASENAME );
+			}
+			if ( true === $suffixed ) {
+				$public_id .= $this->get_post_meta( $attachment_id, Sync::META_KEYS['suffix'], true );
+			}
+		} else {
 			$public_id = $this->sync->generate_public_id( $attachment_id );
 		}
 
@@ -701,21 +714,17 @@ class Media implements Setup {
 	 */
 	public function get_cloudinary_id( $attachment_id ) {
 
-		$public_id = null;
+		$cloudinary_id = null;
 		// A cloudinary_id is a public_id with a file extension.
 		if ( $this->has_public_id( $attachment_id ) ) {
-			$public_id   = $this->get_public_id( $attachment_id );
-			$suffix_data = $this->get_post_meta( $attachment_id, Sync::META_KEYS['suffix'], true );
-			if ( is_array( $suffix_data ) && ! empty( $suffix_data['suffix'] ) && $suffix_data['public_id'] === $public_id ) {
-				$public_id = $public_id . $suffix_data['suffix'];
-			}
-			$file = get_attached_file( $attachment_id );
+			$public_id = $this->get_public_id( $attachment_id, true );
+			$file      = get_attached_file( $attachment_id );
 			// @todo: Make this use the globals, overrides, and application conversion.
-			$extension = pathinfo( $file, PATHINFO_EXTENSION );
-			$public_id = $public_id . '.' . $extension;
+			$extension     = pathinfo( $file, PATHINFO_EXTENSION );
+			$cloudinary_id = $public_id . '.' . $extension;
 		}
 
-		return $public_id;
+		return $cloudinary_id;
 	}
 
 	/**
@@ -735,7 +744,7 @@ class Media implements Setup {
 			return $this->cloudinary_ids[ $attachment_id ];
 		}
 		if ( ! $this->sync->is_synced( $attachment_id ) && ! defined( 'REST_REQUEST' ) ) {
-			$this->sync->maybe_prepare_sync( $attachment_id );
+			return $this->sync->maybe_prepare_sync( $attachment_id );
 		}
 
 		$cloudinary_id = $this->get_cloudinary_id( $attachment_id );
@@ -1081,7 +1090,7 @@ class Media implements Setup {
 			}
 			$transformations = $this->get_transformations_from_string( $url );
 			if ( ! empty( $transformations ) ) {
-				$sync_key                .= wp_json_encode( $transformations );
+				$sync_key                 .= wp_json_encode( $transformations );
 				$asset['transformations'] = $transformations;
 			}
 			// Check Format and url extension.
@@ -1264,29 +1273,6 @@ class Media implements Setup {
 	}
 
 	/**
-	 * Add a full Cloudinary full size with stored file name to the sizes array.
-	 *
-	 * @param array $data    Image meta data array.
-	 * @param int   $post_id Attachment post ID.
-	 *
-	 * @return mixed
-	 */
-	public function add_cloudinary_full_size( $data, $post_id ) {
-		// Add a full Cloudinary filename size.
-		if ( ! empty( $data['file'] ) && ! empty( $data['sizes'] ) ) {
-			$info                       = pathinfo( $data['file'] );
-			$cld_file                   = $this->get_public_id( $post_id ) . '.' . $info['extension'];
-			$data['sizes']['_cld_full'] = array(
-				'file'   => basename( $cld_file ),
-				'width'  => $data['width'],
-				'height' => $data['height'],
-			);
-		}
-
-		return $data;
-	}
-
-	/**
 	 * Get Cloudinary related Post meta.
 	 *
 	 * @param int    $post_id The attachment ID.
@@ -1426,6 +1412,7 @@ class Media implements Setup {
 		$context_options = array(
 			'caption' => esc_attr( get_the_title( $attachment_id ) ),
 			'alt'     => get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ),
+			'guid'    => md5( get_the_guid( $attachment_id ) ),
 		);
 
 		// Check if this asset is a folder sync.
@@ -1449,6 +1436,23 @@ class Media implements Setup {
 	}
 
 	/**
+	 * Check if an asset is folder synced.
+	 *
+	 * @param int $attachment_id The attachment ID.
+	 *
+	 * @return bool
+	 */
+	public function is_folder_synced( $attachment_id ) {
+
+		$return = true; // By default all assets in WordPress will be synced.
+		if ( $this->sync->been_synced( $attachment_id ) ) {
+			$return = ! empty( $this->get_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], true ) );
+		}
+
+		return $return;
+	}
+
+	/**
 	 * Get the media upload options as connected to Cloudinary.
 	 *
 	 * @param int $attachment_id The attachment ID.
@@ -1461,7 +1465,7 @@ class Media implements Setup {
 		$options = array(
 			'unique_filename' => false,
 			'resource_type'   => $this->get_media_type( $attachment_id ),
-			'public_id'       => $this->get_public_id( $attachment_id ),
+			'public_id'       => basename( $this->get_public_id( $attachment_id ) ),
 			'context'         => $this->get_context_options( $attachment_id ),
 		);
 
@@ -1475,6 +1479,10 @@ class Media implements Setup {
 		 * @return array
 		 */
 		$options = apply_filters( 'cloudinary_upload_options', $options, get_post( $attachment_id ), $this );
+		// Add folder to prevent folder contamination.
+		if ( $this->is_folder_synced( $attachment_id ) ) {
+			$options['public_id'] = $this->get_cloudinary_folder() . basename( $options['public_id'] );
+		}
 
 		return $options;
 	}
@@ -1510,7 +1518,6 @@ class Media implements Setup {
 			// Filter live URLS. (functions that return a URL).
 			add_filter( 'wp_calculate_image_srcset', array( $this, 'image_srcset' ), 10, 5 );
 			add_filter( 'wp_calculate_image_srcset_meta', array( $this, 'match_responsive_sources' ), 10, 4 );
-			add_filter( 'wp_get_attachment_metadata', array( $this, 'add_cloudinary_full_size' ), 10, 2 );
 			add_filter( 'wp_get_attachment_url', array( $this, 'attachment_url' ), 10, 2 );
 			add_filter( 'image_downsize', array( $this, 'filter_downsize' ), 10, 3 );
 
