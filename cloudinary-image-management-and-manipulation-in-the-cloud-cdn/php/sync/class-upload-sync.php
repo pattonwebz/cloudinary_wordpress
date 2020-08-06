@@ -146,8 +146,9 @@ class Upload_Sync {
 		switch ( $action ) {
 			case 'cloudinary-push' :
 				foreach ( $post_ids as $post_id ) {
-					$this->sync->set_signature_item( $post_id, 'file', '' );
-					$this->sync->add_to_sync( $post_id );
+					//$this->sync->set_signature_item( $post_id, 'file', '' );
+					//$this->sync->add_to_sync( $post_id );
+					$this->pusher->process_assets( [ $post_id ] );
 				}
 				break;
 		}
@@ -202,9 +203,16 @@ class Upload_Sync {
 		$type      = $this->sync->get_sync_type( $attachment_id );
 		$options   = $this->media->get_upload_options( $attachment_id );
 		$public_id = $options['public_id'];
-		$result    = $this->connect->api->upload( $attachment_id, $options );
+
+		// Add the suffix before uploading.
+		$options['public_id'] .= $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['suffix'], true );
+
+		// Run the upload Call.
+		$result = $this->connect->api->upload( $attachment_id, $options );
 
 		if ( ! is_wp_error( $result ) ) {
+			// Set folder Synced.
+			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], $this->media->is_folder_synced( $attachment_id ) );
 			// Set public_id.
 			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['public_id'], $public_id );
 			// Update signature for all that use the same method.
@@ -306,7 +314,7 @@ class Upload_Sync {
 		$options   = $this->media->get_upload_options( $attachment_id );
 		$public_id = $options['public_id'];
 
-		$url         = $this->connect->api->cloudinary_url( $public_id . $suffix );
+		$url         = $this->connect->api->cloudinary_url( $public_id . $suffix, array( 'transformation' => array( array( 'fetch_format' => 'auto' ) ) ) );
 		$req         = wp_remote_head( $url, array( 'body' => array( 'rdm' => wp_rand( 100, 999 ) ) ) );
 		$asset_error = strtolower( wp_remote_retrieve_header( $req, 'x-cld-error' ) );
 		$code        = wp_remote_retrieve_response_code( $req );

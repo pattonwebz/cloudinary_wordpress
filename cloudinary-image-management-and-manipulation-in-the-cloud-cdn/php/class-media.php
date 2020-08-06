@@ -672,14 +672,22 @@ class Media implements Setup {
 	/**
 	 * Get a public ID.
 	 *
-	 * @param int $attachment_id The Attachment ID.
+	 * @param int  $attachment_id The Attachment ID.
+	 * @param bool $suffixed      Flag to get suffixed version of ID.
 	 *
-	 * @return string A cloudinary public id.
+	 * @return string
 	 */
-	public function get_public_id( $attachment_id ) {
+	public function get_public_id( $attachment_id, $suffixed = false ) {
 		// Check for a public_id.
-		$public_id = $this->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true );
-		if ( empty( $public_id ) ) {
+		if ( $this->has_public_id( $attachment_id ) ) {
+			$public_id = $this->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true );
+			if ( $this->is_folder_synced( $attachment_id ) ) {
+				$public_id = $this->get_cloudinary_folder() . pathinfo( $public_id, PATHINFO_BASENAME );
+			}
+			if ( true === $suffixed ) {
+				$public_id .= $this->get_post_meta( $attachment_id, Sync::META_KEYS['suffix'], true );
+			}
+		} else {
 			$public_id = $this->sync->generate_public_id( $attachment_id );
 		}
 
@@ -706,21 +714,17 @@ class Media implements Setup {
 	 */
 	public function get_cloudinary_id( $attachment_id ) {
 
-		$public_id = null;
+		$cloudinary_id = null;
 		// A cloudinary_id is a public_id with a file extension.
 		if ( $this->has_public_id( $attachment_id ) ) {
-			$public_id   = $this->get_public_id( $attachment_id );
-			$suffix_data = $this->get_post_meta( $attachment_id, Sync::META_KEYS['suffix'], true );
-			if ( is_array( $suffix_data ) && ! empty( $suffix_data['suffix'] ) && $suffix_data['public_id'] === $public_id ) {
-				$public_id = $public_id . $suffix_data['suffix'];
-			}
-			$file = get_attached_file( $attachment_id );
+			$public_id = $this->get_public_id( $attachment_id, true );
+			$file      = get_attached_file( $attachment_id );
 			// @todo: Make this use the globals, overrides, and application conversion.
-			$extension = pathinfo( $file, PATHINFO_EXTENSION );
-			$public_id = $public_id . '.' . $extension;
+			$extension     = pathinfo( $file, PATHINFO_EXTENSION );
+			$cloudinary_id = $public_id . '.' . $extension;
 		}
 
-		return $public_id;
+		return $cloudinary_id;
 	}
 
 	/**
@@ -740,7 +744,7 @@ class Media implements Setup {
 			return $this->cloudinary_ids[ $attachment_id ];
 		}
 		if ( ! $this->sync->is_synced( $attachment_id ) && ! defined( 'REST_REQUEST' ) ) {
-			$this->sync->maybe_prepare_sync( $attachment_id );
+			return $this->sync->maybe_prepare_sync( $attachment_id );
 		}
 
 		$cloudinary_id = $this->get_cloudinary_id( $attachment_id );
@@ -1086,7 +1090,7 @@ class Media implements Setup {
 			}
 			$transformations = $this->get_transformations_from_string( $url );
 			if ( ! empty( $transformations ) ) {
-				$sync_key                .= wp_json_encode( $transformations );
+				$sync_key                 .= wp_json_encode( $transformations );
 				$asset['transformations'] = $transformations;
 			}
 			// Check Format and url extension.
@@ -1533,7 +1537,7 @@ class Media implements Setup {
 			// Filter live URLS. (functions that return a URL).
 			add_filter( 'wp_calculate_image_srcset', array( $this, 'image_srcset' ), 10, 5 );
 			add_filter( 'wp_calculate_image_srcset_meta', array( $this, 'match_responsive_sources' ), 10, 4 );
-			add_filter( 'wp_get_attachment_metadata', array( $this, 'add_cloudinary_full_size' ), 10, 2 );
+			//add_filter( 'wp_get_attachment_metadata', array( $this, 'add_cloudinary_full_size' ), 10, 2 );
 			add_filter( 'wp_get_attachment_url', array( $this, 'attachment_url' ), 10, 2 );
 			add_filter( 'image_downsize', array( $this, 'filter_downsize' ), 10, 3 );
 

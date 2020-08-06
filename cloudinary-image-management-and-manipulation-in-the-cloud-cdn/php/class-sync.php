@@ -270,7 +270,7 @@ class Sync implements Setup, Assets {
 	}
 
 	/**
-	 * Maybe add a suffix to the public ID if it's not unique.
+	 * Get suffix for the attachment.
 	 *
 	 * @param string      $public_id     The public ID to maybe add a suffix.
 	 * @param int         $attachment_id The attachment ID.
@@ -554,7 +554,7 @@ class Sync implements Setup, Assets {
 	 *
 	 * @param int $attachment_id The attachment ID.
 	 *
-	 * @return void
+	 * @return null
 	 */
 	public function maybe_prepare_sync( $attachment_id ) {
 
@@ -562,6 +562,8 @@ class Sync implements Setup, Assets {
 		if ( $type && $this->can_sync( $attachment_id, $type ) ) {
 			$this->add_to_sync( $attachment_id );
 		}
+
+		return null;
 	}
 
 	/**

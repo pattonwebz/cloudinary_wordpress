@@ -238,16 +238,20 @@ class Download_Sync {
 				$meta[ Sync::META_KEYS['cloudinary'] ] = $old_meta[ Sync::META_KEYS['cloudinary'] ];
 				wp_update_attachment_metadata( $attachment_id, $meta );
 			}
-			$this->sync->set_signature_item( $attachment_id, 'download' );
-			$this->sync->set_signature_item( $attachment_id, 'file' );
-			$this->sync->set_signature_item( $attachment_id, 'folder' );
 			// Update the folder synced flag.
 			$public_id         = $this->media->get_public_id( $attachment_id );
 			$asset_folder      = strpos( $public_id, '/' ) ? dirname( $public_id ) : '/';
-			$cloudinary_folder = $this->media->get_cloudinary_folder();
+			$cloudinary_folder = rtrim( $this->media->get_cloudinary_folder(), '/' );
 			if ( $asset_folder === $cloudinary_folder ) {
 				$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], true );
 			}
+			// Generate signatures.
+			$this->sync->set_signature_item( $attachment_id, 'options' );
+			$this->sync->set_signature_item( $attachment_id, 'cloud_name' );
+			$this->sync->set_signature_item( $attachment_id, 'suffix' );
+			$this->sync->set_signature_item( $attachment_id, 'download' );
+			$this->sync->set_signature_item( $attachment_id, 'file' );
+			$this->sync->set_signature_item( $attachment_id, 'folder' );
 
 		} catch ( \Exception $e ) {
 			return new \WP_Error( 'download_error', $e->getMessage() );
