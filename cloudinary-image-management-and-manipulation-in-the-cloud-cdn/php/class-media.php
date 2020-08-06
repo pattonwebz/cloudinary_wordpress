@@ -1151,7 +1151,7 @@ class Media implements Setup {
 					'note'  => esc_html__( 'Not Synced', 'cloudinary' ),
 				);
 				add_filter( 'cloudinary_flag_sync', '__return_true' );
-				if ( false === $this->cloudinary_id( $attachment_id ) ) {
+				if ( ! $this->cloudinary_id( $attachment_id ) ) {
 					// If false, lets check why by seeing if the file size is too large.
 					$file     = get_attached_file( $attachment_id ); // Get the file size to make sure it can exist in cloudinary.
 					$max_size = ( wp_attachment_is_image( $attachment_id ) ? 'image_max_size_bytes' : 'video_max_size_bytes' );
