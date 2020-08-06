@@ -381,7 +381,7 @@ class Filter {
 	public function filter_attachment_for_js( $attachment ) {
 		$cloudinary_id = $this->media->get_cloudinary_id( $attachment['id'] );
 
-		if ( false !== $cloudinary_id ) {
+		if ( ! $cloudinary_id ) {
 			$transformations = array();
 
 			if ( ! empty( $attachment['transformations'] ) ) {
@@ -421,7 +421,7 @@ class Filter {
 
 		$cloudinary_id = $this->media->cloudinary_id( $attachment->data['id'] );
 
-		if ( false !== $cloudinary_id ) {
+		if ( ! $cloudinary_id ) {
 			$attachment->data['source_url'] = $this->media->cloudinary_url( $attachment->data['id'], false );
 		}
 
