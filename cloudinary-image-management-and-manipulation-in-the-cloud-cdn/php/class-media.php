@@ -492,7 +492,7 @@ class Media implements Setup {
 	public function attachment_url( $url, $attachment_id ) {
 		if ( ! doing_action( 'wp_insert_post_data' ) && false === $this->in_downsize ) {
 			$cloudinary_id = $this->cloudinary_id( $attachment_id );
-			if ( ! $cloudinary_id ) {
+			if ( $cloudinary_id ) {
 				$url = $this->cloudinary_url( $attachment_id );
 			}
 			// Previous v1.
@@ -782,7 +782,7 @@ class Media implements Setup {
 
 		$cloudinary_id = $this->cloudinary_id( $attachment_id );
 
-		if ( ! $cloudinary_id ) {
+		if ( $cloudinary_id ) {
 			$this->in_downsize = true;
 			$intermediate      = image_get_intermediate_size( $attachment_id, $size );
 			if ( is_array( $intermediate ) ) {
@@ -833,7 +833,7 @@ class Media implements Setup {
 	 */
 	public function image_srcset( $sources, $size_array, $image_src, $image_meta, $attachment_id ) {
 		$cloudinary_id = $this->cloudinary_id( $attachment_id );
-		if ( false === $cloudinary_id ) {
+		if ( ! $cloudinary_id ) {
 			return $sources; // Return WordPress default sources.
 		}
 		// Get transformations from URL.
