@@ -419,9 +419,14 @@ class Api {
 		// Hook in flag to allow for non accessible URLS.
 		if ( is_wp_error( $result ) ) {
 			$error = $result->get_error_message();
-			if ( false !== strpos( $error, 'ERR_DNS_FAIL' ) ) {
+			/**
+			 * If there's an error and the file is a URL in the error message,
+			 * it's likely due to CURL or the location does not support URL file attachments.
+			 * In this case, we'll flag and disable it and try again with a local file.
+			 */
+			if ( empty( $disable_https_fetch ) && false !== strpos( $error, $args['file'] ) ) {
 				// URLS are not remotely available, try again as a file.
-				set_transient( '_cld_disable_http_upload', true, 300 );
+				set_transient( '_cld_disable_http_upload', true, DAY_IN_SECONDS );
 				// Remove URL file.
 				unset( $args['file'] );
 
