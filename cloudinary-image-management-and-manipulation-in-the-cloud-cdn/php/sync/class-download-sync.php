@@ -194,7 +194,8 @@ class Download_Sync {
 		require_once ABSPATH . 'wp-admin/includes/image.php';
 		require_once ABSPATH . 'wp-admin/includes/media.php';
 		if ( empty( $source ) ) {
-			$source = $this->media->cloudinary_url( $attachment_id );
+			$cloudinary_id = $this->media->get_cloudinary_id( $attachment_id );
+			$source        = $this->media->cloudinary_url( $attachment_id, array(), array(), $cloudinary_id );
 		}
 		$file_name = basename( $source );
 		try {
@@ -234,10 +235,10 @@ class Download_Sync {
 			$meta            = wp_generate_attachment_metadata( $attachment_id, $upload['file'] );
 			$captured_errors = ob_get_clean(); // Capture issues.
 			// Be sure to record v2 meta.
-			if ( ! empty( $meta[ Sync::META_KEYS['cloudinary'] ] ) ) {
+			if ( ! empty( $old_meta[ Sync::META_KEYS['cloudinary'] ] ) ) {
 				$meta[ Sync::META_KEYS['cloudinary'] ] = $old_meta[ Sync::META_KEYS['cloudinary'] ];
-				wp_update_attachment_metadata( $attachment_id, $meta );
 			}
+			wp_update_attachment_metadata( $attachment_id, $meta );
 			// Update the folder synced flag.
 			$public_id         = $this->media->get_public_id( $attachment_id );
 			$asset_folder      = strpos( $public_id, '/' ) ? dirname( $public_id ) : '/';
