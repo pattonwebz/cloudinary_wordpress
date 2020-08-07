@@ -396,8 +396,8 @@ class Sync implements Setup, Assets {
 				'generate' => array( $this, 'get_suffix' ),
 				'priority' => 5.0,
 				'sync'     => array( $this->managers['upload'], 'add_suffix_maybe' ),
-				'state'    => 'uploading',
-				'note'     => __( 'Creating unique version', 'cloudinary' ),
+				'state'    => 'info syncing',
+				'note'     => __( 'Checking version', 'cloudinary' ),
 			),
 			'breakpoints' => array(
 				'generate' => array( $this->managers['media'], 'get_breakpoint_options' ),
@@ -655,7 +655,7 @@ class Sync implements Setup, Assets {
 
 			// Check if there's an error.
 			$has_error = $this->managers['media']->get_post_meta( $attachment_id, Sync::META_KEYS['sync_error'], true );
-			if ( ! empty( $has_error ) ) {
+			if ( ! empty( $has_error ) && $this->get_sync_type( $attachment_id ) ) {
 				$status['state'] = 'error';
 				$status['note']  = $has_error;
 			}

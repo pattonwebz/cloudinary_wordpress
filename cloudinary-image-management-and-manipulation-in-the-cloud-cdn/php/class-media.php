@@ -1462,10 +1462,12 @@ class Media implements Setup {
 	public function get_upload_options( $attachment_id ) {
 
 		// Prepare upload options.
-		$options = array(
+		$public_id = $this->get_public_id( $attachment_id );
+		$folder    = ltrim( dirname( $public_id ), '.' );
+		$options   = array(
 			'unique_filename' => false,
 			'resource_type'   => $this->get_media_type( $attachment_id ),
-			'public_id'       => basename( $this->get_public_id( $attachment_id ) ),
+			'public_id'       => basename( $public_id ),
 			'context'         => $this->get_context_options( $attachment_id ),
 		);
 
@@ -1482,6 +1484,9 @@ class Media implements Setup {
 		// Add folder to prevent folder contamination.
 		if ( $this->is_folder_synced( $attachment_id ) ) {
 			$options['public_id'] = $this->get_cloudinary_folder() . basename( $options['public_id'] );
+		} elseif ( ! empty( $folder ) ) {
+			// add in folder if not empty (not in root).
+			$options['public_id'] = trailingslashit( $folder ) . basename( $options['public_id'] );
 		}
 
 		return $options;

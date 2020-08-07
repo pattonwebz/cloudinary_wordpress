@@ -327,10 +327,18 @@ class Upload_Sync {
 			if ( ! is_wp_error( $cld_asset ) && ! empty( $cld_asset['public_id'] ) ) {
 				$context_guid    = null;
 				$attachment_guid = md5( get_the_guid( $attachment_id ) );
+				$saved_version = $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['_cloudinary_version'], true );
 
 				// Exists, check to see if this asset originally belongs to this ID.
 				if ( ! empty( $cld_asset['context'] ) && ! empty( $cld_asset['context']['custom'] ) && ! empty( $cld_asset['context']['custom']['guid'] ) ) {
 					$context_guid = $cld_asset['context']['custom']['guid'];
+				}
+
+				// Check to see if this asset originally belongs to this ID using the older wp_id.
+				if ( ! empty( $cld_asset['context'] ) && ! empty( $cld_asset['context']['custom'] ) && ! empty( $cld_asset['context']['custom']['wp_id'] ) ) {
+					if( (int) $cld_asset['context']['custom']['wp_id'] === $attachment_id ) {
+						$context_guid = $attachment_guid;
+					}
 				}
 
 				// Generate new ID only if context ID is not related.

@@ -103,11 +103,29 @@ class Upgrade {
 		} else {
 			// v2 upgrade.
 			$public_id = $this->media->get_public_id( $attachment_id );
+			// Check folder sync in order.
+			if ( $this->media->is_folder_synced( $attachment_id ) ) {
+				$public_id_folder = ltrim( dirname( $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true ) ), '.' );
+				$test_signature   = md5( false );
+				$folder_signature = md5( $public_id_folder );
+				$signature        = $this->sync->get_signature( $attachment_id );
+				if ( $folder_signature !== $test_signature && $test_signature === $signature['folder'] ) {
+					// The test signature is a hashed false, which is how non-folder-synced items got hashed.
+					// Indicating this is broken link.
+					$this->media->delete_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'] );
+					$this->media->delete_post_meta( $attachment_id, Sync::META_KEYS['sync_error'] ); // Remove any errors from upgrade. they are outdated.
+					$this->sync->set_signature_item( $attachment_id, 'folder' );
+				}
+				// Since it had a folder sync, it was already matched with existing, so set the suffix.
+				$this->sync->set_signature_item( $attachment_id, 'suffix' );
+			}
 		}
 		$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['plugin_version'], $this->media->plugin->version );
 		$this->sync->set_signature_item( $attachment_id, 'upgrade' );
 		$this->sync->set_signature_item( $attachment_id, 'public_id' );
 
+		// Get a new uncached signature.
+		$this->sync->get_signature( $attachment_id, true );
 		return $public_id;
 	}
 
