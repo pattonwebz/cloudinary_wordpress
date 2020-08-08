@@ -1121,6 +1121,8 @@ class Media implements Setup {
 		$sync_key = $public_id;
 		// Capture public_id. Use core update_post_meta since this attachment data doesnt exist yet.
 		update_post_meta( $attachment_id, Sync::META_KEYS['public_id'], $public_id );
+		// Capture version number.
+		update_post_meta( $attachment_id, Sync::META_KEYS['version'], $asset['version'] );
 		if ( ! empty( $asset['transformations'] ) ) {
 			// Save a combined key.
 			$sync_key .= wp_json_encode( $asset['transformations'] );
