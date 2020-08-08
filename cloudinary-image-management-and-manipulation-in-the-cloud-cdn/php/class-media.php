@@ -188,15 +188,17 @@ class Media implements Setup {
 	 */
 	public function convert_media_extension( $filename ) {
 
+		// Add preferred formats in future.
 		$conversion_types = array(
 			'psd' => 'jpg',
-			'pdf' => 'jpg',
 		);
 		$info             = pathinfo( $filename );
 		$extension        = strtolower( $info['extension'] );
+		$convert          = 'jpg'; // Default handler.
 		if ( ! empty( $conversion_types[ $extension ] ) ) {
-			$filename = trailingslashit( $info['dirname'] ) . $info['filename'] . '.' . $conversion_types[ $extension ];
+			$convert = $conversion_types[ $extension ];
 		}
+		$filename = trailingslashit( $info['dirname'] ) . $info['filename'] . '.' . $convert;
 
 		return $filename;
 	}
@@ -211,6 +213,7 @@ class Media implements Setup {
 	public function is_preview_only( $attachment_id ) {
 		$preview_types = array(
 			'pdf',
+			'psd'
 		);
 		$mime          = wp_check_filetype( get_attached_file( $attachment_id ) );
 
@@ -616,7 +619,9 @@ class Media implements Setup {
 					$default['bit_rate'] = $global['video_bitrate'] . 'k';
 				}
 			} else {
-				$default['fetch_format'] = $global[ $type . '_format' ] !== 'none' ? $global[ $type . '_format' ] : null;
+				if ( 'auto' === $global[ $type . '_format' ] ) {
+					$default['fetch_format'] = 'auto';
+				}
 				if ( isset( $global[ $type . '_quality' ] ) ) {
 					$default['quality'] = $global[ $type . '_quality' ] !== 'none' ? $global[ $type . '_quality' ] : null;
 				} else {
@@ -808,7 +813,13 @@ class Media implements Setup {
 			$public_id = $this->get_public_id( $attachment_id, true );
 			$file      = get_attached_file( $attachment_id );
 			// @todo: Make this use the globals, overrides, and application conversion.
-			$extension     = pathinfo( $file, PATHINFO_EXTENSION );
+			$extension = pathinfo( $file, PATHINFO_EXTENSION );
+			if ( wp_attachment_is_image( $attachment_id ) ) {
+				$settings = $this->global_transformations->globals['image'];
+				if ( ! in_array( $settings['image_format'], array( 'none', 'auto' ), true ) ) {
+					$extension = $settings['image_format'];
+				}
+			}
 			$cloudinary_id = $public_id . '.' . $extension;
 		}
 
@@ -1631,11 +1642,6 @@ class Media implements Setup {
 			add_filter( 'wp_get_attachment_url', array( $this, 'attachment_url' ), 10, 2 );
 			add_filter( 'image_downsize', array( $this, 'filter_downsize' ), 10, 3 );
 
-			// PDF Previews.
-			add_filter( 'wp_get_attachment_image_src', function ( $a ) {
-
-				return $a;
-			} );
 			// Filter and action the custom column.
 			add_filter( 'manage_media_columns', array( $this, 'media_column' ) );
 			add_action( 'manage_media_custom_column', array( $this, 'media_column_value' ), 10, 2 );

@@ -264,6 +264,15 @@ class Api {
 			if ( true === $clean ) {
 				$size['clean'] = true;
 			}
+			if ( array_keys( $size ) == array( 0, 1 ) ) {
+				$size = array(
+					'width'  => $size[0],
+					'height' => $size[1],
+				);
+				if ( $size['width'] === $size['height'] ) {
+					$size['crop'] = 'fill';
+				}
+			}
 			$url_parts[] = self::generate_transformation_string( array( $size ) );
 		}
 
