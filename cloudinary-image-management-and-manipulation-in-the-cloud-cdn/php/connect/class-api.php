@@ -183,6 +183,9 @@ class Api {
 	 * @return string
 	 */
 	public static function generate_transformation_string( array $options, $type = 'image' ) {
+		if ( ! isset( self::$transformation_index[ $type ] ) ) {
+			return '';
+		}
 		$transformation_index = self::$transformation_index[ $type ];
 		$transformations      = array_map(
 			function ( $item ) use ( $transformation_index ) {
@@ -228,17 +231,19 @@ class Api {
 	 * @return string
 	 */
 	public function cloudinary_url( $public_id, $args = array(), $size = array(), $clean = false ) {
+
 		$defaults = array(
 			'resource_type' => 'image',
 		);
 		$args     = wp_parse_args( array_filter( $args ), $defaults );
 		// Correct Audio to Video.
-		if ( 'audio' === $args['resource_type'] ) {
-			$args['resource_type'] = 'video';
-		}
+		$args['resource_type'] = $this->covert_resource_type( $args['resource_type'] );
+
 		// check for version.
 		if ( ! empty( $args['version'] ) && is_numeric( $args['version'] ) ) {
 			$args['version'] = 'v' . $args['version'];
+		} else {
+			$args['version'] = 'v1';
 		}
 
 		// Determine if we're dealing with a fetched.
@@ -269,6 +274,26 @@ class Api {
 		$url_parts = array_filter( $url_parts );
 
 		return implode( '/', $url_parts );
+	}
+
+	/**
+	 * Convert the resource type into the usable Cloudinary type.
+	 *
+	 * @param string $type The type to convert.
+	 *
+	 * @return string
+	 */
+	public function covert_resource_type( $type ) {
+		$covert_resource_type = array(
+			'application' => 'image',
+			'audio'       => 'video',
+		);
+
+		if ( isset( $covert_resource_type[ $type ] ) ) {
+			$type = $covert_resource_type[ $type ];
+		}
+
+		return $type;
 	}
 
 	/**
@@ -371,6 +396,7 @@ class Api {
 	public function upload( $attachment_id, $args, $headers = array() ) {
 
 		$resource            = ! empty( $args['resource_type'] ) ? $args['resource_type'] : 'image';
+		$resource            = $this->covert_resource_type( $resource );
 		$url                 = $this->url( $resource, 'upload', true );
 		$args                = $this->clean_args( $args );
 		$disable_https_fetch = get_transient( '_cld_disable_http_upload' );
