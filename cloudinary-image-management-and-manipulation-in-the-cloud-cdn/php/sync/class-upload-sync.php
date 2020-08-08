@@ -214,6 +214,8 @@ class Upload_Sync {
 			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], $this->media->is_folder_synced( $attachment_id ) );
 			// Set public_id.
 			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['public_id'], $public_id );
+			// Set version.
+			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['version'], $result['version'] );
 			// Update signature for all that use the same method.
 			$this->sync->sync_signature_by_type( $attachment_id, $type );
 			// Update options and public_id as well (full sync)
