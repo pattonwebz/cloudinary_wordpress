@@ -189,30 +189,38 @@ class Media implements Setup {
 	public function convert_media_extension( $filename ) {
 
 		// Add preferred formats in future.
-		$conversion_types = array(
-			'psd'	=> 'jpg',
-			'ai'	=> 'jpg',
-			'eps'	=> 'jpg',
-			'ps'	=> 'jpg',
-			'ept'	=> 'jpg',
-			'eps3'	=> 'jpg',
-			'indd'	=> 'jpg',
-			'webp'	=> 'gif',
-			'bmp'	=> 'jpg',
-			'fbx'	=> 'jpg',
-			'flif'	=> 'jpg',
-			'gltf'	=> 'jpg',
-			'heif'	=> 'jpg',
-			'heic'	=> 'jpg',
-			'ico'	=> 'png',
-			'svg'	=> 'png',
-			'tga'	=> 'jpg',
-			'tiff'	=> 'jpg',
-			'tif'	=> 'jpg'
+		$base_types = array(
+			'psd'  => 'jpg',
+			'ai'   => 'jpg',
+			'eps'  => 'jpg',
+			'ps'   => 'jpg',
+			'ept'  => 'jpg',
+			'eps3' => 'jpg',
+			'indd' => 'jpg',
+			'webp' => 'gif',
+			'bmp'  => 'jpg',
+			'fbx'  => 'jpg',
+			'flif' => 'jpg',
+			'gltf' => 'jpg',
+			'heif' => 'jpg',
+			'heic' => 'jpg',
+			'ico'  => 'png',
+			'svg'  => 'png',
+			'tga'  => 'jpg',
+			'tiff' => 'jpg',
+			'tif'  => 'jpg',
 		);
-		$info             = pathinfo( $filename );
-		$extension        = strtolower( $info['extension'] );
-		$convert          = 'jpg'; // Default handler.
+
+		/**
+		 * Filter the base types for conversion.
+		 *
+		 * @param array $base_types The base conversion types array.
+		 */
+		$conversion_types = apply_filters( 'cloudinary_convert_media_types', $base_types );
+
+		$info      = pathinfo( $filename );
+		$extension = strtolower( $info['extension'] );
+		$convert   = 'jpg'; // Default handler.
 
 		if ( ! empty( $conversion_types[ $extension ] ) ) {
 			$convert = $conversion_types[ $extension ];
@@ -231,10 +239,17 @@ class Media implements Setup {
 	 * @return bool
 	 */
 	public function is_preview_only( $attachment_id ) {
-		$preview_types = array(
+		$base_types = array(
 			'pdf',
-			'psd'
+			'psd',
 		);
+
+		/**
+		 * Filter the file types that are preview only.
+		 *
+		 * @param array $base_types The base preview types.
+		 */
+		$preview_types = apply_filters( 'cloudinary_preview_types', $base_types );
 		$mime          = wp_check_filetype( get_attached_file( $attachment_id ) );
 
 		return in_array( $mime['ext'], $preview_types, true );

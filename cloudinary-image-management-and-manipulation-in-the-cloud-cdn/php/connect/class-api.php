@@ -238,13 +238,11 @@ class Api {
 		);
 		$args     = wp_parse_args( array_filter( $args ), $defaults );
 		// Correct Audio to Video.
-		$args['resource_type'] = $this->covert_resource_type( $args['resource_type'] );
+		$args['resource_type'] = $this->convert_resource_type( $args['resource_type'] );
 
 		// check for version.
 		if ( ! empty( $args['version'] ) && is_numeric( $args['version'] ) ) {
 			$args['version'] = 'v' . $args['version'];
-		} else {
-			$args['version'] = 'v1';
 		}
 
 		// Determine if we're dealing with a fetched.
@@ -293,14 +291,14 @@ class Api {
 	 *
 	 * @return string
 	 */
-	public function covert_resource_type( $type ) {
-		$covert_resource_type = array(
+	public function convert_resource_type( $type ) {
+		$convert_resource_type = array(
 			'application' => 'image',
 			'audio'       => 'video',
 		);
 
-		if ( isset( $covert_resource_type[ $type ] ) ) {
-			$type = $covert_resource_type[ $type ];
+		if ( isset( $convert_resource_type[ $type ] ) ) {
+			$type = $convert_resource_type[ $type ];
 		}
 
 		return $type;
@@ -406,7 +404,7 @@ class Api {
 	public function upload( $attachment_id, $args, $headers = array() ) {
 
 		$resource            = ! empty( $args['resource_type'] ) ? $args['resource_type'] : 'image';
-		$resource            = $this->covert_resource_type( $resource );
+		$resource            = $this->convert_resource_type( $resource );
 		$url                 = $this->url( $resource, 'upload', true );
 		$args                = $this->clean_args( $args );
 		$disable_https_fetch = get_transient( '_cld_disable_http_upload' );
