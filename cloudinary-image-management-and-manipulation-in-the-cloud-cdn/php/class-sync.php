@@ -647,7 +647,7 @@ class Sync implements Setup, Assets {
 					$status['state'] = $this->sync_base_struct[ $sync_type ]['state'];
 					$status['note']  = $this->sync_base_struct[ $sync_type ]['note'];
 					if ( is_callable( $status['note'] ) ) {
-						$status['note'] = call_user_func( $status['note'] );
+						$status['note'] = call_user_func( $status['note'], $attachment_id );
 					}
 				}
 			}
