@@ -744,7 +744,7 @@ class Media implements Setup {
 			return $this->cloudinary_ids[ $attachment_id ];
 		}
 		if ( ! $this->sync->is_synced( $attachment_id ) && ! defined( 'REST_REQUEST' ) ) {
-			return $this->sync->maybe_prepare_sync( $attachment_id );
+			$this->sync->maybe_prepare_sync( $attachment_id );
 		}
 
 		$cloudinary_id = $this->get_cloudinary_id( $attachment_id );
