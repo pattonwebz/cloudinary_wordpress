@@ -191,7 +191,6 @@ class Media implements Setup {
 		// Add preferred formats in future.
 		$conversion_types = array(
 			'psd'	=> 'jpg',
-			'pdf'	=> 'jpg',
 			'ai'	=> 'jpg',
 			'eps'	=> 'jpg',
 			'ps'	=> 'jpg',
