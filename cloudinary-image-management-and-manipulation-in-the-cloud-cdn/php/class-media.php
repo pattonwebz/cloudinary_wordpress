@@ -129,7 +129,7 @@ class Media implements Setup {
 	 */
 	public function is_media( $attachment_id ) {
 		$is_media = false;
-		if ( 'attachment' === get_post_type( $attachment_id ) ) {
+		if ( 'attachment' === get_post_type( $attachment_id ) && wp_get_attachment_metadata( $attachment_id ) ) {
 			/**
 			 * Filter the default Cloudinary Media Types.
 			 *
