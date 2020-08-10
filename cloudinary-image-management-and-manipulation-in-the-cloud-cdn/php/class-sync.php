@@ -435,6 +435,13 @@ class Sync implements Setup, Assets {
 		foreach ( $base_struct as $type => $structure ) {
 			$this->register_sync_type( $type, $structure );
 		}
+
+		/**
+		 * Do action for setting up sync types.
+		 *
+		 * @param \Cloudinary\Sync $this The sync object.
+		 */
+		do_action( 'cloudinary_register_sync_types', $this );
 	}
 
 	/**
@@ -647,7 +654,7 @@ class Sync implements Setup, Assets {
 					$status['state'] = $this->sync_base_struct[ $sync_type ]['state'];
 					$status['note']  = $this->sync_base_struct[ $sync_type ]['note'];
 					if ( is_callable( $status['note'] ) ) {
-						$status['note'] = call_user_func( $status['note'] );
+						$status['note'] = call_user_func( $status['note'], $attachment_id );
 					}
 				}
 			}

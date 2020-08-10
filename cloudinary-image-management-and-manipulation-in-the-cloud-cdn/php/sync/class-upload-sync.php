@@ -337,10 +337,13 @@ class Upload_Sync {
 				}
 
 				// Check to see if this asset originally belongs to this ID using the older wp_id.
-				if ( ! empty( $cld_asset['context'] ) && ! empty( $cld_asset['context']['custom'] ) && ! empty( $cld_asset['context']['custom']['wp_id'] ) ) {
-					if( (int) $cld_asset['context']['custom']['wp_id'] === $attachment_id ) {
-						$context_guid = $attachment_guid;
-					}
+				if ( 
+					! empty( $cld_asset['context'] ) && 
+					! empty( $cld_asset['context']['custom'] ) && 
+					! empty( $cld_asset['context']['custom']['wp_id'] ) && 
+					(int) $cld_asset['context']['custom']['wp_id'] === $attachment_id 
+				) {
+					$context_guid = $attachment_guid;
 				}
 
 				// Generate new ID only if context ID is not related.
