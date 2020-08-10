@@ -120,12 +120,14 @@ class Upload_Sync {
 					esc_html__( 'Push to Cloudinary', 'cloudinary' )
 				);
 			} else {
-				$actions['cloudinary-push'] = sprintf(
-					'<a href="%s" aria-label="%s">%s</a>',
-					$action_url,
-					esc_attr__( 'Re-sync to Cloudinary', 'cloudinary' ),
-					esc_html__( 'Re-sync to Cloudinary', 'cloudinary' )
-				);
+				if ( file_exists( get_attached_file( $post->ID ) ) ) {
+					$actions['cloudinary-push'] = sprintf(
+						'<a href="%s" aria-label="%s">%s</a>',
+						$action_url,
+						esc_attr__( 'Re-sync to Cloudinary', 'cloudinary' ),
+						esc_html__( 'Re-sync to Cloudinary', 'cloudinary' )
+					);
+				}
 			}
 		}
 
@@ -329,7 +331,7 @@ class Upload_Sync {
 			if ( ! is_wp_error( $cld_asset ) && ! empty( $cld_asset['public_id'] ) ) {
 				$context_guid    = null;
 				$attachment_guid = md5( get_the_guid( $attachment_id ) );
-				$saved_version = $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['_cloudinary_version'], true );
+				$saved_version   = $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['_cloudinary_version'], true );
 
 				// Exists, check to see if this asset originally belongs to this ID.
 				if ( ! empty( $cld_asset['context'] ) && ! empty( $cld_asset['context']['custom'] ) && ! empty( $cld_asset['context']['custom']['guid'] ) ) {
@@ -337,11 +339,11 @@ class Upload_Sync {
 				}
 
 				// Check to see if this asset originally belongs to this ID using the older wp_id.
-				if ( 
-					! empty( $cld_asset['context'] ) && 
-					! empty( $cld_asset['context']['custom'] ) && 
-					! empty( $cld_asset['context']['custom']['wp_id'] ) && 
-					(int) $cld_asset['context']['custom']['wp_id'] === $attachment_id 
+				if (
+					! empty( $cld_asset['context'] ) &&
+					! empty( $cld_asset['context']['custom'] ) &&
+					! empty( $cld_asset['context']['custom']['wp_id'] ) &&
+					(int) $cld_asset['context']['custom']['wp_id'] === $attachment_id
 				) {
 					$context_guid = $attachment_guid;
 				}
