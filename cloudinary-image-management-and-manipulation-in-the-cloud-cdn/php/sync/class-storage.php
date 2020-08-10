@@ -96,16 +96,17 @@ class Storage {
 				break;
 			case 'dual_full':
 				$state = $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['storage'], true );
-				if( !empty( $state ) && 'dual_full' !== $state ) {
+				if ( ! empty( $state ) && 'dual_full' !== $state ) {
 					// Only do this is it's changing a state.
 					$url = $this->media->cloudinary_url( $attachment_id, '', array(), null, false, false );
 				}
 				break;
 		}
 
+		// If we have a URL, it means we have a new source to pull from.
 		if ( ! empty( $url ) ) {
 			$this->remove_local_assets( $attachment_id );
-			$this->create_local_assets( $attachment_id, $url );
+			$this->download->download_asset( $attachment_id, $url );
 		}
 
 		$this->sync->set_signature_item( $attachment_id, 'storage' );
@@ -122,17 +123,6 @@ class Storage {
 		$meta = wp_get_attachment_metadata( $attachment_id );
 
 		return wp_delete_attachment_files( $attachment_id, $meta, array(), get_attached_file( $attachment_id ) );
-	}
-
-	/**
-	 * Create local assets from a download URL.
-	 *
-	 * @param int    $attachment_id The attachment ID to download to.
-	 * @param string $url           The source URL.
-	 */
-	protected function create_local_assets( $attachment_id, $url ) {
-		$download = $this->download->download_asset( $attachment_id, $url );
-		$this->download->update_attachment( $attachment_id, $download );
 	}
 
 	/**
