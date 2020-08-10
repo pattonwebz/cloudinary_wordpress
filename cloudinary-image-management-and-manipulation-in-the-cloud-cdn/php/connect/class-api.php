@@ -230,7 +230,7 @@ class Api {
 	public function cloudinary_url( $public_id, $args = array(), $size = array(), $clean = false ) {
 		$defaults = array(
 			'resource_type' => 'image',
-			'version'       => '',
+			'version'       => 'v1',
 		);
 		$args     = wp_parse_args( array_filter( $args ), $defaults );
 		// Correct Audio to Video.
