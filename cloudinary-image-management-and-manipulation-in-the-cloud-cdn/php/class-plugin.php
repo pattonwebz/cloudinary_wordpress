@@ -11,6 +11,7 @@ use Cloudinary\Component\Assets;
 use Cloudinary\Component\Config;
 use Cloudinary\Component\Notice;
 use Cloudinary\Component\Setup;
+use Cloudinary\Sync\Storage;
 
 /**
  * Main plugin bootstrap file.
@@ -120,6 +121,7 @@ class Plugin {
 		$this->components['sync']     = new Sync( $this );
 		$this->components['api']      = new REST_API( $this );
 		$this->components['media']    = new Media( $this );
+		$this->components['storage']  = new Storage( $this );
 	}
 
 	/**
@@ -271,7 +273,7 @@ class Plugin {
 		 * Component that implements Component\Setup.
 		 *
 		 * @var  Component\Setup $component
-		 */ 
+		 */
 		foreach ( $this->components as $key => $component ) {
 			if ( ! $this->is_setup_component( $component ) ) {
 				continue;
