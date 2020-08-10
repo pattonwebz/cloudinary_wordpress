@@ -25,18 +25,14 @@ $struct = array(
 		),
 		'low_res' => array(
 			'label'       => __( 'Low Resolution', 'cloudinary' ),
-			'description' => sprintf(
-			// translators: Placeholders are <strong> tags.
-				__( 'The compression quality to apply when delivering all assets. %1$sAuto%2$s applies an algorithm that finds the best tradeoff between visual quality and file size.', 'cloudinary' ),
-				'<strong>',
-				'</strong>'
-			),
+			'description' => __( 'The compression quality to apply to local stored assets.', 'cloudinary' ),
 			'type'        => 'select',
 			'choices'     => array(
 				'40' => '40',
 				'20' => '20',
 				'10' => '10',
 				'5'  => '5',
+				'2'  => '2',
 			),
 			'default'     => '10',
 			'suffix'      => '%',
