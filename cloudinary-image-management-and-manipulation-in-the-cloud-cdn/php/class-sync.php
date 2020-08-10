@@ -435,6 +435,13 @@ class Sync implements Setup, Assets {
 		foreach ( $base_struct as $type => $structure ) {
 			$this->register_sync_type( $type, $structure );
 		}
+
+		/**
+		 * Do action for setting up sync types.
+		 *
+		 * @param \Cloudinary\Sync $this The sync object.
+		 */
+		do_action( 'cloudinary_register_sync_types', $this );
 	}
 
 	/**
