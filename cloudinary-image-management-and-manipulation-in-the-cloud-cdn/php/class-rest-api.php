@@ -36,6 +36,15 @@ class REST_API {
 	 */
 	public function rest_api_init() {
 		foreach ( $this->endpoints as $route => $endpoint ) {
+			$endpoint = wp_parse_args(
+				$endpoint,
+				array(
+					'method'              => 'GET',
+					'callback'            => null,
+					'arg'                 => array(),
+					'permission_callback' => '__return_true',
+				)
+			);
 			register_rest_route(
 				static::BASE,
 				$route,

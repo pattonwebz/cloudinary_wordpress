@@ -234,6 +234,7 @@ class Api {
 
 		$defaults = array(
 			'resource_type' => 'image',
+			'version'       => 'v1',
 		);
 		$args     = wp_parse_args( array_filter( $args ), $defaults );
 		// Correct Audio to Video.
