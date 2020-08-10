@@ -126,6 +126,29 @@ class Storage {
 	}
 
 	/**
+	 * Get the current status of the sync.
+	 *
+	 * @return string
+	 */
+	public function status() {
+		$settings = $this->plugin->config['settings']['storage'];
+		$note     = __( 'Syncing', 'cloudinary' );
+		switch ( $settings['offload'] ) {
+			case 'cld':
+				$note = __( 'Removing local copies.', 'cloudinary' );
+				break;
+			case 'dual_low':
+				$note = __( 'Reducing local resolutions', 'cloudinary' );
+				break;
+			case 'dual_full':
+				$note = __( 'Rebuilding local copies.', 'cloudinary' );
+				break;
+		}
+
+		return $note;
+	}
+
+	/**
 	 * Setup hooks for the filters.
 	 */
 	public function setup() {
@@ -136,17 +159,7 @@ class Storage {
 			'priority' => 5.2,
 			'sync'     => array( $this, 'sync' ),
 			'state'    => 'info syncing',
-			'note'     => function () {
-				$settings = $this->plugin->config['settings']['storage'];
-				if ( 'cld' === $settings['offload'] ) {
-					return __( 'Off-loading to Cloudinary', 'cloudinary' );
-				} elseif ( 'dual_low' === $settings['offload'] ) {
-					return __( 'Reducing local resolutions', 'cloudinary' );
-				} else {
-					return __( 'Rebuilding local copies.', 'cloudinary' );
-				}
-
-			},
+			'note'     => array( $this, 'status' ),
 		);
 		$this->sync->register_sync_type( 'storage', $structure );
 	}
