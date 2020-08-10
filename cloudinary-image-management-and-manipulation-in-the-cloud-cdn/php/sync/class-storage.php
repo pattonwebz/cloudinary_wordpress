@@ -110,6 +110,8 @@ class Storage {
 		}
 
 		$this->sync->set_signature_item( $attachment_id, 'storage' );
+		$this->sync->set_signature_item( $attachment_id, 'file' );
+		$this->sync->set_signature_item( $attachment_id, 'suffix' );
 		$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['storage'], $settings['offload'] ); // Save the state.
 	}
 
