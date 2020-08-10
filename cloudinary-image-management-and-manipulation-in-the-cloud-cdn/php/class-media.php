@@ -190,14 +190,35 @@ class Media implements Setup {
 
 		// Add preferred formats in future.
 		$conversion_types = array(
-			'psd' => 'jpg',
+			'psd'	=> 'jpg',
+			'pdf'	=> 'jpg',
+			'ai'	=> 'jpg',
+			'eps'	=> 'jpg',
+			'ps'	=> 'jpg',
+			'ept'	=> 'jpg',
+			'eps3'	=> 'jpg',
+			'indd'	=> 'jpg',
+			'webp'	=> 'gif',
+			'bmp'	=> 'jpg',
+			'fbx'	=> 'jpg',
+			'flif'	=> 'jpg',
+			'gltf'	=> 'jpg',
+			'heif'	=> 'jpg',
+			'heic'	=> 'jpg',
+			'ico'	=> 'png',
+			'svg'	=> 'png',
+			'tga'	=> 'jpg',
+			'tiff'	=> 'jpg',
+			'tif'	=> 'jpg'
 		);
 		$info             = pathinfo( $filename );
 		$extension        = strtolower( $info['extension'] );
 		$convert          = 'jpg'; // Default handler.
+
 		if ( ! empty( $conversion_types[ $extension ] ) ) {
 			$convert = $conversion_types[ $extension ];
 		}
+
 		$filename = trailingslashit( $info['dirname'] ) . $info['filename'] . '.' . $convert;
 
 		return $filename;
