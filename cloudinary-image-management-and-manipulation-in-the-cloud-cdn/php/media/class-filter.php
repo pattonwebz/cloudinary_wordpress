@@ -372,11 +372,11 @@ class Filter {
 	/**
 	 * Return a Cloudinary URL for an attachment used in JS.
 	 *
-	 * @uses filter:wp_prepare_attachment_for_js
-	 *
-	 * @param array $attachment The attachment array to be used in JS.
+	 * @param array    $attachment The attachment response array.
 	 *
 	 * @return array
+	 * @uses filter:wp_prepare_attachment_for_js
+	 *
 	 */
 	public function filter_attachment_for_js( $attachment ) {
 		$cloudinary_id = $this->media->get_cloudinary_id( $attachment['id'] );
@@ -392,13 +392,20 @@ class Filter {
 
 			$attachment['url']       = $this->media->cloudinary_url( $attachment['id'], false, $transformations );
 			$attachment['public_id'] = $attachment['type'] . '/upload/' . $this->media->get_public_id( $attachment['id'] );
-		}
 
-		if ( empty( $attachment['transformations'] ) ) {
-			$transformations = $this->media->get_transformation_from_meta( $attachment['id'] );
+			if ( empty( $attachment['transformations'] ) ) {
+				$transformations = $this->media->get_transformation_from_meta( $attachment['id'] );
 
-			if ( $transformations ) {
-				$attachment['transformations'] = $transformations;
+				if ( $transformations ) {
+					$attachment['transformations'] = $transformations;
+				}
+			}
+
+			// Ensure the sizes has the transformations and are converted URLS.
+			if ( ! empty( $attachment['sizes'] ) ) {
+				foreach ( $attachment['sizes'] as &$size ) {
+					$size['url'] = $this->media->convert_url( basename( $size['url'] ), $attachment['id'], $transformations );
+				}
 			}
 		}
 
@@ -680,7 +687,7 @@ class Filter {
 		add_filter( 'the_editor_content', array( $this, 'filter_out_local' ) );
 		add_filter( 'the_content', array( $this, 'filter_out_local' ), 9 ); // Early to hook before responsive srcsets.
 
-		add_filter( 'wp_prepare_attachment_for_js', array( $this, 'filter_attachment_for_js' ) );
+		add_filter( 'wp_prepare_attachment_for_js', array( $this, 'filter_attachment_for_js' ), 11 );
 		// Add support for custom header.
 		add_filter( 'get_header_image_tag', array( $this, 'filter_out_local' ) );
 
