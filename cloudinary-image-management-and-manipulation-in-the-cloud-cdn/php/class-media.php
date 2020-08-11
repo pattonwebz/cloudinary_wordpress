@@ -1467,7 +1467,8 @@ class Media implements Setup {
 		$public_id = $this->get_public_id( $attachment_id );
 		$folder    = ltrim( dirname( $public_id ), '.' );
 		$options   = array(
-			'unique_filename' => false,
+			'unique_filename' => true,
+			'overwrite'       => false,
 			'resource_type'   => $this->get_media_type( $attachment_id ),
 			'public_id'       => basename( $public_id ),
 			'context'         => $this->get_context_options( $attachment_id ),

@@ -270,30 +270,6 @@ class Sync implements Setup, Assets {
 	}
 
 	/**
-	 * Get suffix for the attachment.
-	 *
-	 * @param string      $public_id     The public ID to maybe add a suffix.
-	 * @param int         $attachment_id The attachment ID.
-	 * @param string|null $suffix        The suffix to maybe add.
-	 *
-	 * @return string The public ID.
-	 */
-	public function get_suffix( $attachment_id ) {
-
-		$options    = $this->managers['media']->get_upload_options( $attachment_id ); // Filtered, upload options.
-		$cld_folder = $this->managers['media']->get_cloudinary_folder();
-		$public_id  = $options['public_id'];
-		if ( $this->managers['media']->is_folder_synced( $attachment_id ) ) {
-			$public_id = $cld_folder . $public_id;
-		}
-		// Add suffix.
-		$public_id .= $this->managers['media']->get_post_meta( $attachment_id, Sync::META_KEYS['suffix'], true );
-
-
-		return $public_id;
-	}
-
-	/**
 	 * Register a new sync type.
 	 *
 	 * @param string         $type        Sync type key. Must not exceed 20 characters and may
@@ -391,13 +367,6 @@ class Sync implements Setup, Assets {
 				'sync'     => array( $this->managers['media']->upgrade, 'convert_cloudinary_version' ), // Rename
 				'state'    => 'info syncing',
 				'note'     => __( 'Updating metadata', 'cloudinary' ),
-			),
-			'suffix'      => array(
-				'generate' => array( $this, 'get_suffix' ),
-				'priority' => 5.0,
-				'sync'     => array( $this->managers['upload'], 'add_suffix_maybe' ),
-				'state'    => 'info syncing',
-				'note'     => __( 'Checking version', 'cloudinary' ),
 			),
 			'breakpoints' => array(
 				'generate' => array( $this->managers['media'], 'get_breakpoint_options' ),
