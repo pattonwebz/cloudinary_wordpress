@@ -146,6 +146,7 @@ class Upload_Sync {
 		switch ( $action ) {
 			case 'cloudinary-push' :
 				foreach ( $post_ids as $post_id ) {
+					$this->sync->set_signature_item( $post_id, 'suffix', '' );
 					$this->sync->set_signature_item( $post_id, 'file', '' );
 					$this->sync->add_to_sync( $post_id );
 				}
