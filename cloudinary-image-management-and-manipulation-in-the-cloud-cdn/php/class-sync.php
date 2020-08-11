@@ -108,10 +108,12 @@ class Sync implements Setup, Assets {
 	 * Register Assets.
 	 */
 	public function register_assets() {
-		// Setup the sync_base_structure.
-		$this->setup_sync_base_struct();
-		// Setup sync types.
-		$this->setup_sync_types();
+		if ( $this->plugin->config['connect'] ) {
+			// Setup the sync_base_structure.
+			$this->setup_sync_base_struct();
+			// Setup sync types.
+			$this->setup_sync_types();
+		}
 	}
 
 
