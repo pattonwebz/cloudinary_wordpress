@@ -610,7 +610,7 @@ class Sync implements Setup, Assets {
 	 */
 	public function filter_status( $status, $attachment_id ) {
 
-		if ( $this->been_synced( $attachment_id ) || $this->is_pending( $attachment_id ) ) {
+		if ( $this->been_synced( $attachment_id ) || ( $this->is_pending( $attachment_id ) && $this->get_sync_type( $attachment_id ) ) ) {
 			$sync_type = $this->get_sync_type( $attachment_id );
 			if ( ! empty( $sync_type ) && isset( $this->sync_base_struct[ $sync_type ] ) ) {
 				// check process log in case theres an error.
