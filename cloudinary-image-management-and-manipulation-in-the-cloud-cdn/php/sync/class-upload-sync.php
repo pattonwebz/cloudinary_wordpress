@@ -309,6 +309,14 @@ class Upload_Sync {
 		}
 	}
 
+	/**
+	 * Maybe add a suffix to a public_id in case it already exists.
+	 *
+	 * @param int         $attachment_id The attachment ID to maybe suffix.
+	 * @param null|string $suffix        The proposed suffix to maybe use.
+	 *
+	 * @return mixed|string|null
+	 */
 	public function add_suffix_maybe( $attachment_id, $suffix = null ) {
 
 		// Test if asset exists by calling just the head on the asset url, to prevent API rate limits.
@@ -329,7 +337,6 @@ class Upload_Sync {
 			if ( ! is_wp_error( $cld_asset ) && ! empty( $cld_asset['public_id'] ) ) {
 				$context_guid    = null;
 				$attachment_guid = md5( get_the_guid( $attachment_id ) );
-				$saved_version = $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['_cloudinary_version'], true );
 
 				// Exists, check to see if this asset originally belongs to this ID.
 				if ( ! empty( $cld_asset['context'] ) && ! empty( $cld_asset['context']['custom'] ) && ! empty( $cld_asset['context']['custom']['guid'] ) ) {
@@ -337,19 +344,25 @@ class Upload_Sync {
 				}
 
 				// Check to see if this asset originally belongs to this ID using the older wp_id.
-				if ( 
-					! empty( $cld_asset['context'] ) && 
-					! empty( $cld_asset['context']['custom'] ) && 
-					! empty( $cld_asset['context']['custom']['wp_id'] ) && 
-					(int) $cld_asset['context']['custom']['wp_id'] === $attachment_id 
+				if (
+					! empty( $cld_asset['context'] ) &&
+					! empty( $cld_asset['context']['custom'] ) &&
+					! empty( $cld_asset['context']['custom']['wp_id'] ) &&
+					(int) $cld_asset['context']['custom']['wp_id'] === $attachment_id
 				) {
 					$context_guid = $attachment_guid;
 				}
 
 				// Generate new ID only if context ID is not related.
 				if ( $context_guid !== $attachment_guid ) {
-					// Generate a new ID with a uniqueID prefix.
-					$suffix = '-' . uniqid( $attachment_id );
+					// Check if we've saved a suffix before. If so use it, and test. This is to prevent making new suffixes if the original is removed.
+					$saved_suffix = $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['suffix'], true );
+					if ( null === $suffix && ! empty( $saved_suffix ) ) {
+						$suffix = $saved_suffix;
+					} else {
+						// Generate a new ID with a uniqueID prefix.
+						$suffix = '-' . uniqid( $attachment_id );
+					}
 
 					// Return new potential suffixed ID.
 					return $this->add_suffix_maybe( $attachment_id, $suffix );
