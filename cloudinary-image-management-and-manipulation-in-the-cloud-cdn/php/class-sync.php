@@ -343,7 +343,7 @@ class Sync implements Setup, Assets {
 				'generate' => 'get_attached_file',
 				'priority' => 5.1,
 				'sync'     => array( $this->managers['upload'], 'upload_asset' ),
-				'state'    => 'info',
+				'state'    => 'uploading',
 				'note'     => __( 'Uploading to Cloudinary', 'cloudinary' ),
 			),
 			'folder'      => array(
