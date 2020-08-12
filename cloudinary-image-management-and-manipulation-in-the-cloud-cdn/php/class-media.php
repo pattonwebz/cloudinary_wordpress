@@ -744,7 +744,12 @@ class Media implements Setup {
 			return $this->cloudinary_ids[ $attachment_id ];
 		}
 		if ( ! $this->sync->is_synced( $attachment_id ) && ! defined( 'REST_REQUEST' ) ) {
-			return $this->sync->maybe_prepare_sync( $attachment_id );
+			$sync_type = $this->sync->maybe_prepare_sync( $attachment_id );
+			// Check sync type allows for continued rendering. i.e meta update, breakpoints etc, will still allow the URL to work,
+			// Where is type "file" will not since it's still being uploaded.
+			if ( ! is_null( $sync_type ) && $this->sync->is_required( $sync_type ) ) {
+				return null; // Return and render local URLs.
+			}
 		}
 
 		$cloudinary_id = $this->get_cloudinary_id( $attachment_id );

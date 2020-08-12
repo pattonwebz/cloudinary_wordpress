@@ -163,6 +163,17 @@ class Sync implements Setup, Assets {
 	}
 
 	/**
+	 * Check if sync type is required for rendering a Cloudinary URL.
+	 *
+	 * @param string $type The type to check.
+	 *
+	 * @return bool
+	 */
+	public function is_required( $type ) {
+		return ! empty( $this->sync_base_struct[ $type ]['required'] );
+	}
+
+	/**
 	 * Generate a signature based on whats required for a full sync.
 	 *
 	 * @param int  $attachment_id The Attachment id to generate a signature for.
@@ -347,6 +358,7 @@ class Sync implements Setup, Assets {
 				'sync'     => array( $this->managers['upload'], 'upload_asset' ),
 				'state'    => 'uploading',
 				'note'     => __( 'Uploading to Cloudinary', 'cloudinary' ),
+				'required' => true, // Required to complete URL render flag.
 			),
 			'folder'      => array(
 				'generate' => array( $this->managers['media'], 'get_cloudinary_folder' ),
@@ -357,6 +369,7 @@ class Sync implements Setup, Assets {
 				'note'     => function () {
 					return sprintf( __( 'Copying to folder %s.', 'cloudinary' ), untrailingslashit( $this->managers['media']->get_cloudinary_folder() ) );
 				},
+				'required' => true, // Required to complete URL render flag.
 			),
 			'public_id'   => array(
 				'generate' => array( $this->managers['media'], 'get_public_id' ),
@@ -369,6 +382,7 @@ class Sync implements Setup, Assets {
 				'sync'     => array( $this->managers['media']->upgrade, 'convert_cloudinary_version' ), // Rename
 				'state'    => 'info syncing',
 				'note'     => __( 'Updating metadata', 'cloudinary' ),
+				'required' => true,
 			),
 			'breakpoints' => array(
 				'generate' => array( $this->managers['media'], 'get_breakpoint_options' ),
@@ -390,6 +404,7 @@ class Sync implements Setup, Assets {
 				'sync'     => array( $this->managers['upload'], 'upload_asset' ),
 				'state'    => 'uploading',
 				'note'     => __( 'Uploading to new cloud name.', 'cloudinary' ),
+				'required' => true,
 			),
 		);
 
@@ -530,7 +545,7 @@ class Sync implements Setup, Assets {
 	 *
 	 * @param int $attachment_id The attachment ID.
 	 *
-	 * @return null
+	 * @return string | null
 	 */
 	public function maybe_prepare_sync( $attachment_id ) {
 
@@ -539,7 +554,7 @@ class Sync implements Setup, Assets {
 			$this->add_to_sync( $attachment_id );
 		}
 
-		return null;
+		return $type;
 	}
 
 	/**
