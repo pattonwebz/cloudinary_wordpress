@@ -732,7 +732,7 @@ class Media implements Setup {
 	 *
 	 * @param int $attachment_id The ID to get Cloudinary id for.
 	 *
-	 * @return string|null the ID or false if not existing.
+	 * @return string|null the ID or null if not existing.
 	 */
 	public function cloudinary_id( $attachment_id ) {
 
