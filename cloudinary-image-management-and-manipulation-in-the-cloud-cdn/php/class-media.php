@@ -199,7 +199,6 @@ class Media implements Setup {
 			'indd' => 'jpg',
 			'webp' => 'gif',
 			'bmp'  => 'jpg',
-			'fbx'  => 'jpg',
 			'flif' => 'jpg',
 			'gltf' => 'jpg',
 			'heif' => 'jpg',
