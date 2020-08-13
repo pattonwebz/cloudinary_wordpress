@@ -204,12 +204,34 @@ class Upload_Sync {
 		$public_id = $options['public_id'];
 
 		// Add the suffix before uploading.
-		$options['public_id'] .= $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['suffix'], true );
+		if ( $this->media->get_public_id( $attachment_id ) === $public_id ) {
+			// Only apply the saved suffix if the public_id is the same. This is to allow filtered ID's a change to have a suffix removed.
+			$options['public_id'] .= $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['suffix'], true );
+		} else {
+			// If the public_id has been changed, remove the saved suffix.
+			$this->media->delete_post_meta( $attachment_id, Sync::META_KEYS['suffix'] );
+		}
 
 		// Run the upload Call.
 		$result = $this->connect->api->upload( $attachment_id, $options );
 
 		if ( ! is_wp_error( $result ) ) {
+
+			// Check that this wasn't an existing.
+			if ( ! empty( $result['existing'] ) ) {
+				// Check to see if this is the same image.
+				$version = (int) $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['version'], true );
+				if ( $version !== $result['version'] ) {
+					// New image with the same name.
+					// Add a suffix and try again.
+					$suffix = '_' . $attachment_id . substr( strrev( uniqid() ), 0, 5 );
+					$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['suffix'], $suffix );
+
+					return $this->upload_asset( $attachment_id );
+				}
+			}
+
+
 			// Set folder Synced.
 			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], $this->media->is_folder_synced( $attachment_id ) );
 			// Set public_id.
@@ -307,60 +329,5 @@ class Upload_Sync {
 				wp_update_post( array( 'ID' => $content_id ) ); // Trigger an update, internal filters will filter out remote URLS.
 			}
 		}
-	}
-
-	public function add_suffix_maybe( $attachment_id, $suffix = null ) {
-
-		// Test if asset exists by calling just the head on the asset url, to prevent API rate limits.
-		$options   = $this->media->get_upload_options( $attachment_id );
-		$public_id = $options['public_id'];
-
-		$url         = $this->connect->api->cloudinary_url( $public_id . $suffix, array( 'transformation' => array( array( 'fetch_format' => 'auto' ) ) ) );
-		$req         = wp_remote_head( $url, array( 'body' => array( 'rdm' => wp_rand( 100, 999 ) ) ) );
-		$asset_error = strtolower( wp_remote_retrieve_header( $req, 'x-cld-error' ) );
-		$code        = wp_remote_retrieve_response_code( $req );
-
-		// If the request is not a 404 & does not have a cld-error header stating resource not found, it exists and should be checked that it's not a resync or generate a prefixed ID.
-		if ( 404 !== $code && false === strpos( $asset_error, 'resource not found' ) ) {
-
-			// Get the attachment type.
-			$type      = $this->media->get_media_type( $attachment_id );
-			$cld_asset = $this->plugin->components['connect']->api->get_asset_details( $public_id . $suffix, $type );
-			if ( ! is_wp_error( $cld_asset ) && ! empty( $cld_asset['public_id'] ) ) {
-				$context_guid    = null;
-				$attachment_guid = md5( get_the_guid( $attachment_id ) );
-				$saved_version = $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['_cloudinary_version'], true );
-
-				// Exists, check to see if this asset originally belongs to this ID.
-				if ( ! empty( $cld_asset['context'] ) && ! empty( $cld_asset['context']['custom'] ) && ! empty( $cld_asset['context']['custom']['guid'] ) ) {
-					$context_guid = $cld_asset['context']['custom']['guid'];
-				}
-
-				// Check to see if this asset originally belongs to this ID using the older wp_id.
-				if ( 
-					! empty( $cld_asset['context'] ) && 
-					! empty( $cld_asset['context']['custom'] ) && 
-					! empty( $cld_asset['context']['custom']['wp_id'] ) && 
-					(int) $cld_asset['context']['custom']['wp_id'] === $attachment_id 
-				) {
-					$context_guid = $attachment_guid;
-				}
-
-				// Generate new ID only if context ID is not related.
-				if ( $context_guid !== $attachment_guid ) {
-					// Generate a new ID with a uniqueID prefix.
-					$suffix = '-' . uniqid( $attachment_id );
-
-					// Return new potential suffixed ID.
-					return $this->add_suffix_maybe( $attachment_id, $suffix );
-				}
-			}
-		}
-		// Save defined suffix.
-		$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['suffix'], $suffix );
-		// Update Signature.
-		$this->sync->set_signature_item( $attachment_id, 'suffix' );
-
-		return $suffix;
 	}
 }

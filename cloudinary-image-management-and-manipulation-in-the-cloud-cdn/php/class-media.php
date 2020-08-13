@@ -866,7 +866,7 @@ class Media implements Setup {
 	 *
 	 * @param int $attachment_id The ID to get Cloudinary id for.
 	 *
-	 * @return string|null the ID or false if not existing.
+	 * @return string|null the ID or null if not existing.
 	 */
 	public function cloudinary_id( $attachment_id ) {
 
@@ -878,7 +878,12 @@ class Media implements Setup {
 			return $this->cloudinary_ids[ $attachment_id ];
 		}
 		if ( ! $this->sync->is_synced( $attachment_id ) && ! defined( 'REST_REQUEST' ) ) {
-			return $this->sync->maybe_prepare_sync( $attachment_id );
+			$sync_type = $this->sync->maybe_prepare_sync( $attachment_id );
+			// Check sync type allows for continued rendering. i.e meta update, breakpoints etc, will still allow the URL to work,
+			// Where is type "file" will not since it's still being uploaded.
+			if ( ! is_null( $sync_type ) && $this->sync->is_required( $sync_type ) ) {
+				return null; // Return and render local URLs.
+			}
 		}
 
 		$cloudinary_id = $this->get_cloudinary_id( $attachment_id );
@@ -1616,7 +1621,8 @@ class Media implements Setup {
 		$public_id = $this->get_public_id( $attachment_id );
 		$folder    = ltrim( dirname( $public_id ), '.' );
 		$options   = array(
-			'unique_filename' => false,
+			'unique_filename' => true,
+			'overwrite'       => false,
 			'resource_type'   => $this->get_media_type( $attachment_id ),
 			'public_id'       => basename( $public_id ),
 			'context'         => $this->get_context_options( $attachment_id ),
