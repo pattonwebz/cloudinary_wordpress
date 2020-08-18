@@ -232,8 +232,8 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	 *
 	 * @since 0.1
 	 *
-	 * @param array       $field The field to render.
-	 * @param string|null $value The value to render.
+	 * @param array       $field            The field to render.
+	 * @param string|null $value            The value to render.
 	 * @param bool        $show_description Whether to render the description.
 	 */
 	public function render_field( $field, $value = null, $show_description = true ) {
@@ -423,7 +423,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 				if ( is_array( $field ) ) {
 					array_walk_recursive(
 						$field,
-						static function( $field_value ) {
+						static function ( $field_value ) {
 							// WP 4.9 compatibility, as _sanitize_text_fields() didn't have this check yet, and this prevents an error.
 							// @see https://github.com/WordPress/wordpress-develop/blob/b30baca3ca2feb7f44b3615262ca55fcd87ae232/src/wp-includes/formatting.php#L5307
 							if ( is_object( $field_value ) || is_array( $field_value ) ) {
@@ -734,6 +734,8 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	 *
 	 * @param array    $set  The array of assets to register.
 	 * @param callable $call The function to call to register asset.
+	 *
+	 * @return array
 	 */
 	public function register_tab_asset( $set, $call ) {
 		foreach ( $set as $key => &$asset ) {
@@ -921,4 +923,5 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 			$this->active_page = $page_slug;
 		}
 	}
+
 }

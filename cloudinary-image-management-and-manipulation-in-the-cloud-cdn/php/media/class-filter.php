@@ -372,16 +372,16 @@ class Filter {
 	/**
 	 * Return a Cloudinary URL for an attachment used in JS.
 	 *
-	 * @uses filter:wp_prepare_attachment_for_js
-	 *
-	 * @param array $attachment The attachment array to be used in JS.
+	 * @param array    $attachment The attachment response array.
 	 *
 	 * @return array
+	 * @uses filter:wp_prepare_attachment_for_js
+	 *
 	 */
 	public function filter_attachment_for_js( $attachment ) {
-		$cloudinary_id = $this->media->cloudinary_id( $attachment['id'] );
+		$cloudinary_id = $this->media->get_cloudinary_id( $attachment['id'] );
 
-		if ( false !== $cloudinary_id ) {
+		if ( $cloudinary_id ) {
 			$transformations = array();
 
 			if ( ! empty( $attachment['transformations'] ) ) {
@@ -392,13 +392,20 @@ class Filter {
 
 			$attachment['url']       = $this->media->cloudinary_url( $attachment['id'], false, $transformations );
 			$attachment['public_id'] = $attachment['type'] . '/upload/' . $this->media->get_public_id( $attachment['id'] );
-		}
 
-		if ( empty( $attachment['transformations'] ) ) {
-			$transformations = $this->media->get_transformation_from_meta( $attachment['id'] );
-	
-			if ( $transformations ) {
-				$attachment['transformations'] = $transformations;
+			if ( empty( $attachment['transformations'] ) ) {
+				$transformations = $this->media->get_transformation_from_meta( $attachment['id'] );
+
+				if ( $transformations ) {
+					$attachment['transformations'] = $transformations;
+				}
+			}
+
+			// Ensure the sizes has the transformations and are converted URLS.
+			if ( ! empty( $attachment['sizes'] ) ) {
+				foreach ( $attachment['sizes'] as &$size ) {
+					$size['url'] = $this->media->convert_url( basename( $size['url'] ), $attachment['id'], $transformations );
+				}
 			}
 		}
 
@@ -421,14 +428,14 @@ class Filter {
 
 		$cloudinary_id = $this->media->cloudinary_id( $attachment->data['id'] );
 
-		if ( false !== $cloudinary_id ) {
+		if ( $cloudinary_id ) {
 			$attachment->data['source_url'] = $this->media->cloudinary_url( $attachment->data['id'], false );
 		}
-		
+
 		if ( $has_transformations = ! empty( $this->media->get_transformation_from_meta( $attachment->data['id'] ) ) ) {
 			$attachment->data['transformations'] = $has_transformations;
 		}
- 
+
 		return $attachment;
 	}
 
@@ -524,7 +531,7 @@ class Filter {
 		$context = $request->get_param( 'context' );
 		if ( 'edit' === $context ) {
 			$data                   = $response->get_data();
-			$content                = wp_unslash( $data['content']['raw'] );
+			$content                = $data['content']['raw'];
 			$data['content']['raw'] = $this->filter_out_local( $content );
 
 			$response->set_data( $data );
@@ -672,45 +679,6 @@ class Filter {
 	}
 
 	/**
-	 * Attempt to set the width and height for SVGs.
-	 *
-	 * @param array|false  $image         The image details.
-	 * @param int          $attachment_id The attachment ID.
-	 * @param string|int[] $size          The requested image size.
-	 *
-	 * @return array|false
-	 */
-	public function filter_svg_image_size( $image, $attachment_id, $size ) {
-		if ( is_array( $image ) && preg_match('/\.svg$/i', $image[0] ) && $image[1] <= 1 ) {
-			$image[1] = $image[2] = null;
-
-			if ( is_array( $size ) ) {
-				$image[1] = $size[0];
-				$image[2] = $size[1];
-			} elseif ( false !== ( $xml = simplexml_load_file( $image[0] ) ) ) {
-				$attr     = $xml->attributes();
-				$viewbox  = explode( ' ', $attr->viewBox );
-
-				// Get width
-				if ( isset( $attr->width ) && preg_match( '/\d+/', $attr->width, $value ) ) {
-					$image[1] = (int) $value[0];
-				} elseif ( 4 === count( $viewbox ) ) {
-					$image[1] = (int) $viewbox[2];
-				}
-
-				// Get height
-				if ( isset( $attr->height ) && preg_match( '/\d+/', $attr->height, $value ) ) {
-					$image[2] = (int) $value[0];
-				} elseif ( 4 === count( $viewbox ) ) {
-					$image[2] = (int) $viewbox[3];
-				}
-			}
-		}
-
-		return $image;
-	}
-
-	/**
 	 * Setup hooks for the filters.
 	 */
 	public function setup_hooks() {
@@ -718,21 +686,9 @@ class Filter {
 		add_action( 'wp_insert_post_data', array( $this, 'filter_out_cloudinary' ) );
 		add_filter( 'the_editor_content', array( $this, 'filter_out_local' ) );
 		add_filter( 'the_content', array( $this, 'filter_out_local' ), 9 ); // Early to hook before responsive srcsets.
+		add_filter( 'wp_prepare_attachment_for_js', array( $this, 'filter_attachment_for_js' ), 11 );
 
-		// Remove editors to prevent users from manually editing images in WP.
-		add_filter( 'wp_image_editors', array( $this, 'disable_editors_maybe' ) );
-
-		// Add checkbox to media modal template.
-		add_action( 'admin_footer', array( $this, 'catch_media_templates_maybe' ), 9 );
-
-		// Filter for block rendering.
-		add_filter( 'render_block_data', array( $this, 'filter_image_block_pre_render' ), 10, 2 );
-
-		// Try to get SVGs size.
-		add_filter( 'wp_get_attachment_image_src', array( $this, 'filter_svg_image_size' ), 10, 3 );
-
-		add_filter( 'wp_prepare_attachment_for_js', array( $this, 'filter_attachment_for_js' ) );
-		// Add support for custom header.
+    // Add support for custom header.
 		add_filter( 'get_header_image_tag', array( $this, 'filter_out_local' ) );
 
 		// Add transformations.
@@ -750,5 +706,14 @@ class Filter {
 			},
 			$types
 		);
+
+		// Remove editors to prevent users from manually editing images in WP.
+		add_filter( 'wp_image_editors', array( $this, 'disable_editors_maybe' ) );
+
+		// Add checkbox to media modal template.
+		add_action( 'admin_footer', array( $this, 'catch_media_templates_maybe' ), 9 );
+
+		// Filter for block rendering.
+		add_filter( 'render_block_data', array( $this, 'filter_image_block_pre_render' ), 10, 2 );
 	}
 }
