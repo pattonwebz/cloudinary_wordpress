@@ -797,12 +797,16 @@ class Media implements Setup {
 		$cloudinary_id = $this->cloudinary_id( $attachment_id );
 
 		if ( $cloudinary_id ) {
+			$overwrite = false;
+			if( in_the_loop() && $attachment_id === get_post_thumbnail_id() ){
+				$overwrite = (bool) $this->get_post_meta( get_the_ID(), Global_Transformations::META_FEATURED_IMAGE_KEY, true );
+			}
 			$this->in_downsize = true;
 			$intermediate      = image_get_intermediate_size( $attachment_id, $size );
 			if ( is_array( $intermediate ) ) {
 				// Found an intermediate size.
 				$image = array(
-					$this->convert_url( $intermediate['url'], $attachment_id, array(), false ),
+					$this->convert_url( $intermediate['url'], $attachment_id, array(), $overwrite ),
 					$intermediate['width'],
 					$intermediate['height'],
 					true,
