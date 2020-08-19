@@ -486,19 +486,24 @@ class Global_Transformations {
 	/**
 	 * Add checkbox to override transformations for featured image.
 	 *
-	 * @param string $content
-	 * @param int    $post_id
+	 * @param string $content       The content to be saved.
+	 * @param int    $post_id       The post ID.
+	 * @param int    $attachment_id The ID of the attachment.
 	 *
 	 * @return string
 	 */
-	public function classic_overwrite_transformations_featured_image( $content, $post_id ) {
-		$field_value = get_post_meta( $post_id, self::META_FEATURED_IMAGE_KEY, true );
-		$content    .= sprintf(
-			'<p><label for="%1$s"><input type="hidden" name="%1$s" value="0" /><input type="checkbox" name="%1$s" id="%1$s" value="1" %2$s /> %3$s</label></p>',
-			esc_attr( self::META_FEATURED_IMAGE_KEY ),
-			checked( $field_value, 1, false ),
-			esc_html__( 'Overwrite Transformations', 'cloudinary' )
-		);
+	public function classic_overwrite_transformations_featured_image( $content, $post_id, $attachment_id ) {
+		if ( $this->media->get_transformation_from_meta( $attachment_id ) ) {
+			// Get the current value.
+			$field_value = get_post_meta( $post_id, self::META_FEATURED_IMAGE_KEY, true );
+			// Add hidden field and checkbox to the HTML.
+			$content .= sprintf(
+				'<p><label for="%1$s"><input type="hidden" name="%1$s" value="0" /><input type="checkbox" name="%1$s" id="%1$s" value="1" %2$s /> %3$s</label></p>',
+				esc_attr( self::META_FEATURED_IMAGE_KEY ),
+				checked( $field_value, 1, false ),
+				esc_html__( 'Overwrite Transformations', 'cloudinary' )
+			);
+		}
 
 		return $content;
 	}
@@ -535,7 +540,7 @@ class Global_Transformations {
 		add_action( 'add_meta_boxes', array( $this, 'taxonomy_ordering' ), 10, 2 );
 		add_action( 'save_post', array( $this, 'save_taxonomy_ordering' ), 10, 1 );
 		add_action( 'save_post', array( $this, 'save_overwrite_transformations_featured_image' ), 10, 3 );
-		add_filter( 'admin_post_thumbnail_html', array( $this, 'classic_overwrite_transformations_featured_image' ), 10, 2 );
+		add_filter( 'admin_post_thumbnail_html', array( $this, 'classic_overwrite_transformations_featured_image' ), 10, 3 );
 
 		// Register Meta.
 		$this->register_featured_overwrite();
