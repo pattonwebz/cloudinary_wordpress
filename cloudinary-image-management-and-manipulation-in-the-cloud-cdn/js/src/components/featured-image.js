@@ -8,24 +8,19 @@ import { withSelect, withDispatch } from '@wordpress/data';
 // Set our component.
 let FeaturedTransformationsToggle = ( props ) => {
 
-    // We only show the toggle if the item has transformations.
     return (
         <>
-            { props.media && props.media.transformations &&
-                <ToggleControl
-                    label={ __( 'Overwrite Transformations', 'cloudinary' ) }
-                    checked={ props.overwrite_featured_transformations }
-                    onChange={ ( value ) => props.setOverwrite( value ) }
-                />
-            }
+            <ToggleControl
+                label={ __( 'Overwrite Transformations', 'cloudinary' ) }
+                checked={ props.overwrite_featured_transformations }
+                onChange={ ( value ) => props.setOverwrite( value ) }
+            />
         </>
     );
 };
 
 // Setup our properties.
 FeaturedTransformationsToggle = withSelect( ( select, ownProps ) => ( {
-    // We get the media item here since we add in the property indicating if it has transformations.
-    media: ownProps.value ? select( 'core' ).getMedia( ownProps.value ) : {},
     overwrite_featured_transformations: select( 'core/editor' ).getEditedPostAttribute( 'meta' )[ '_overwrite_featured_transformations' ] ?? false,
 } ) )( FeaturedTransformationsToggle );
 
@@ -47,7 +42,7 @@ const cldFilterFeatured = ( BlockEdit ) => {
         return (
             <>
                 <BlockEdit { ...props }  />
-                { props.value &&
+                { !! props.value &&
                     <FeaturedTransformationsToggle { ...props } />
                 }
             </>

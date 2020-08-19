@@ -493,7 +493,7 @@ class Global_Transformations {
 	 * @return string
 	 */
 	public function classic_overwrite_transformations_featured_image( $content, $post_id, $attachment_id ) {
-		if ( $this->media->get_transformation_from_meta( $attachment_id ) ) {
+		if ( ! empty( $attachment_id ) ) {
 			// Get the current value.
 			$field_value = get_post_meta( $post_id, self::META_FEATURED_IMAGE_KEY, true );
 			// Add hidden field and checkbox to the HTML.
