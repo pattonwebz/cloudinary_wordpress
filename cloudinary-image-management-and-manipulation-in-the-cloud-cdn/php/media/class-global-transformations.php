@@ -54,7 +54,7 @@ class Global_Transformations {
 	/**
 	 * Holds the overwrite transformations for featured images meta key.
 	 */
-	const META_FEATURED_IMAGE_KEY = '_overwrite_featured_transformations';
+	const META_FEATURED_IMAGE_KEY = '_cloudinary_featured_overwrite';
 
 	/**
 	 * Global Transformations constructor.
