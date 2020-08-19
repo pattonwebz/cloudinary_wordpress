@@ -112,6 +112,13 @@ class Media implements Setup {
 	private $max_width;
 
 	/**
+	 * Flag to determine if the Featured Image is currently being rendered.
+	 *
+	 * @var bool|int
+	 */
+	private $doing_featured_image = false;
+
+	/**
 	 * Media constructor.
 	 *
 	 * @param Plugin $plugin The global plugin instance.
@@ -797,10 +804,7 @@ class Media implements Setup {
 		$cloudinary_id = $this->cloudinary_id( $attachment_id );
 
 		if ( $cloudinary_id ) {
-			$overwrite = false;
-			if( in_the_loop() && $attachment_id === get_post_thumbnail_id() ){
-				$overwrite = (bool) $this->get_post_meta( get_the_ID(), Global_Transformations::META_FEATURED_IMAGE_KEY, true );
-			}
+			$overwrite         = $this->maybe_overwrite_featured_image( $attachment_id );
 			$this->in_downsize = true;
 			$intermediate      = image_get_intermediate_size( $attachment_id, $size );
 			if ( is_array( $intermediate ) ) {
@@ -1505,6 +1509,35 @@ class Media implements Setup {
 	}
 
 	/**
+	 * Check if the current image is to be have the transformations overwritten.
+	 *
+	 * @param int $attachment_id The attachment ID.
+	 *
+	 * @return bool
+	 */
+	public function maybe_overwrite_featured_image( $attachment_id ) {
+		$overwrite = false;
+		if ( $this->doing_featured_image && $this->doing_featured_image === $attachment_id ) {
+			$overwrite = (bool) $this->get_post_meta( get_the_ID(), Global_Transformations::META_FEATURED_IMAGE_KEY, true );
+		}
+
+		return $overwrite;
+	}
+
+	/**
+	 * Set the flag indicating if the featured image is being done.
+	 *
+	 * @param int $post_id       The current post ID.
+	 * @param int $attachment_id The thumbnail ID.
+	 */
+	public function set_doing_featured( $post_id, $attachment_id ) {
+		$this->doing_featured_image = $attachment_id;
+		add_action( 'end_fetch_post_thumbnail_html', function () {
+			$this->doing_featured_image = false;
+		} );
+	}
+
+	/**
 	 * Setup the hooks and base_url if configured.
 	 */
 	public function setup() {
@@ -1541,6 +1574,9 @@ class Media implements Setup {
 			// Filter and action the custom column.
 			add_filter( 'manage_media_columns', array( $this, 'media_column' ) );
 			add_action( 'manage_media_custom_column', array( $this, 'media_column_value' ), 10, 2 );
+
+			// Hook into Featured Image cycle.
+			add_action( 'begin_fetch_post_thumbnail_html', array( $this, 'set_doing_featured' ), 10, 2 );
 		}
 	}
 }
