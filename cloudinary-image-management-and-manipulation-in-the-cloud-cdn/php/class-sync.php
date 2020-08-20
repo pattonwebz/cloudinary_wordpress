@@ -108,10 +108,12 @@ class Sync implements Setup, Assets {
 	 * Register Assets.
 	 */
 	public function register_assets() {
-		// Setup the sync_base_structure.
-		$this->setup_sync_base_struct();
-		// Setup sync types.
-		$this->setup_sync_types();
+		if ( $this->plugin->config['connect'] ) {
+			// Setup the sync_base_structure.
+			$this->setup_sync_base_struct();
+			// Setup sync types.
+			$this->setup_sync_types();
+		}
 	}
 
 
@@ -158,6 +160,17 @@ class Sync implements Setup, Assets {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Check if sync type is required for rendering a Cloudinary URL.
+	 *
+	 * @param string $type The type to check.
+	 *
+	 * @return bool
+	 */
+	public function is_required( $type ) {
+		return ! empty( $this->sync_base_struct[ $type ]['required'] );
 	}
 
 	/**
@@ -343,8 +356,9 @@ class Sync implements Setup, Assets {
 				'generate' => 'get_attached_file',
 				'priority' => 5.1,
 				'sync'     => array( $this->managers['upload'], 'upload_asset' ),
-				'state'    => 'info',
+				'state'    => 'uploading',
 				'note'     => __( 'Uploading to Cloudinary', 'cloudinary' ),
+				'required' => true, // Required to complete URL render flag.
 			),
 			'folder'      => array(
 				'generate' => array( $this->managers['media'], 'get_cloudinary_folder' ),
@@ -355,6 +369,7 @@ class Sync implements Setup, Assets {
 				'note'     => function () {
 					return sprintf( __( 'Copying to folder %s.', 'cloudinary' ), untrailingslashit( $this->managers['media']->get_cloudinary_folder() ) );
 				},
+				'required' => true, // Required to complete URL render flag.
 			),
 			'public_id'   => array(
 				'generate' => array( $this->managers['media'], 'get_public_id' ),
@@ -367,6 +382,7 @@ class Sync implements Setup, Assets {
 				'sync'     => array( $this->managers['media']->upgrade, 'convert_cloudinary_version' ), // Rename
 				'state'    => 'info syncing',
 				'note'     => __( 'Updating metadata', 'cloudinary' ),
+				'required' => true,
 			),
 			'breakpoints' => array(
 				'generate' => array( $this->managers['media'], 'get_breakpoint_options' ),
@@ -388,6 +404,7 @@ class Sync implements Setup, Assets {
 				'sync'     => array( $this->managers['upload'], 'upload_asset' ),
 				'state'    => 'uploading',
 				'note'     => __( 'Uploading to new cloud name.', 'cloudinary' ),
+				'required' => true,
 			),
 		);
 
@@ -528,7 +545,7 @@ class Sync implements Setup, Assets {
 	 *
 	 * @param int $attachment_id The attachment ID.
 	 *
-	 * @return null
+	 * @return string | null
 	 */
 	public function maybe_prepare_sync( $attachment_id ) {
 
@@ -537,7 +554,7 @@ class Sync implements Setup, Assets {
 			$this->add_to_sync( $attachment_id );
 		}
 
-		return null;
+		return $type;
 	}
 
 	/**
@@ -610,7 +627,7 @@ class Sync implements Setup, Assets {
 	 */
 	public function filter_status( $status, $attachment_id ) {
 
-		if ( $this->been_synced( $attachment_id ) || $this->is_pending( $attachment_id ) ) {
+		if ( $this->been_synced( $attachment_id ) || ( $this->is_pending( $attachment_id ) && $this->get_sync_type( $attachment_id ) ) ) {
 			$sync_type = $this->get_sync_type( $attachment_id );
 			if ( ! empty( $sync_type ) && isset( $this->sync_base_struct[ $sync_type ] ) ) {
 				// check process log in case theres an error.
