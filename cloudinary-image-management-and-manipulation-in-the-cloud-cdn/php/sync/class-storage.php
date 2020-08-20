@@ -87,11 +87,11 @@ class Storage implements Notice {
 	}
 
 	/**
-	 * Generate a signature for this sync type.s
+	 * Generate a signature for this sync type.
 	 *
 	 * @return string
 	 */
-	public function generate() {
+	public function generate_signature() {
 		return $this->settings['offload'] . $this->settings['low_res'];
 	}
 
@@ -130,6 +130,8 @@ class Storage implements Notice {
 	}
 
 	/**
+	 * Remove all local files from an asset/attachment.
+	 *
 	 * @param $attachment_id
 	 *
 	 * @return bool
@@ -227,7 +229,7 @@ class Storage implements Notice {
 		$this->connect  = $this->sync->managers['connect'];
 		$this->settings = $this->plugin->config['settings']['storage'];
 		$structure      = array(
-			'generate' => array( $this, 'generate' ),
+			'generate' => array( $this, 'generate_signature' ),
 			'priority' => 5.2,
 			'sync'     => array( $this, 'sync' ),
 			'state'    => 'info syncing',
