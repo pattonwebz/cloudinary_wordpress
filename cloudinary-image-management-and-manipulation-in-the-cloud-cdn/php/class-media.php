@@ -145,6 +145,44 @@ class Media implements Setup {
 	}
 
 	/**
+	 * Get convertible extensions and converted file types.
+	 *
+	 * @return array
+	 */
+	public function get_convertible_extensions() {
+
+
+		// Add preferred formats in future.
+		$base_types = array(
+			'psd'  => 'jpg',
+			'ai'   => 'jpg',
+			'eps'  => 'jpg',
+			'ps'   => 'jpg',
+			'ept'  => 'jpg',
+			'eps3' => 'jpg',
+			'indd' => 'jpg',
+			'webp' => 'gif',
+			'bmp'  => 'jpg',
+			'flif' => 'jpg',
+			'gltf' => 'jpg',
+			'heif' => 'jpg',
+			'heic' => 'jpg',
+			'ico'  => 'png',
+			'svg'  => 'png',
+			'tga'  => 'jpg',
+			'tiff' => 'jpg',
+			'tif'  => 'jpg',
+		);
+
+		/**
+		 * Filter the base types for conversion.
+		 *
+		 * @param array $base_types The base conversion types array.
+		 */
+		return apply_filters( 'cloudinary_convert_media_types', $base_types );
+	}
+
+	/**
 	 * Check if a file type is compatibile with Cloudinary & WordPress.
 	 *
 	 * @param string $file The file to check.
@@ -153,12 +191,14 @@ class Media implements Setup {
 	 */
 	public function is_file_compatible( $file ) {
 
-		$types    = $this->get_compatible_media_types();
-		$filename = pathinfo( $file, PATHINFO_BASENAME );
-		$mime     = wp_check_filetype( $filename );
-		$type     = strstr( $mime['type'], '/', true );
+		$types        = $this->get_compatible_media_types();
+		$filename     = pathinfo( $file, PATHINFO_BASENAME );
+		$mime         = wp_check_filetype( $filename );
+		$type         = strstr( $mime['type'], '/', true );
+		$conversions  = $this->get_convertible_extensions();
+		$convertibles = array_keys( $conversions );
 
-		return in_array( $type, $types, true );
+		return in_array( $type, $types, true ) && ! in_array( $mime['ext'], $convertibles );
 	}
 
 	/**
@@ -188,38 +228,10 @@ class Media implements Setup {
 	 */
 	public function convert_media_extension( $filename ) {
 
-		// Add preferred formats in future.
-		$base_types = array(
-			'psd'  => 'jpg',
-			'ai'   => 'jpg',
-			'eps'  => 'jpg',
-			'ps'   => 'jpg',
-			'ept'  => 'jpg',
-			'eps3' => 'jpg',
-			'indd' => 'jpg',
-			'webp' => 'gif',
-			'bmp'  => 'jpg',
-			'flif' => 'jpg',
-			'gltf' => 'jpg',
-			'heif' => 'jpg',
-			'heic' => 'jpg',
-			'ico'  => 'png',
-			'svg'  => 'png',
-			'tga'  => 'jpg',
-			'tiff' => 'jpg',
-			'tif'  => 'jpg',
-		);
-
-		/**
-		 * Filter the base types for conversion.
-		 *
-		 * @param array $base_types The base conversion types array.
-		 */
-		$conversion_types = apply_filters( 'cloudinary_convert_media_types', $base_types );
-
-		$info      = pathinfo( $filename );
-		$extension = strtolower( $info['extension'] );
-		$convert   = 'jpg'; // Default handler.
+		$conversion_types = $this->get_convertible_extensions();
+		$info             = pathinfo( $filename );
+		$extension        = strtolower( $info['extension'] );
+		$convert          = 'jpg'; // Default handler.
 
 		if ( ! empty( $conversion_types[ $extension ] ) ) {
 			$convert = $conversion_types[ $extension ];
