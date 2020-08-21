@@ -238,6 +238,9 @@ class Upload_Sync {
 			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['public_id'], $public_id );
 			// Set version.
 			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['version'], $result['version'] );
+			// Set traceable sync keys.
+			update_post_meta( $attachment_id, '_' . md5( $options['public_id'] ), true );
+			update_post_meta( $attachment_id, '_' . md5( 'base_' . $options['public_id'] ), true );
 			// Update signature for all that use the same method.
 			$this->sync->sync_signature_by_type( $attachment_id, $type );
 			// Update options and public_id as well (full sync)

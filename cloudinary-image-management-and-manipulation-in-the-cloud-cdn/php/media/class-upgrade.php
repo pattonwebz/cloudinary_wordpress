@@ -102,7 +102,7 @@ class Upgrade {
 			$this->sync->set_signature_item( $attachment_id, 'cloud_name', $cloud_name );
 		} else {
 			// v2 upgrade.
-			$public_id = $this->media->get_public_id( $attachment_id );
+			$public_id = $this->media->get_public_id( $attachment_id, true );
 			// Check folder sync in order.
 			if ( $this->media->is_folder_synced( $attachment_id ) ) {
 				$public_id_folder = ltrim( dirname( $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true ) ), '.' );
@@ -123,7 +123,9 @@ class Upgrade {
 		$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['plugin_version'], $this->media->plugin->version );
 		$this->sync->set_signature_item( $attachment_id, 'upgrade' );
 		$this->sync->set_signature_item( $attachment_id, 'public_id' );
-
+		// Update Sync keys.
+		update_post_meta( $attachment_id, '_' . md5( $public_id ), true );
+		update_post_meta( $attachment_id, '_' . md5( 'base_' . $public_id ), true );
 		// Get a new uncached signature.
 		$this->sync->get_signature( $attachment_id, true );
 		return $public_id;
