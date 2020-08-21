@@ -125,6 +125,22 @@ class Plugin {
 	}
 
 	/**
+	 * Get a plugin component.
+	 *
+	 * @param $component
+	 *
+	 * @return \Cloudinary\Connect|\Cloudinary\Media|\Cloudinary\REST_API|\Cloudinary\Settings_Page|\Cloudinary\Sync|null
+	 */
+	public function get_component( $component ) {
+		$return = null;
+		if ( isset( $this->components[ $component ] ) ) {
+			$return = $this->components[ $component ];
+		}
+
+		return $return;
+	}
+
+	/**
 	 * Register Hooks for the plugin.
 	 */
 	public function set_config() {

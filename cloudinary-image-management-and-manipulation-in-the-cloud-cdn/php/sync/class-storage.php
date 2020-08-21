@@ -22,7 +22,7 @@ class Storage implements Notice {
 	/**
 	 * Holds the Plugin instance.
 	 *
-	 * @since   0.1
+	 * @since   2.2.0
 	 *
 	 * @var     \Cloudinary\Plugin Instance of the plugin.
 	 */
@@ -32,7 +32,7 @@ class Storage implements Notice {
 	/**
 	 * Holds the Plugin Media instance.
 	 *
-	 * @since   0.1
+	 * @since   2.2.0
 	 *
 	 * @var     \Cloudinary\Media Instance of the media object.
 	 */
@@ -41,7 +41,7 @@ class Storage implements Notice {
 	/**
 	 * Holds the Sync instance.
 	 *
-	 * @since   0.1
+	 * @since   2.2.0
 	 *
 	 * @var     \Cloudinary\Sync Instance of the plugin.
 	 */
@@ -50,7 +50,7 @@ class Storage implements Notice {
 	/**
 	 * Holds the Download Sync instance.
 	 *
-	 * @since   0.1
+	 * @since   2.2.0
 	 *
 	 * @var     \Cloudinary\Sync\Download_Sync Instance of the plugin.
 	 */
@@ -59,7 +59,7 @@ class Storage implements Notice {
 	/**
 	 * Holds the Connect instance.
 	 *
-	 * @since   0.1
+	 * @since   2.2.0
 	 *
 	 * @var     \Cloudinary\Connect Instance of the plugin.
 	 */
@@ -79,9 +79,8 @@ class Storage implements Notice {
 	 */
 	public function __construct( \Cloudinary\Plugin $plugin ) {
 		$this->plugin   = $plugin;
-		$this->sync     = $this->plugin->components['sync'];
-		$this->media    = $this->plugin->components['media'];
-		$this->download = $this->sync->managers['download'];
+		$this->media    = $this->plugin->get_component( 'media' );
+		$this->download = $this->sync->managers['download'] ? $this->sync->managers['download'] : new Download_Sync( $plugin );
 
 		add_action( 'cloudinary_register_sync_types', array( $this, 'setup' ), 20 );
 	}
@@ -168,7 +167,7 @@ class Storage implements Notice {
 	/**
 	 * Get notices to display in admin.
 	 *
-	 * @return array|void
+	 * @return array
 	 */
 	public function get_notices() {
 		$notices = array();
@@ -222,23 +221,41 @@ class Storage implements Notice {
 	}
 
 	/**
+	 * Check if component is ready to run.
+	 *
+	 * @return bool
+	 */
+	public function is_ready() {
+		return $this->sync && $this->media && $this->connect && $this->download;
+	}
+
+	/**
 	 * Setup hooks for the filters.
 	 */
 	public function setup() {
-		$this->sync     = $this->plugin->components['sync'];
-		$this->connect  = $this->sync->managers['connect'];
-		$this->settings = $this->plugin->config['settings']['storage'];
-		$structure      = array(
-			'generate' => array( $this, 'generate_signature' ),
-			'priority' => 5.2,
-			'sync'     => array( $this, 'sync' ),
-			'state'    => 'info syncing',
-			'note'     => array( $this, 'status' ),
-		);
-		$this->sync->register_sync_type( 'storage', $structure );
 
-		// Tag the deactivate button.
-		$plugin_file = pathinfo( dirname( CLDN_CORE ), PATHINFO_BASENAME ) . '/' . basename( CLDN_CORE );
-		add_filter( 'plugin_action_links_' . $plugin_file, array( $this, 'tag_deactivate_link' ) );
+		$this->sync    = $this->plugin->get_component( 'sync' );
+		$this->connect = $this->plugin->get_component( 'connect' );
+
+		if ( $this->is_ready() ) {
+			$defaults       = array(
+				'offload' => 'dual_full',
+				'low_res' => '20',
+			);
+			$settings       = isset( $this->plugin->config['settings']['storage'] ) ? $this->plugin->config['settings']['storage'] : array();
+			$this->settings = wp_parse_args( $settings, $defaults );
+			$structure      = array(
+				'generate' => array( $this, 'generate_signature' ),
+				'priority' => 5.2,
+				'sync'     => array( $this, 'sync' ),
+				'state'    => 'info syncing',
+				'note'     => array( $this, 'status' ),
+			);
+			$this->sync->register_sync_type( 'storage', $structure );
+
+			// Tag the deactivate button.
+			$plugin_file = pathinfo( dirname( CLDN_CORE ), PATHINFO_BASENAME ) . '/' . basename( CLDN_CORE );
+			add_filter( 'plugin_action_links_' . $plugin_file, array( $this, 'tag_deactivate_link' ) );
+		}
 	}
 }
