@@ -16,7 +16,14 @@ $active_tabs = array_filter(
 	$nav_tabs,
 	function ( $tab ) use ( $config, $connect ) {
 		// If this tab has "require_config" set, ensure we're fully connected to cloudinary.
-		return ! empty( $tab['requires_config'] ) && ( ! $config['connect'] || ! $connect || ! $connect->is_connected() );
+		if ( 
+			! empty( $tab['requires_config'] ) && 
+			( empty( $config['connect'] ) || empty( $connect ) || empty( $connect->is_connected() ) ) 
+		) {
+			return false;
+		}
+
+		return true;
 	}
 );
 
