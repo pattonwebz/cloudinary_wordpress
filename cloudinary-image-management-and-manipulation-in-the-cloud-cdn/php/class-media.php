@@ -617,7 +617,9 @@ class Media implements Setup {
 				$size = $this->get_crop( $intermediate['url'], $attachment_id );
 			}
 		}
-
+		if( false === $overwrite_transformations ) {
+			$overwrite_transformations = $this->maybe_overwrite_featured_image( $attachment_id );
+		}
 		/**
 		 * Filter the Cloudinary transformations.
 		 *
@@ -804,13 +806,12 @@ class Media implements Setup {
 		$cloudinary_id = $this->cloudinary_id( $attachment_id );
 
 		if ( $cloudinary_id ) {
-			$overwrite         = $this->maybe_overwrite_featured_image( $attachment_id );
 			$this->in_downsize = true;
 			$intermediate      = image_get_intermediate_size( $attachment_id, $size );
 			if ( is_array( $intermediate ) ) {
 				// Found an intermediate size.
 				$image = array(
-					$this->convert_url( $intermediate['url'], $attachment_id, array(), $overwrite ),
+					$this->convert_url( $intermediate['url'], $attachment_id, array(), false ),
 					$intermediate['width'],
 					$intermediate['height'],
 					true,
