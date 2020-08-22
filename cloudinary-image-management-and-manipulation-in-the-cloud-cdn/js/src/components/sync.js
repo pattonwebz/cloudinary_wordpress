@@ -120,7 +120,7 @@ export default Sync;
 
 // Add it a trigger watch to stop deactivation.
 let triggers = document.getElementsByClassName( 'cld-deactivate' );
-[ ...triggers ].map( ( trigger ) => {
+[ ...triggers ].forEach( ( trigger ) => {
     trigger.addEventListener( 'click', function( ev ) {
         if ( !confirm( wp.i18n.__( 'Assets are currently stored on Cloudinary only. Deactivating this plugin will result in broken images. Are you sure you want to do this?', 'cloudinary' ) ) ) {
             ev.preventDefault();
