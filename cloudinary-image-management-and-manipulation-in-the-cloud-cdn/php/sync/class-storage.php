@@ -78,10 +78,7 @@ class Storage implements Notice {
 	 * @param \Cloudinary\Plugin $plugin The plugin.
 	 */
 	public function __construct( \Cloudinary\Plugin $plugin ) {
-		$this->plugin   = $plugin;
-		$this->media    = $this->plugin->get_component( 'media' );
-		$this->download = $this->sync->managers['download'] ? $this->sync->managers['download'] : new Download_Sync( $plugin );
-
+		$this->plugin = $plugin;
 		add_action( 'cloudinary_register_sync_types', array( $this, 'setup' ), 20 );
 	}
 
@@ -234,8 +231,10 @@ class Storage implements Notice {
 	 */
 	public function setup() {
 
-		$this->sync    = $this->plugin->get_component( 'sync' );
-		$this->connect = $this->plugin->get_component( 'connect' );
+		$this->sync     = $this->plugin->get_component( 'sync' );
+		$this->connect  = $this->plugin->get_component( 'connect' );
+		$this->media    = $this->plugin->get_component( 'media' );
+		$this->download = $this->sync->managers['download'] ? $this->sync->managers['download'] : new Download_Sync( $plugin );
 
 		if ( $this->is_ready() ) {
 			$defaults       = array(
