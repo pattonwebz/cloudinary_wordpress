@@ -736,6 +736,9 @@ class Sync implements Setup, Assets {
 
 		// Get the core meta.
 		$meta = wp_get_attachment_metadata( $attachment_id, true );
+		if ( ! is_array( $meta ) ) {
+			$meta = array();
+		}
 		if ( empty( $meta[ Sync::META_KEYS['cloudinary'] ] ) ) {
 			$meta[ Sync::META_KEYS['cloudinary'] ] = array();
 		}

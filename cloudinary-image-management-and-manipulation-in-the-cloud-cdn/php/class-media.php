@@ -121,6 +121,87 @@ class Media implements Setup {
 	}
 
 	/**
+	 * Get an array of compatible media types that are used by Cloudinary.
+	 *
+	 * @return array
+	 */
+	public function get_compatible_media_types() {
+
+		$media_types = array(
+			'image',
+			'video',
+			'audio',
+			'application',
+		);
+
+		/**
+		 * Filter the default Cloudinary Media Types.
+		 *
+		 * @param array $types The default media types array.
+		 *
+		 * @return array
+		 */
+		return apply_filters( 'cloudinary_media_types', $media_types );
+	}
+
+	/**
+	 * Get convertible extensions and converted file types.
+	 *
+	 * @return array
+	 */
+	public function get_convertible_extensions() {
+
+
+		// Add preferred formats in future.
+		$base_types = array(
+			'psd'  => 'jpg',
+			'ai'   => 'jpg',
+			'eps'  => 'jpg',
+			'ps'   => 'jpg',
+			'ept'  => 'jpg',
+			'eps3' => 'jpg',
+			'indd' => 'jpg',
+			'webp' => 'gif',
+			'bmp'  => 'jpg',
+			'flif' => 'jpg',
+			'gltf' => 'jpg',
+			'heif' => 'jpg',
+			'heic' => 'jpg',
+			'ico'  => 'png',
+			'svg'  => 'png',
+			'tga'  => 'jpg',
+			'tiff' => 'jpg',
+			'tif'  => 'jpg',
+		);
+
+		/**
+		 * Filter the base types for conversion.
+		 *
+		 * @param array $base_types The base conversion types array.
+		 */
+		return apply_filters( 'cloudinary_convert_media_types', $base_types );
+	}
+
+	/**
+	 * Check if a file type is compatibile with Cloudinary & WordPress.
+	 *
+	 * @param string $file The file to check.
+	 *
+	 * @return bool
+	 */
+	public function is_file_compatible( $file ) {
+
+		$types        = $this->get_compatible_media_types();
+		$filename     = pathinfo( $file, PATHINFO_BASENAME );
+		$mime         = wp_check_filetype( $filename );
+		$type         = strstr( $mime['type'], '/', true );
+		$conversions  = $this->get_convertible_extensions();
+		$convertibles = array_keys( $conversions );
+
+		return in_array( $type, $types, true ) && ! in_array( $mime['ext'], $convertibles );
+	}
+
+	/**
 	 * Check if the attachment is a media file.
 	 *
 	 * @param int $attachment_id The attachment ID to check.
@@ -130,14 +211,7 @@ class Media implements Setup {
 	public function is_media( $attachment_id ) {
 		$is_media = false;
 		if ( 'attachment' === get_post_type( $attachment_id ) && wp_get_attachment_metadata( $attachment_id ) ) {
-			/**
-			 * Filter the default Cloudinary Media Types.
-			 *
-			 * @param array $types The default media types array.
-			 *
-			 * @return array
-			 */
-			$media_types = apply_filters( 'cloudinary_media_types', array( 'image', 'video', 'audio' ) );
+			$media_types = $this->get_compatible_media_types();
 			$type        = $this->get_media_type( $attachment_id );
 			$is_media    = in_array( $type, $media_types );
 		}
@@ -146,17 +220,75 @@ class Media implements Setup {
 	}
 
 	/**
-	 * Get a resource type based on file.(Cloudinary v1 remove mime type in post data).
+	 * Convert media extension.
+	 *
+	 * @param string $filename The file to convert.
+	 *
+	 * @return string|null
+	 */
+	public function convert_media_extension( $filename ) {
+
+		$conversion_types = $this->get_convertible_extensions();
+		$info             = pathinfo( $filename );
+		$extension        = strtolower( $info['extension'] );
+		$convert          = 'jpg'; // Default handler.
+
+		if ( ! empty( $conversion_types[ $extension ] ) ) {
+			$convert = $conversion_types[ $extension ];
+		}
+
+		$filename = trailingslashit( $info['dirname'] ) . $info['filename'] . '.' . $convert;
+
+		return $filename;
+	}
+
+	/**
+	 * Checks if the file is for preview only. True = only render sizes converted.
+	 *
+	 * @param int $attachment_id The attachment ID to check.
+	 *
+	 * @return bool
+	 */
+	public function is_preview_only( $attachment_id ) {
+		$base_types = array(
+			'pdf',
+			'psd',
+		);
+
+		/**
+		 * Filter the file types that are preview only.
+		 *
+		 * @param array $base_types The base preview types.
+		 */
+		$preview_types = apply_filters( 'cloudinary_preview_types', $base_types );
+		$mime          = wp_check_filetype( get_attached_file( $attachment_id ) );
+
+		return in_array( $mime['ext'], $preview_types, true );
+	}
+
+	/**
+	 * Get a resource type based on file. (Cloudinary v1 remove mime type in post data).
+	 *
+	 * @param string $file The file to get type for.
+	 *
+	 * @return string
+	 */
+	public function get_file_type( $file ) {
+		$file = pathinfo( $file, PATHINFO_BASENAME );
+		$mime = wp_check_filetype( $file );
+
+		return strstr( $mime['type'], '/', true );
+	}
+
+	/**
+	 * Get a resource type based on attachment_id.
 	 *
 	 * @param \WP_Post|int $attachment_id The attachment ID or object.
 	 *
 	 * @return string
 	 */
 	public function get_media_type( $attachment_id ) {
-		$file = pathinfo( get_attached_file( $attachment_id ), PATHINFO_BASENAME );
-		$mime = wp_check_filetype( $file );
-
-		return strstr( $mime['type'], '/', true );
+		return $this->get_file_type( get_attached_file( $attachment_id ) );
 	}
 
 	/**
@@ -533,7 +665,9 @@ class Media implements Setup {
 					$default['bit_rate'] = $global['video_bitrate'] . 'k';
 				}
 			} else {
-				$default['fetch_format'] = $global[ $type . '_format' ] !== 'none' ? $global[ $type . '_format' ] : null;
+				if ( 'auto' === $global[ $type . '_format' ] ) {
+					$default['fetch_format'] = 'auto';
+				}
 				if ( isset( $global[ $type . '_quality' ] ) ) {
 					$default['quality'] = $global[ $type . '_quality' ] !== 'none' ? $global[ $type . '_quality' ] : null;
 				} else {
@@ -629,6 +763,11 @@ class Media implements Setup {
 		$args = $pre_args;
 		$url  = $this->plugin->components['connect']->api->cloudinary_url( $cloudinary_id, $args, $size, $clean );
 
+		// Check if this type is a preview only type. i.e PDF.
+		if ( ! empty( $size ) && $this->is_preview_only( $attachment_id ) ) {
+			$url = $this->convert_media_extension( $url );
+		}
+
 		/**
 		 * Filter the final Cloudinary URL.
 		 *
@@ -720,7 +859,13 @@ class Media implements Setup {
 			$public_id = $this->get_public_id( $attachment_id, true );
 			$file      = get_attached_file( $attachment_id );
 			// @todo: Make this use the globals, overrides, and application conversion.
-			$extension     = pathinfo( $file, PATHINFO_EXTENSION );
+			$extension = pathinfo( $file, PATHINFO_EXTENSION );
+			if ( wp_attachment_is_image( $attachment_id ) ) {
+				$settings = $this->global_transformations->globals['image'];
+				if ( ! in_array( $settings['image_format'], array( 'none', 'auto' ), true ) ) {
+					$extension = $settings['image_format'];
+				}
+			}
 			$cloudinary_id = $public_id . '.' . $extension;
 		}
 
@@ -802,13 +947,23 @@ class Media implements Setup {
 			if ( is_array( $intermediate ) ) {
 				// Found an intermediate size.
 				$image = array(
-					$this->convert_url( $intermediate['url'], $attachment_id, array(), false ),
+					$this->convert_url( $intermediate['file'], $attachment_id, array(), false ),
 					$intermediate['width'],
 					$intermediate['height'],
 					true,
 				);
 			}
 			$this->in_downsize = false;
+
+			// Preview formats.
+			if ( empty( $image ) && $this->is_preview_only( $attachment_id ) ) {
+				$image = array(
+					$this->cloudinary_url( $attachment_id, $size, array(), $cloudinary_id ),
+					$size[0],
+					$size[1],
+					false,
+				);
+			}
 		}
 
 		return $image;
@@ -1095,6 +1250,11 @@ class Media implements Setup {
 			if ( ! empty( $asset['derived'] ) ) {
 				$url = $asset['derived'][0]['secure_url'];
 			}
+
+			//convert_media_extension
+			if ( ! $this->is_file_compatible( $url ) ) {
+				$url = $this->convert_media_extension( $url );
+			}
 			$transformations = $this->get_transformations_from_string( $url );
 			if ( ! empty( $transformations ) ) {
 				$sync_key                 .= wp_json_encode( $transformations );
@@ -1103,16 +1263,16 @@ class Media implements Setup {
 			// Check Format and url extension.
 			$file_info = pathinfo( $url );
 			if ( $format !== $file_info['extension'] ) {
-				// Format transformation.
-				$this->set_transformation( $transformations, 'fetch_format', $file_info['extension'] );
-				$url = $file_info['dirname'] . '/' . $file_info['filename'] . '.' . $file_info['extension'];
+				$sync_key .= $file_info['extension'];
 			}
 			// Try to find the Attachment ID in context meta data.
 			$attachment_id = $this->get_id_from_sync_key( $sync_key );
 
 			if ( empty( $attachment_id ) ) {
-				$attachment_id = $this->create_attachment( $asset, $public_id );
-				$return        = array(
+				// ensure the url is correct.
+				$asset['secure_url'] = $url;
+				$attachment_id       = $this->create_attachment( $asset, $public_id );
+				$return              = array(
 					'fetch'         => rest_url( REST_API::BASE . '/asset' ),
 					'uploading'     => true,
 					'src'           => $src,
