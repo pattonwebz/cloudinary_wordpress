@@ -1691,6 +1691,7 @@ class Media implements Setup {
 			// Filter live URLS. (functions that return a URL).
 			add_filter( 'wp_calculate_image_srcset', array( $this, 'image_srcset' ), 10, 5 );
 			add_filter( 'wp_calculate_image_srcset_meta', array( $this, 'match_responsive_sources' ), 10, 4 );
+			add_filter( 'wp_get_attachment_metadata', array( $this, 'match_file_name_with_cloudinary_source' ) );
 			add_filter( 'wp_get_attachment_url', array( $this, 'attachment_url' ), 10, 2 );
 			add_filter( 'image_downsize', array( $this, 'filter_downsize' ), 10, 3 );
 
@@ -1698,5 +1699,29 @@ class Media implements Setup {
 			add_filter( 'manage_media_columns', array( $this, 'media_column' ) );
 			add_action( 'manage_media_custom_column', array( $this, 'media_column_value' ), 10, 2 );
 		}
+	}
+
+	/**
+	 * In certain situations when images had changes applied to them directly (ie. transformations)
+	 * on Cloudinary, when syncing to WordPress it will append a "-n" to the image file name.
+	 * This can cause a mismatch of file names when WordPress attempts to attach the 
+	 * srcset attribute to the image. In this method, we account for this potential
+	 * situation and handle it accordingly by replacing this "-n" name with the original name.
+	 *
+	 * @param array $image_meta Meta information of the attachment.
+	 * 
+	 * @return array
+	 */
+	public function match_file_name_with_cloudinary_source( $image_meta ) {
+		if ( isset( $image_meta[ Sync::META_KEYS['cloudinary'] ] ) ) {
+			$extension = pathinfo( $image_meta['file'], PATHINFO_EXTENSION );
+			$cld_file  = $image_meta[ Sync::META_KEYS['cloudinary'] ][ Sync::META_KEYS['public_id'] ] . '.' . $extension;
+
+			if ( false === strpos( $image_meta['file'], $cld_file ) ) {
+				$image_meta['file'] = $cld_file;
+			}
+		}
+
+		return $image_meta;
 	}
 }
