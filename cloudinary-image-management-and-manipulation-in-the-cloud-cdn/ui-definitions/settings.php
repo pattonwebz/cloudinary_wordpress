@@ -40,6 +40,15 @@ $definition = array(
 				'global_video_transformations',
 			),
 		),
+		'storage'            => array(
+			'page_title'      => __( 'Media Storage', 'cloudinary' ),
+			'menu_title'      => __( 'Storage', 'cloudinary' ),
+			'slug'            => 'cld_storage',
+			'requires_config' => true,
+			'tabs'            => array(
+				'storage',
+			),
+		),
 		'sync_media'            => array(
 			'page_title'      => __( 'Sync Media to Cloudinary', 'cloudinary' ),
 			'menu_title'      => __( 'Sync Media', 'cloudinary' ),

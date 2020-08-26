@@ -75,6 +75,7 @@ class Sync implements Setup, Assets {
 		'syncing'        => '_cloudinary_syncing',
 		'downloading'    => '_cloudinary_downloading',
 		'process_log'    => '_process_log',
+		'storage'        => '_cloudinary_storage',
 	);
 
 	/**
@@ -685,7 +686,7 @@ class Sync implements Setup, Assets {
 	public function is_pending( $attachment_id ) {
 		// Check if it's not already in the to sync array.
 		if ( ! in_array( $attachment_id, $this->to_sync, true ) ) {
-			$is_pending = $this->managers['media']->get_post_meta( $attachment_id, Sync::META_KEYS['pending'], true );
+			$is_pending = get_post_meta( $attachment_id, Sync::META_KEYS['pending'], true );
 			if ( empty( $is_pending ) || $is_pending < time() - 5 * 60 ) {
 				// No need to delete pending meta, since it will be updated with the new timestamp anyway.
 				return false;
@@ -703,7 +704,7 @@ class Sync implements Setup, Assets {
 	public function add_to_sync( $attachment_id ) {
 		if ( ! in_array( $attachment_id, $this->to_sync, true ) ) {
 			// Flag image as pending to prevent duplicate upload.
-			$this->managers['media']->update_post_meta( $attachment_id, Sync::META_KEYS['pending'], time() );
+			update_post_meta( $attachment_id, Sync::META_KEYS['pending'], time() );
 			$this->to_sync[] = $attachment_id;
 		}
 	}
