@@ -1304,6 +1304,11 @@ class Media implements Setup {
 				$asset['attachment_id']  = $this->create_attachment( $asset, $asset['public_id'] );
 				$return['attachment_id'] = $asset['attachment_id'];
 			} else {
+				// Capture the ALT Text.
+				if ( ! empty( $asset['meta']['alt'] ) ) {
+					$alt_text = wp_strip_all_tags( $asset['meta']['alt'] );
+					update_post_meta( $asset['attachment_id'], '_wp_attachment_image_alt', $alt_text );
+				}
 				// Compare Version.
 				$current_version = (int) $this->get_post_meta( $asset['attachment_id'], Sync::META_KEYS['version'], true );
 				if ( $current_version !== $asset['version'] ) {
@@ -1329,12 +1334,6 @@ class Media implements Setup {
 				}
 			}
 			$return['transformations'] = $asset['transformations'];
-
-			// Capture the ALT Text.
-			if ( ! empty( $asset['meta']['alt'] ) ) {
-				$alt_text = wp_strip_all_tags( $asset['meta']['alt'] );
-				update_post_meta( $asset['attachment_id'], '_wp_attachment_image_alt', $alt_text );
-			}
 
 			wp_send_json_success( $return );
 		}
