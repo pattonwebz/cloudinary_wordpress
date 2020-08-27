@@ -12,6 +12,8 @@ if ( ! $this->plugin->components['sync']->managers['queue']->is_running() ) {
 }
 
 ?>
+<button type="submit" class="button button-primary"><?php esc_html_e( 'Save Changes', 'cloudinary' ); ?></button>
+<hr />
 <div class="sync settings-tab-section">
 	<h2><?php esc_html_e( 'Bulk-Sync WordPress Media with Cloudinary (optional)', 'cloudinary' ); ?></h2>
 
