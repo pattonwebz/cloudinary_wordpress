@@ -1320,7 +1320,8 @@ class Media implements Setup {
 						$meta = wp_get_attachment_metadata( $id );
 						wp_delete_attachment_files( $id, $meta, array(), get_attached_file( $id ) );
 						$this->update_post_meta( $id, Sync::META_KEYS['version'], $asset['version'] );
-						$this->sync->set_signature_item( $id, 'download', '' );
+						// Set signature for storage, since this will be more effective at downloading or not.
+						$this->sync->set_signature_item( $id, 'storage', '' );
 						if ( $id !== $asset['attachment_id'] ) {
 							$resync[] = wp_prepare_attachment_for_js( $id );
 						}
