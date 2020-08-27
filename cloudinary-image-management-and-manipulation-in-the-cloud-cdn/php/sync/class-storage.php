@@ -98,6 +98,8 @@ class Storage implements Notice {
 	 */
 	public function sync( $attachment_id ) {
 
+		// Get the previous state of the attachment.
+		$previous_state = $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['storage'], true );
 		switch ( $this->settings['offload'] ) {
 			case 'cld':
 				$this->remove_local_assets( $attachment_id );
@@ -106,8 +108,7 @@ class Storage implements Notice {
 				$url = $this->media->cloudinary_url( $attachment_id, 'full', array( array( 'effect' => 'blur:100', 'quality' => $this->settings['low_res'] . ':440' ) ), null, false, true );
 				break;
 			case 'dual_full':
-				$state = $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['storage'], true );
-				if ( ! empty( $state ) && 'dual_full' !== $state ) {
+				if ( ! empty( $previous_state ) && 'dual_full' !== $previous_state ) {
 					// Only do this is it's changing a state.
 					$url = $this->media->cloudinary_url( $attachment_id, '', array(), null, false, false );
 				}
@@ -116,7 +117,10 @@ class Storage implements Notice {
 
 		// If we have a URL, it means we have a new source to pull from.
 		if ( ! empty( $url ) ) {
-			$this->remove_local_assets( $attachment_id );
+			// Ensure that we dont delete assets if the last state didn't have any.
+			if ( 'cld' !== $previous_state ) {
+				$this->remove_local_assets( $attachment_id );
+			}
 			$this->download->download_asset( $attachment_id, $url );
 		}
 
@@ -241,7 +245,7 @@ class Storage implements Notice {
 				'offload' => 'dual_full',
 				'low_res' => '20',
 			);
-			$settings       = isset( $this->plugin->config['settings']['storage'] ) ? $this->plugin->config['settings']['storage'] : array();
+			$settings       = isset( $this->plugin->config['settings']['sync_media'] ) ? $this->plugin->config['settings']['sync_media'] : array();
 			$this->settings = wp_parse_args( $settings, $defaults );
 			$structure      = array(
 				'generate' => array( $this, 'generate_signature' ),
