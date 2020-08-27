@@ -375,8 +375,9 @@ class Media implements Setup {
 	 * Attempt to get an attachment_id from a sync key.
 	 *
 	 * @param string $sync_key Key for matching a post_id.
+	 * @param bool   $all      Flag to return all found ID's.
 	 *
-	 * @return int|false The attachment id or false if not found.
+	 * @return int|array|false The attachment id or id's, or false if not found.
 	 */
 	public function get_id_from_sync_key( $sync_key, $all = false ) {
 
@@ -1308,15 +1309,20 @@ class Media implements Setup {
 				if ( $current_version !== $asset['version'] ) {
 					// Difference version, remove files, and downsync new files related to this asset.
 					// If this is a different version, we should try find attachments with the base sync key and update the source.
-					$ids = $this->get_id_from_sync_key( 'base_' . $asset['public_id'], true );
+					$ids    = $this->get_id_from_sync_key( 'base_' . $asset['public_id'], true );
+					$resync = array();
 					foreach ( $ids as $id ) {
 						$meta = wp_get_attachment_metadata( $id );
 						wp_delete_attachment_files( $id, $meta, array(), get_attached_file( $id ) );
 						$this->update_post_meta( $id, Sync::META_KEYS['version'], $asset['version'] );
 						$this->sync->set_signature_item( $id, 'download', '' );
+						if ( $id !== $asset['attachment_id'] ) {
+							$resync[] = wp_prepare_attachment_for_js( $id );
+						}
 					}
-					$return = $base_return;
-
+					// Use the primary ID as the main return, and add the resynced assets to that.
+					$return           = wp_prepare_attachment_for_js( $asset['attachment_id'] );
+					$return['resync'] = $resync;
 				} else {
 					$return              = wp_prepare_attachment_for_js( $asset['attachment_id'] );
 					$return['public_id'] = $asset['public_id'];
