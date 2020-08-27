@@ -630,14 +630,14 @@ class Media implements Setup {
 	 */
 	public function attachment_url( $url, $attachment_id ) {
 		if ( ! doing_action( 'wp_insert_post_data' ) && false === $this->in_downsize ) {
-			$cloudinary_id = $this->cloudinary_id( $attachment_id );
-			if ( $cloudinary_id ) {
-				$url = $this->cloudinary_url( $attachment_id );
-			}
 			// Previous v1.
 			$previous_url = strpos( $url, untrailingslashit( $this->base_url ) );
 			if ( false !== $previous_url ) {
 				$url = substr( $url, $previous_url );
+			} else {
+				if ( $this->cloudinary_id( $attachment_id ) ) {
+					$url = $this->cloudinary_url( $attachment_id );
+				}
 			}
 		}
 
@@ -751,7 +751,7 @@ class Media implements Setup {
 				$size = $this->get_crop( $intermediate['url'], $attachment_id );
 			}
 		}
-		if( false === $overwrite_transformations ) {
+		if ( false === $overwrite_transformations ) {
 			$overwrite_transformations = $this->maybe_overwrite_featured_image( $attachment_id );
 		}
 		/**
@@ -865,8 +865,11 @@ class Media implements Setup {
 		$cloudinary_id = null;
 		// A cloudinary_id is a public_id with a file extension.
 		if ( $this->has_public_id( $attachment_id ) ) {
-			$public_id = $this->get_public_id( $attachment_id, true );
-			$file      = get_attached_file( $attachment_id );
+			$public_id = $this->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true );
+			// Since this is based on saved and not a dynamic, append a suffix.
+			$public_id .= $this->get_post_meta( $attachment_id, Sync::META_KEYS['suffix'], true );
+			// Get the file, and use the same extension.
+			$file = get_attached_file( $attachment_id );
 			// @todo: Make this use the globals, overrides, and application conversion.
 			$extension = pathinfo( $file, PATHINFO_EXTENSION );
 			if ( wp_attachment_is_image( $attachment_id ) ) {
@@ -901,7 +904,7 @@ class Media implements Setup {
 			$sync_type = $this->sync->maybe_prepare_sync( $attachment_id );
 			// Check sync type allows for continued rendering. i.e meta update, breakpoints etc, will still allow the URL to work,
 			// Where is type "file" will not since it's still being uploaded.
-			if ( ! is_null( $sync_type ) && $this->sync->is_required( $sync_type ) ) {
+			if ( ! is_null( $sync_type ) && $this->sync->is_required( $sync_type, $attachment_id ) ) {
 				return null; // Return and render local URLs.
 			}
 		}
@@ -1704,7 +1707,7 @@ class Media implements Setup {
 	public function setup() {
 		if ( $this->plugin->config['connect'] ) {
 
-			$this->base_url          = $this->plugin->components['connect']->api->cloudinary_url( '/' );
+			$this->base_url          = $this->plugin->components['connect']->api->cloudinary_url();
 			$this->credentials       = $this->plugin->components['connect']->get_credentials();
 			$this->cloudinary_folder = $this->plugin->config['settings']['sync_media']['cloudinary_folder'] ? $this->plugin->config['settings']['sync_media']['cloudinary_folder'] : '';
 			$this->sync              = $this->plugin->components['sync'];
@@ -1745,12 +1748,12 @@ class Media implements Setup {
 	/**
 	 * In certain situations when images had changes applied to them directly (ie. transformations)
 	 * on Cloudinary, when syncing to WordPress it will append a "-n" to the image file name.
-	 * This can cause a mismatch of file names when WordPress attempts to attach the 
+	 * This can cause a mismatch of file names when WordPress attempts to attach the
 	 * srcset attribute to the image. In this method, we account for this potential
 	 * situation and handle it accordingly by replacing this "-n" name with the original name.
 	 *
 	 * @param array $image_meta Meta information of the attachment.
-	 * 
+	 *
 	 * @return array
 	 */
 	public function match_file_name_with_cloudinary_source( $image_meta ) {
@@ -1760,6 +1763,10 @@ class Media implements Setup {
 
 			if ( false === strpos( $image_meta['file'], $cld_file ) ) {
 				$image_meta['file'] = $cld_file;
+				// Match sizes to exclude sizes suffix.
+				foreach ( $image_meta['sizes'] as &$size ) {
+					$size['file'] = basename( $cld_file );
+				}
 			}
 		}
 

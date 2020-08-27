@@ -80,6 +80,46 @@ class Storage implements Notice {
 	public function __construct( \Cloudinary\Plugin $plugin ) {
 		$this->plugin = $plugin;
 		add_action( 'cloudinary_register_sync_types', array( $this, 'setup' ), 20 );
+		// Add File validation sync.
+		add_filter( 'cloudinary_sync_base_struct', array( $this, 'add_file_folder_validators' ) );
+	}
+
+	/**
+	 * Add a validators for the file and folder sync type to allow skipping the upload if of-storage is on.
+	 *
+	 * @param array $sync_types The array of sync types.
+	 *
+	 * @return array
+	 */
+	public function add_file_folder_validators( $sync_types ) {
+
+		if ( isset( $sync_types['file'] ) && ! isset( $sync_types['file']['validate'] ) ) {
+			$sync_types['file']['validate'] = array( $this, 'validate_file_folder_sync' );
+		}
+		if ( isset( $sync_types['folder'] ) && ! isset( $sync_types['folder']['validate'] ) ) {
+			$sync_types['folder']['required'] = array( $this, 'validate_file_folder_sync' );
+		}
+
+		return $sync_types;
+	}
+
+	/**
+	 * Validator and Required check to skip file and folder required for of-storage.
+	 *
+	 * @param int $attachment_id The attachment ID.
+	 *
+	 * @return bool
+	 */
+	public function validate_file_folder_sync( $attachment_id ) {
+
+		$return = true;
+		// Check if this is not a Cloudinary URL.
+		if ( 'cld' === $this->settings['offload'] ) {
+			$file   = get_post_meta( $attachment_id, '_wp_attached_file', true );
+			$return = ! $this->media->is_cloudinary_url( $file );
+		}
+
+		return $return;
 	}
 
 	/**
@@ -87,8 +127,8 @@ class Storage implements Notice {
 	 *
 	 * @return string
 	 */
-	public function generate_signature() {
-		return $this->settings['offload'] . $this->settings['low_res'];
+	public function generate_signature( $attachment_id ) {
+		return $this->settings['offload'] . $this->settings['low_res'] . $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true );
 	}
 
 	/**
@@ -103,6 +143,7 @@ class Storage implements Notice {
 		switch ( $this->settings['offload'] ) {
 			case 'cld':
 				$this->remove_local_assets( $attachment_id );
+				update_post_meta( $attachment_id, '_wp_attached_file', $this->media->cloudinary_url( $attachment_id ) );
 				break;
 			case 'dual_low':
 				$url = $this->media->cloudinary_url( $attachment_id, 'full', array( array( 'effect' => 'blur:100', 'quality' => $this->settings['low_res'] . ':440' ) ), null, false, true );
@@ -259,6 +300,8 @@ class Storage implements Notice {
 			// Tag the deactivate button.
 			$plugin_file = pathinfo( dirname( CLDN_CORE ), PATHINFO_BASENAME ) . '/' . basename( CLDN_CORE );
 			add_filter( 'plugin_action_links_' . $plugin_file, array( $this, 'tag_deactivate_link' ) );
+
+
 		}
 	}
 }
