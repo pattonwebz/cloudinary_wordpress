@@ -6,7 +6,7 @@
  */
 
 add_thickbox();
-$autosync = $this->plugin->components['settings']->is_auto_sync_enabled();
+$autosync = $this->plugin->components['sync']->is_auto_sync_enabled();
 ?>
 <?php if ( ! empty( $this->plugin->config['connect'] ) ) : ?>
 	<div id="auto-sync-alert" style="display:none;">
