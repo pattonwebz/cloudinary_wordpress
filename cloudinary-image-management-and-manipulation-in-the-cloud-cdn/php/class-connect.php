@@ -79,7 +79,13 @@ class Connect implements Config, Setup, Notice {
 		'url'        => 'cloudinary_url',
 		'connect'    => 'cloudinary_connect',
 		'cache'      => 'cloudinary_settings_cache',
+		'cname'		 => 'cloudinary_url_cname',
 	);
+
+	/**
+	 * Regex to match Cloudinary environment variable.
+	 */
+	const CLOUDINARY_VARIABLE_REGEX = '^(?:CLOUDINARY_URL=)?cloudinary://[0-9]+:[A-Za-z_\-0-9]+@[A-Za-z]+';
 
 	/**
 	 * Initiate the plugin resources.
@@ -157,7 +163,7 @@ class Connect implements Config, Setup, Notice {
 		}
 
 		// Pattern match to ensure validity of the provided url
-		if ( ! preg_match( '~^(?:CLOUDINARY_URL=)?cloudinary://[0-9]+:[A-Za-z_\-0-9]+@[A-Za-z]+~', $data['cloudinary_url'] ) ) {
+		if ( ! preg_match( '~' . self::CLOUDINARY_VARIABLE_REGEX . '~', $data['cloudinary_url'] ) ) {
 			add_settings_error(
 				'cloudinary_connect',
 				'format_mismatch',
@@ -172,11 +178,21 @@ class Connect implements Config, Setup, Notice {
 
 		if ( ! empty( $result['message'] ) ) {
 			add_settings_error( 'cloudinary_connect', $result['type'], $result['message'], 'error' );
-
 			return $current;
 		}
 
-		add_settings_error( 'cloudinary_connect', 'connection_success', __( 'Successfully connected to Cloudinary.', 'cloudinary' ), 'updated' );
+		// Check if the given URL has a cname and store it if present.
+		if ( preg_match( '/(?:@\w+)\/([A-Za-z-]+\.cloudinary.com)/', $data['cloudinary_url'], $cname ) ) {
+			update_option( self::META_KEYS['cname'], $cname[1] );
+		}
+
+		add_settings_error( 
+			'cloudinary_connect', 
+			'connection_success', 
+			__( 'Successfully connected to Cloudinary.', 'cloudinary' ), 
+			'updated' 
+		);
+
 		update_option( self::META_KEYS['signature'], md5( $data['cloudinary_url'] ) );
 
 		return $data;
@@ -213,29 +229,30 @@ class Connect implements Config, Setup, Notice {
 
 			return $result;
 		}
-		// Test if has a cname and is valid.
-		if ( ! empty( $test['query'] ) ) {
-			$config_params = array();
-			wp_parse_str( $test['query'], $config_params );
-			if ( ! empty( $config_params['cname'] ) ) {
-				if ( defined( 'FILTER_VALIDATE_DOMAIN' ) ) {
-					$is_valid = filter_var( $config_params['cname'], FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME );
-				} else {
-					$cname    = 'https://' . $config_params['cname'];
-					$is_valid = filter_var( $cname, FILTER_VALIDATE_URL );
-				}
-				if ( ! substr_count( $is_valid, '.' ) || false === $is_valid ) {
-					$result['type']    = 'invalid_cname';
-					$result['message'] = __( 'CNAME is not a valid domain name.', 'cloudinary' );
 
-					return $result;
-				}
+		// Test if has a cname and is valid.
+		if ( ! empty( $test['path'] ) ) {
+			$cname = ltrim( $test['path'], '/' );
+			if ( defined( 'FILTER_VALIDATE_DOMAIN' ) ) {
+				$is_valid = filter_var( $cname, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME );
+			} else {
+				$cname    = 'https://' . $cname;
+				$is_valid = filter_var( $cname, FILTER_VALIDATE_URL );
+			}
+
+			if ( ! substr_count( $is_valid, '.' ) || false === $is_valid ) {
+				$result['type']    = 'invalid_cname';
+				$result['message'] = __( 'CNAME is not a valid domain name.', 'cloudinary' );
+
+				return $result;
 			}
 		}
 
 		$this->config_from_url( $url );
+		
 		$test        = new Connect\Api( $this, $this->plugin->version );
 		$test_result = $test->ping();
+
 		if ( is_wp_error( $test_result ) ) {
 			$result['type']    = 'connection_error';
 			$result['message'] = ucwords( str_replace( '_', ' ', $test_result->get_error_message() ) );
