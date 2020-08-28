@@ -8,6 +8,7 @@
 namespace Cloudinary;
 
 use Cloudinary\Component\Setup;
+use Cloudinary\Connect\Api;
 use Cloudinary\Media\Filter;
 use Cloudinary\Media\Upgrade;
 use Cloudinary\Media\Global_Transformations;
@@ -90,6 +91,13 @@ class Media implements Setup {
 	public $video;
 
 	/**
+	 * Sync instance.
+	 *
+	 * @var \Cloudinary\Sync
+	 */
+	public $sync;
+
+	/**
 	 * Flag if in image_downsize function to prevent overload.
 	 *
 	 * @var bool
@@ -104,6 +112,13 @@ class Media implements Setup {
 	private $max_width;
 
 	/**
+	 * Flag to determine if the Featured Image is currently being rendered.
+	 *
+	 * @var bool|int
+	 */
+	private $doing_featured_image = false;
+
+	/**
 	 * Media constructor.
 	 *
 	 * @param Plugin $plugin The global plugin instance.
@@ -113,23 +128,174 @@ class Media implements Setup {
 	}
 
 	/**
-	 * Check if the attachment is a media file.
+	 * Get an array of compatible media types that are used by Cloudinary.
 	 *
-	 * @param int|\WP_Post $attachment The attachment to check.
+	 * @return array
+	 */
+	public function get_compatible_media_types() {
+
+		$media_types = array(
+			'image',
+			'video',
+			'audio',
+			'application',
+		);
+
+		/**
+		 * Filter the default Cloudinary Media Types.
+		 *
+		 * @param array $types The default media types array.
+		 *
+		 * @return array
+		 */
+		return apply_filters( 'cloudinary_media_types', $media_types );
+	}
+
+	/**
+	 * Get convertible extensions and converted file types.
+	 *
+	 * @return array
+	 */
+	public function get_convertible_extensions() {
+
+
+		// Add preferred formats in future.
+		$base_types = array(
+			'psd'  => 'jpg',
+			'ai'   => 'jpg',
+			'eps'  => 'jpg',
+			'ps'   => 'jpg',
+			'ept'  => 'jpg',
+			'eps3' => 'jpg',
+			'indd' => 'jpg',
+			'webp' => 'gif',
+			'bmp'  => 'jpg',
+			'flif' => 'jpg',
+			'gltf' => 'jpg',
+			'heif' => 'jpg',
+			'heic' => 'jpg',
+			'ico'  => 'png',
+			'svg'  => 'png',
+			'tga'  => 'jpg',
+			'tiff' => 'jpg',
+			'tif'  => 'jpg',
+		);
+
+		/**
+		 * Filter the base types for conversion.
+		 *
+		 * @param array $base_types The base conversion types array.
+		 */
+		return apply_filters( 'cloudinary_convert_media_types', $base_types );
+	}
+
+	/**
+	 * Check if a file type is compatibile with Cloudinary & WordPress.
+	 *
+	 * @param string $file The file to check.
 	 *
 	 * @return bool
 	 */
-	public function is_media( $attachment ) {
+	public function is_file_compatible( $file ) {
+
+		$types        = $this->get_compatible_media_types();
+		$filename     = pathinfo( $file, PATHINFO_BASENAME );
+		$mime         = wp_check_filetype( $filename );
+		$type         = strstr( $mime['type'], '/', true );
+		$conversions  = $this->get_convertible_extensions();
+		$convertibles = array_keys( $conversions );
+
+		return in_array( $type, $types, true ) && ! in_array( $mime['ext'], $convertibles );
+	}
+
+	/**
+	 * Check if the attachment is a media file.
+	 *
+	 * @param int $attachment_id The attachment ID to check.
+	 *
+	 * @return bool
+	 */
+	public function is_media( $attachment_id ) {
 		$is_media = false;
-		if ( 'attachment' === get_post_type( $attachment ) ) {
-			$is_media = $this->get_post_meta( $attachment, 'is_media', true );
-			if ( '' === $is_media ) {
-				$is_media = wp_attachment_is( 'image', $attachment ) || wp_attachment_is( 'video', $attachment );
-				$this->update_post_meta( $attachment, 'is_media', $is_media );
-			}
+		if ( 'attachment' === get_post_type( $attachment_id ) && wp_get_attachment_metadata( $attachment_id ) ) {
+			$media_types = $this->get_compatible_media_types();
+			$type        = $this->get_media_type( $attachment_id );
+			$is_media    = in_array( $type, $media_types );
 		}
 
 		return $is_media;
+	}
+
+	/**
+	 * Convert media extension.
+	 *
+	 * @param string $filename The file to convert.
+	 *
+	 * @return string|null
+	 */
+	public function convert_media_extension( $filename ) {
+
+		$conversion_types = $this->get_convertible_extensions();
+		$info             = pathinfo( $filename );
+		$extension        = strtolower( $info['extension'] );
+		$convert          = 'jpg'; // Default handler.
+
+		if ( ! empty( $conversion_types[ $extension ] ) ) {
+			$convert = $conversion_types[ $extension ];
+		}
+
+		$filename = trailingslashit( $info['dirname'] ) . $info['filename'] . '.' . $convert;
+
+		return $filename;
+	}
+
+	/**
+	 * Checks if the file is for preview only. True = only render sizes converted.
+	 *
+	 * @param int $attachment_id The attachment ID to check.
+	 *
+	 * @return bool
+	 */
+	public function is_preview_only( $attachment_id ) {
+		$base_types = array(
+			'pdf',
+			'psd',
+		);
+
+		/**
+		 * Filter the file types that are preview only.
+		 *
+		 * @param array $base_types The base preview types.
+		 */
+		$preview_types = apply_filters( 'cloudinary_preview_types', $base_types );
+		$mime          = wp_check_filetype( get_attached_file( $attachment_id ) );
+
+		return in_array( $mime['ext'], $preview_types, true );
+	}
+
+	/**
+	 * Get a resource type based on file. (Cloudinary v1 remove mime type in post data).
+	 *
+	 * @param string $file The file to get type for.
+	 *
+	 * @return string
+	 */
+	public function get_file_type( $file ) {
+		$file = pathinfo( $file, PATHINFO_BASENAME );
+		$mime = wp_check_filetype( $file );
+
+		return strstr( $mime['type'], '/', true );
+	}
+
+	/**
+	 * Get a resource type based on attachment_id.
+	 *
+	 * @param \WP_Post|int $attachment_id The attachment ID or object.
+	 *
+	 * @return string
+	 */
+	public function get_media_type( $attachment_id ) {
+		return $this->get_file_type( get_attached_file( $attachment_id ) );
 	}
 
 	/**
@@ -464,8 +630,11 @@ class Media implements Setup {
 	 */
 	public function attachment_url( $url, $attachment_id ) {
 		if ( ! doing_action( 'wp_insert_post_data' ) && false === $this->in_downsize ) {
-			$cloudinary_id = $this->cloudinary_id( $attachment_id );
-			if ( false !== $cloudinary_id ) {
+			// Previous v1.
+			$previous_url = strpos( $url, untrailingslashit( $this->base_url ) );
+			if ( false !== $previous_url ) {
+				$url = substr( $url, $previous_url );
+			} elseif ( $this->cloudinary_id( $attachment_id ) ) {
 				$url = $this->cloudinary_url( $attachment_id );
 			}
 		}
@@ -501,7 +670,9 @@ class Media implements Setup {
 					$default['bit_rate'] = $global['video_bitrate'] . 'k';
 				}
 			} else {
-				$default['fetch_format'] = $global[ $type . '_format' ] !== 'none' ? $global[ $type . '_format' ] : null;
+				if ( 'auto' === $global[ $type . '_format' ] ) {
+					$default['fetch_format'] = 'auto';
+				}
 				if ( isset( $global[ $type . '_quality' ] ) ) {
 					$default['quality'] = $global[ $type . '_quality' ] !== 'none' ? $global[ $type . '_quality' ] : null;
 				} else {
@@ -553,17 +724,17 @@ class Media implements Setup {
 	 */
 	public function cloudinary_url( $attachment_id, $size = array(), $transformations = array(), $cloudinary_id = null, $overwrite_transformations = false, $clean = false ) {
 
-		if ( empty( $cloudinary_id ) ) {
+		if ( ! ( $cloudinary_id ) ) {
 			$cloudinary_id = $this->cloudinary_id( $attachment_id );
-		}
-		if ( false === $cloudinary_id ) {
-			return false;
+			if ( ! $cloudinary_id ) {
+				return null;
+			}
 		}
 		if ( empty( $transformations ) ) {
 			$transformations = $this->get_transformation_from_meta( $attachment_id );
 		}
 		// Get the attachment resource type.
-		$resource_type = wp_attachment_is( 'image', $attachment_id ) ? 'image' : 'video';
+		$resource_type = $this->get_media_type( $attachment_id );
 		// Setup initial args for cloudinary_url.
 		$pre_args = array(
 			'secure'        => is_ssl(),
@@ -578,7 +749,9 @@ class Media implements Setup {
 				$size = $this->get_crop( $intermediate['url'], $attachment_id );
 			}
 		}
-
+		if ( false === $overwrite_transformations ) {
+			$overwrite_transformations = $this->maybe_overwrite_featured_image( $attachment_id );
+		}
 		/**
 		 * Filter the Cloudinary transformations.
 		 *
@@ -596,6 +769,11 @@ class Media implements Setup {
 		// Make a copy as not to destroy the options in \Cloudinary::cloudinary_url().
 		$args = $pre_args;
 		$url  = $this->plugin->components['connect']->api->cloudinary_url( $cloudinary_id, $args, $size, $clean );
+
+		// Check if this type is a preview only type. i.e PDF.
+		if ( ! empty( $size ) && $this->is_preview_only( $attachment_id ) ) {
+			$url = $this->convert_media_extension( $url );
+		}
 
 		/**
 		 * Filter the final Cloudinary URL.
@@ -617,52 +795,89 @@ class Media implements Setup {
 	 * @return array Altered array of paths.
 	 */
 	public function upload_dir( $dirs ) {
-		$folder                    = $this->cloudinary_folder;
-		$dirs['cloudinary_folder'] = trailingslashit( $folder );
+
+		$dirs['cloudinary_folder'] = $this->get_cloudinary_folder();
 
 		return $dirs;
 	}
 
 	/**
+	 * Get the setup Cloudinary Folder.
+	 *
+	 * @return string
+	 */
+	public function get_cloudinary_folder() {
+		$folder = '';
+		if ( ! empty( $this->cloudinary_folder ) ) {
+			$folder = trailingslashit( $this->cloudinary_folder );
+		}
+
+		return $folder;
+	}
+
+	/**
 	 * Get a public ID.
 	 *
-	 * @param int $attachment_id The Attachment ID.
+	 * @param int  $attachment_id The Attachment ID.
+	 * @param bool $suffixed      Flag to get suffixed version of ID.
 	 *
-	 * @return string A cloudinary public id.
+	 * @return string
 	 */
-	public function get_public_id( $attachment_id ) {
+	public function get_public_id( $attachment_id, $suffixed = false ) {
 		// Check for a public_id.
-		$public_id = $this->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true );
-		if ( empty( $public_id ) ) {
-			// No public_id is an up-sync (WP->CLD).
-			// Build a public_id based on cloudinary folder, and filename.
-			$file              = get_attached_file( $attachment_id );
-			$info              = pathinfo( $file );
-			$cloudinary_folder = trailingslashit( $this->cloudinary_folder );
-			$public_id         = $cloudinary_folder . $info['filename'];
+		if ( $this->has_public_id( $attachment_id ) ) {
+			$public_id = $this->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true );
+			if ( $this->is_folder_synced( $attachment_id ) ) {
+				$public_id = $this->get_cloudinary_folder() . pathinfo( $public_id, PATHINFO_BASENAME );
+			}
+			if ( true === $suffixed ) {
+				$public_id .= $this->get_post_meta( $attachment_id, Sync::META_KEYS['suffix'], true );
+			}
+		} else {
+			$public_id = $this->sync->generate_public_id( $attachment_id );
 		}
 
 		return $public_id;
 	}
 
 	/**
-	 * Get a Cloudinary ID.
+	 * Check if an attachment has a public ID.
 	 *
 	 * @param int $attachment_id The Attachment ID.
 	 *
-	 * @return string A cloudinary id.
+	 * @return bool
+	 */
+	public function has_public_id( $attachment_id ) {
+		return ! empty( $this->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true ) );
+	}
+
+	/**
+	 * Get a Cloudinary ID which includes the file format extension.
+	 *
+	 * @param int $attachment_id The Attachment ID.
+	 *
+	 * @return string|null
 	 */
 	public function get_cloudinary_id( $attachment_id ) {
 
+		$cloudinary_id = null;
 		// A cloudinary_id is a public_id with a file extension.
-		$public_id   = $this->get_public_id( $attachment_id );
-		$suffix_data = $this->get_post_meta( $attachment_id, Sync::META_KEYS['suffix'], true );
-		if ( is_array( $suffix_data ) && ! empty( $suffix_data['suffix'] ) && $suffix_data['public_id'] === $public_id ) {
-			$public_id = $public_id . $suffix_data['suffix'];
+		if ( $this->has_public_id( $attachment_id ) ) {
+			$public_id = $this->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true );
+			// Since this is based on saved and not a dynamic, append a suffix.
+			$public_id .= $this->get_post_meta( $attachment_id, Sync::META_KEYS['suffix'], true );
+			// Get the file, and use the same extension.
+			$file = get_attached_file( $attachment_id );
+			// @todo: Make this use the globals, overrides, and application conversion.
+			$extension = pathinfo( $file, PATHINFO_EXTENSION );
+			if ( wp_attachment_is_image( $attachment_id ) ) {
+				$settings = $this->global_transformations->globals['image'];
+				if ( ! in_array( $settings['image_format'], array( 'none', 'auto' ), true ) ) {
+					$extension = $settings['image_format'];
+				}
+			}
+			$cloudinary_id = $public_id . '.' . $extension;
 		}
-		$file          = get_attached_file( $attachment_id );
-		$info          = pathinfo( $file );
-		$cloudinary_id = $public_id . '.' . $info['extension'];
 
 		return $cloudinary_id;
 	}
@@ -672,21 +887,27 @@ class Media implements Setup {
 	 *
 	 * @param int $attachment_id The ID to get Cloudinary id for.
 	 *
-	 * @return string|bool the ID or false if not existing.
+	 * @return string|null the ID or null if not existing.
 	 */
 	public function cloudinary_id( $attachment_id ) {
 
 		if ( ! $this->is_media( $attachment_id ) ) {
-			return false;
+			return null;
 		}
 		// Return cached ID if we've already gotten it before.
-		if ( ! empty( $this->cloudinary_ids[ $attachment_id ] ) ) {
+		if ( isset( $this->cloudinary_ids[ $attachment_id ] ) ) {
 			return $this->cloudinary_ids[ $attachment_id ];
 		}
-		$cloudinary_id = false;
-		if ( $this->plugin->components['sync']->is_synced( $attachment_id ) ) {
-			$cloudinary_id = $this->get_cloudinary_id( $attachment_id );
+		if ( ! $this->sync->is_synced( $attachment_id ) && ! defined( 'REST_REQUEST' ) ) {
+			$sync_type = $this->sync->maybe_prepare_sync( $attachment_id );
+			// Check sync type allows for continued rendering. i.e meta update, breakpoints etc, will still allow the URL to work,
+			// Where is type "file" will not since it's still being uploaded.
+			if ( ! is_null( $sync_type ) && $this->sync->is_required( $sync_type, $attachment_id ) ) {
+				return null; // Return and render local URLs.
+			}
 		}
+
+		$cloudinary_id = $this->get_cloudinary_id( $attachment_id );
 
 		/**
 		 * Filter to  validate the Cloudinary ID to allow extending it's availability.
@@ -706,9 +927,7 @@ class Media implements Setup {
 		 */
 		do_action( 'cloudinary_id', $cloudinary_id, $attachment_id );
 		// Cache ID to prevent multiple lookups.
-		if ( false !== $cloudinary_id ) {
-			$this->cloudinary_ids[ $attachment_id ] = $cloudinary_id;
-		}
+		$this->cloudinary_ids[ $attachment_id ] = $cloudinary_id;
 
 		return $cloudinary_id;
 	}
@@ -732,19 +951,29 @@ class Media implements Setup {
 
 		$cloudinary_id = $this->cloudinary_id( $attachment_id );
 
-		if ( false !== $cloudinary_id ) {
+		if ( $cloudinary_id ) {
 			$this->in_downsize = true;
 			$intermediate      = image_get_intermediate_size( $attachment_id, $size );
 			if ( is_array( $intermediate ) ) {
 				// Found an intermediate size.
 				$image = array(
-					$this->convert_url( $intermediate['url'], $attachment_id, array(), false ),
+					$this->convert_url( $intermediate['file'], $attachment_id, array(), false ),
 					$intermediate['width'],
 					$intermediate['height'],
 					true,
 				);
 			}
 			$this->in_downsize = false;
+
+			// Preview formats.
+			if ( empty( $image ) && $this->is_preview_only( $attachment_id ) ) {
+				$image = array(
+					$this->cloudinary_url( $attachment_id, $size, array(), $cloudinary_id ),
+					$size[0],
+					$size[1],
+					false,
+				);
+			}
 		}
 
 		return $image;
@@ -783,7 +1012,7 @@ class Media implements Setup {
 	 */
 	public function image_srcset( $sources, $size_array, $image_src, $image_meta, $attachment_id ) {
 		$cloudinary_id = $this->cloudinary_id( $attachment_id );
-		if ( false === $cloudinary_id ) {
+		if ( ! $cloudinary_id ) {
 			return $sources; // Return WordPress default sources.
 		}
 		// Get transformations from URL.
@@ -964,6 +1193,8 @@ class Media implements Setup {
 		$sync_key = $public_id;
 		// Capture public_id. Use core update_post_meta since this attachment data doesnt exist yet.
 		update_post_meta( $attachment_id, Sync::META_KEYS['public_id'], $public_id );
+		// Capture version number.
+		update_post_meta( $attachment_id, Sync::META_KEYS['version'], $asset['version'] );
 		if ( ! empty( $asset['transformations'] ) ) {
 			// Save a combined key.
 			$sync_key .= wp_json_encode( $asset['transformations'] );
@@ -1029,24 +1260,29 @@ class Media implements Setup {
 			if ( ! empty( $asset['derived'] ) ) {
 				$url = $asset['derived'][0]['secure_url'];
 			}
+
+			//convert_media_extension
+			if ( ! $this->is_file_compatible( $url ) ) {
+				$url = $this->convert_media_extension( $url );
+			}
 			$transformations = $this->get_transformations_from_string( $url );
 			if ( ! empty( $transformations ) ) {
-				$sync_key                .= wp_json_encode( $transformations );
+				$sync_key                 .= wp_json_encode( $transformations );
 				$asset['transformations'] = $transformations;
 			}
 			// Check Format and url extension.
 			$file_info = pathinfo( $url );
 			if ( $format !== $file_info['extension'] ) {
-				// Format transformation.
-				$this->set_transformation( $transformations, 'fetch_format', $file_info['extension'] );
-				$url = $file_info['dirname'] . '/' . $file_info['filename'] . '.' . $file_info['extension'];
+				$sync_key .= $file_info['extension'];
 			}
 			// Try to find the Attachment ID in context meta data.
 			$attachment_id = $this->get_id_from_sync_key( $sync_key );
 
 			if ( empty( $attachment_id ) ) {
-				$attachment_id = $this->create_attachment( $asset, $public_id );
-				$return        = array(
+				// ensure the url is correct.
+				$asset['secure_url'] = $url;
+				$attachment_id       = $this->create_attachment( $asset, $public_id );
+				$return              = array(
 					'fetch'         => rest_url( REST_API::BASE . '/asset' ),
 					'uploading'     => true,
 					'src'           => $src,
@@ -1101,7 +1337,7 @@ class Media implements Setup {
 					'note'  => esc_html__( 'Not Synced', 'cloudinary' ),
 				);
 				add_filter( 'cloudinary_flag_sync', '__return_true' );
-				if ( false === $this->cloudinary_id( $attachment_id ) ) {
+				if ( ! $this->cloudinary_id( $attachment_id ) ) {
 					// If false, lets check why by seeing if the file size is too large.
 					$file     = get_attached_file( $attachment_id ); // Get the file size to make sure it can exist in cloudinary.
 					$max_size = ( wp_attachment_is_image( $attachment_id ) ? 'image_max_size_bytes' : 'video_max_size_bytes' );
@@ -1214,29 +1450,6 @@ class Media implements Setup {
 	}
 
 	/**
-	 * Add a full Cloudinary full size with stored file name to the sizes array.
-	 *
-	 * @param array $data    Image meta data array.
-	 * @param int   $post_id Attachment post ID.
-	 *
-	 * @return mixed
-	 */
-	public function add_cloudinary_full_size( $data, $post_id ) {
-		// Add a full Cloudinary filename size.
-		if ( ! empty( $data['file'] ) && ! empty( $data['sizes'] ) ) {
-			$info                       = pathinfo( $data['file'] );
-			$cld_file                   = $this->get_public_id( $post_id ) . '.' . $info['extension'];
-			$data['sizes']['_cld_full'] = array(
-				'file'   => basename( $cld_file ),
-				'width'  => $data['width'],
-				'height' => $data['height'],
-			);
-		}
-
-		return $data;
-	}
-
-	/**
 	 * Get Cloudinary related Post meta.
 	 *
 	 * @param int    $post_id The attachment ID.
@@ -1290,13 +1503,16 @@ class Media implements Setup {
 	 */
 	public function update_post_meta( $post_id, $key, $data ) {
 		$meta_data = wp_get_attachment_metadata( $post_id, true );
-		if ( is_array( $meta_data ) && isset( $meta_data[ Sync::META_KEYS['cloudinary'] ] ) && is_array( $meta_data[ Sync::META_KEYS['cloudinary'] ] ) ) {
-			// Only do this side if has been set before.
+		if ( is_array( $meta_data ) ) {
+			if ( ! isset( $meta_data[ Sync::META_KEYS['cloudinary'] ] ) ) {
+				$meta_data[ Sync::META_KEYS['cloudinary'] ] = array();
+			}
 			$meta_data[ Sync::META_KEYS['cloudinary'] ][ $key ] = $data;
 			wp_update_attachment_metadata( $post_id, $meta_data );
+		} else {
+			// Update core mete data for consistency.
+			update_post_meta( $post_id, $key, $data );
 		}
-		// Update core mete data for consistency.
-		update_post_meta( $post_id, $key, $data );
 	}
 
 	/**
@@ -1317,14 +1533,184 @@ class Media implements Setup {
 	}
 
 	/**
+	 * Get the breakpoint generation options for an attachment.
+	 *
+	 * @param int $attachment_id The attachment ID.
+	 *
+	 * @return array
+	 */
+	public function get_breakpoint_options( $attachment_id ) {
+		// Add breakpoints if we have an image.
+		$breakpoints = array();
+		$settings    = $this->plugin->config['settings']['global_transformations'];
+
+		if ( 'off' !== $settings['enable_breakpoints'] && wp_attachment_is_image( $attachment_id ) ) {
+			$meta = wp_get_attachment_metadata( $attachment_id );
+			// Get meta image size if non exists.
+			if ( empty( $meta ) ) {
+				$meta          = array();
+				$imagesize     = getimagesize( get_attached_file( $attachment_id ) );
+				$meta['width'] = $imagesize[0] ? $imagesize[0] : 0;
+			}
+			$max_width = $this->get_max_width();
+			// Add breakpoints request options.
+			$breakpoint_options = array(
+				'create_derived' => true,
+				'bytes_step'     => $settings['bytes_step'],
+				'max_images'     => $settings['breakpoints'],
+				'max_width'      => $meta['width'] < $max_width ? $meta['width'] : $max_width,
+				'min_width'      => $settings['min_width'],
+			);
+			$transformations    = $this->get_transformation_from_meta( $attachment_id );
+			if ( ! empty( $transformations ) ) {
+				$breakpoints['transformation'] = Api::generate_transformation_string( $transformations );
+			}
+			$breakpoints = array(
+				'public_id'              => $this->get_public_id( $attachment_id ),
+				'type'                   => 'upload',
+				'responsive_breakpoints' => $breakpoint_options,
+				'context'                => $this->get_context_options( $attachment_id ),
+			);
+
+		}
+
+		return $breakpoints;
+	}
+
+	/**
+	 * Get the context options for an asset.
+	 *
+	 * @param int $attachment_id The ID of the attachment.
+	 *
+	 * @return array
+	 */
+	public function get_context_options( $attachment_id ) {
+
+		$context_options = array(
+			'caption' => esc_attr( get_the_title( $attachment_id ) ),
+			'alt'     => get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ),
+			'guid'    => md5( get_the_guid( $attachment_id ) ),
+		);
+
+		// Check if this asset is a folder sync.
+		$folder_sync = $this->get_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], true );
+		if ( ! empty( $folder_sync ) ) {
+			$context_options['wp_id'] = $attachment_id;
+		}
+
+		/**
+		 * Filter the options to allow other plugins to add requested options for uploading.
+		 *
+		 * @param array    $options The options array.
+		 * @param \WP_Post $post    The attachment post.
+		 * @param \Cloudinary\Sync The sync object instance.
+		 *
+		 * @return array
+		 */
+		$context_options = apply_filters( 'cloudinary_context_options', $context_options, get_post( $attachment_id ), $this );
+
+		return http_build_query( $context_options, null, '|' );
+	}
+
+	/**
+	 * Check if an asset is folder synced.
+	 *
+	 * @param int $attachment_id The attachment ID.
+	 *
+	 * @return bool
+	 */
+	public function is_folder_synced( $attachment_id ) {
+
+		$return = true; // By default all assets in WordPress will be synced.
+		if ( $this->sync->been_synced( $attachment_id ) ) {
+			$return = ! empty( $this->get_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], true ) );
+		}
+
+		return $return;
+	}
+
+	/**
+	 * Get the media upload options as connected to Cloudinary.
+	 *
+	 * @param int $attachment_id The attachment ID.
+	 *
+	 * @return array
+	 */
+	public function get_upload_options( $attachment_id ) {
+
+		// Prepare upload options.
+		$public_id = $this->get_public_id( $attachment_id );
+		$folder    = ltrim( dirname( $public_id ), '.' );
+		$options   = array(
+			'unique_filename' => true,
+			'overwrite'       => false,
+			'resource_type'   => $this->get_media_type( $attachment_id ),
+			'public_id'       => basename( $public_id ),
+			'context'         => $this->get_context_options( $attachment_id ),
+		);
+
+		/**
+		 * Filter the options to allow other plugins to add requested options for uploading.
+		 *
+		 * @param array    $options The options array.
+		 * @param \WP_Post $post    The attachment post.
+		 * @param \Cloudinary\Sync The sync object instance.
+		 *
+		 * @return array
+		 */
+		$options = apply_filters( 'cloudinary_upload_options', $options, get_post( $attachment_id ), $this );
+		// Add folder to prevent folder contamination.
+		if ( $this->is_folder_synced( $attachment_id ) ) {
+			$options['public_id'] = $this->get_cloudinary_folder() . basename( $options['public_id'] );
+		} elseif ( ! empty( $folder ) ) {
+			// add in folder if not empty (not in root).
+			$options['public_id'] = trailingslashit( $folder ) . basename( $options['public_id'] );
+		}
+
+		return $options;
+	}
+
+	/**
+	 * Check if the current image is to be have the transformations overwritten.
+	 *
+	 * @param int $attachment_id The attachment ID.
+	 *
+	 * @return bool
+	 */
+	public function maybe_overwrite_featured_image( $attachment_id ) {
+		$overwrite = false;
+		if ( $this->doing_featured_image && $this->doing_featured_image === $attachment_id ) {
+			$overwrite = (bool) $this->get_post_meta( get_the_ID(), Global_Transformations::META_FEATURED_IMAGE_KEY, true );
+		}
+
+		return $overwrite;
+	}
+
+	/**
+	 * Set the flag indicating if the featured image is being done.
+	 *
+	 * @param int $post_id       The current post ID.
+	 * @param int $attachment_id The thumbnail ID.
+	 */
+	public function set_doing_featured( $post_id, $attachment_id ) {
+		$this->doing_featured_image = $attachment_id;
+		add_action( 'end_fetch_post_thumbnail_html', function () {
+			$this->doing_featured_image = false;
+		} );
+	}
+
+	/**
 	 * Setup the hooks and base_url if configured.
 	 */
 	public function setup() {
 		if ( $this->plugin->config['connect'] ) {
 
-			$this->base_url               = $this->plugin->components['connect']->api->cloudinary_url( '/' );
-			$this->credentials            = $this->plugin->components['connect']->get_credentials();
-			$this->cloudinary_folder      = $this->plugin->config['settings']['sync_media']['cloudinary_folder'] ? $this->plugin->config['settings']['sync_media']['cloudinary_folder'] : '';
+			$this->base_url          = $this->plugin->components['connect']->api->cloudinary_url();
+			$this->credentials       = $this->plugin->components['connect']->get_credentials();
+			$this->cloudinary_folder = $this->plugin->config['settings']['sync_media']['cloudinary_folder'] ? $this->plugin->config['settings']['sync_media']['cloudinary_folder'] : '';
+			$this->sync              = $this->plugin->components['sync'];
+
+			// Internal components.
 			$this->filter                 = new Filter( $this );
 			$this->upgrade                = new Upgrade( $this );
 			$this->global_transformations = new Global_Transformations( $this );
@@ -1344,13 +1730,44 @@ class Media implements Setup {
 			// Filter live URLS. (functions that return a URL).
 			add_filter( 'wp_calculate_image_srcset', array( $this, 'image_srcset' ), 10, 5 );
 			add_filter( 'wp_calculate_image_srcset_meta', array( $this, 'match_responsive_sources' ), 10, 4 );
-			add_filter( 'wp_get_attachment_metadata', array( $this, 'add_cloudinary_full_size' ), 10, 2 );
+			add_filter( 'wp_get_attachment_metadata', array( $this, 'match_file_name_with_cloudinary_source' ) );
 			add_filter( 'wp_get_attachment_url', array( $this, 'attachment_url' ), 10, 2 );
 			add_filter( 'image_downsize', array( $this, 'filter_downsize' ), 10, 3 );
 
 			// Filter and action the custom column.
 			add_filter( 'manage_media_columns', array( $this, 'media_column' ) );
 			add_action( 'manage_media_custom_column', array( $this, 'media_column_value' ), 10, 2 );
+
+			// Hook into Featured Image cycle.
+			add_action( 'begin_fetch_post_thumbnail_html', array( $this, 'set_doing_featured' ), 10, 2 );
 		}
+	}
+
+	/**
+	 * In certain situations when images had changes applied to them directly (ie. transformations)
+	 * on Cloudinary, when syncing to WordPress it will append a "-n" to the image file name.
+	 * This can cause a mismatch of file names when WordPress attempts to attach the
+	 * srcset attribute to the image. In this method, we account for this potential
+	 * situation and handle it accordingly by replacing this "-n" name with the original name.
+	 *
+	 * @param array $image_meta Meta information of the attachment.
+	 *
+	 * @return array
+	 */
+	public function match_file_name_with_cloudinary_source( $image_meta ) {
+		if ( isset( $image_meta[ Sync::META_KEYS['cloudinary'] ] ) ) {
+			$extension = pathinfo( $image_meta['file'], PATHINFO_EXTENSION );
+			$cld_file  = $image_meta[ Sync::META_KEYS['cloudinary'] ][ Sync::META_KEYS['public_id'] ] . '.' . $extension;
+
+			if ( false === strpos( $image_meta['file'], $cld_file ) ) {
+				$image_meta['file'] = $cld_file;
+				// Match sizes to exclude sizes suffix.
+				foreach ( $image_meta['sizes'] as &$size ) {
+					$size['file'] = basename( $cld_file );
+				}
+			}
+		}
+
+		return $image_meta;
 	}
 }
