@@ -634,10 +634,8 @@ class Media implements Setup {
 			$previous_url = strpos( $url, untrailingslashit( $this->base_url ) );
 			if ( false !== $previous_url ) {
 				$url = substr( $url, $previous_url );
-			} else {
-				if ( $this->cloudinary_id( $attachment_id ) ) {
-					$url = $this->cloudinary_url( $attachment_id );
-				}
+			} elseif ( $this->cloudinary_id( $attachment_id ) ) {
+				$url = $this->cloudinary_url( $attachment_id );
 			}
 		}
 
