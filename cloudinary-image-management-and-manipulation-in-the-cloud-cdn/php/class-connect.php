@@ -481,7 +481,7 @@ class Connect implements Config, Setup, Notice {
 				$this->notices[] = array(
 					'message'     => $message,
 					'type'        => $level,
-					'dismissible' => false,
+					'dismissible' => true,
 				);
 			}
 		}

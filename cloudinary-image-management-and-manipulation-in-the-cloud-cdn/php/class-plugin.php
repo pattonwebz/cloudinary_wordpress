@@ -166,6 +166,25 @@ class Plugin {
 		add_action( 'init', array( $this, 'register_assets' ), 10 );
 		add_action( 'admin_notices', array( $this, 'admin_notices' ) );
 		add_filter( 'plugin_row_meta', array( $this, 'force_visit_plugin_site_link' ), 10, 4 );
+		add_filter( 'cloudinary_api_rest_endpoints', array( $this, 'rest_endpoints' ) );
+	}
+
+	/**
+	 * Add endpoints to the \Cloudinary\REST_API::$endpoints array.
+	 *
+	 * @param array $endpoints Endpoints from the filter.
+	 *
+	 * @return array
+	 */
+	public function rest_endpoints( $endpoints ) {
+
+		$endpoints['dismiss_notice'] = array(
+			'method'   => \WP_REST_Server::CREATABLE,
+			'callback' => array( $this, 'rest_dismiss_notice' ),
+			'args'     => array(),
+		);
+
+		return $endpoints;
 	}
 
 	/**
@@ -300,6 +319,18 @@ class Plugin {
 	}
 
 	/**
+	 * Dismiss a notice.
+	 *
+	 * @param \WP_REST_Request $request The request object.
+	 */
+	public function rest_dismiss_notice( \WP_REST_Request $request ) {
+		$token    = $request->get_param( 'token' );
+		$duration = $request->get_param( 'duration' );
+
+		set_transient( $token, true, $duration );
+	}
+
+	/**
 	 * Load admin notices where needed.
 	 *
 	 * @since  0.1
@@ -310,24 +341,31 @@ class Plugin {
 		 *
 		 * An array of classes that implement the Notice interface.
 		 */
-		$components = array_filter( $this->components, array( $this, 'is_notice_component' ) );
-		$default    = array(
+		$components  = array_filter( $this->components, array( $this, 'is_notice_component' ) );
+		$default     = array(
 			'message'     => '',
 			'type'        => 'error',
 			'dismissible' => true,
+			'duration'    => HOUR_IN_SECONDS,
 		);
+		$has_notices = false;
 		foreach ( $components as $component ) {
-			$notices = $component->get_notices();
+			$notices     = $component->get_notices();
+			$has_notices = true;
 			foreach ( $notices as $notice ) {
 				if ( ! empty( $notice ) && ! empty( $notice['message'] ) ) {
 					$notice = wp_parse_args( $notice, $default );
 					if ( true === $notice['dismissible'] ) {
-						$html = sprintf(
-							'<div class="notice-%1$s settings-error notice is-dismissible"><p><strong>%2$s</strong></p><button type="button" class="notice-dismiss"><span class="screen-reader-text">%3$s</span></button></div>',
-							esc_attr( $notice['type'] ),
-							$notice['message'],
-							__( 'Dismiss this notice.', 'cloudinary' )
-						);
+						$notice_key = md5( wp_json_encode( $notice ) );
+						if ( ! get_transient( $notice_key ) ) {
+							$html = sprintf(
+								'<div class="notice-%1$s settings-error notice is-dismissible cld-notice" dismiss="alert" data-dismiss="%3$s" data-duration="%4$d"><p><strong>%2$s</strong></p></div>',
+								esc_attr( $notice['type'] ),
+								$notice['message'],
+								esc_attr( $notice_key ),
+								esc_attr( $notice['duration'] )
+							);
+						}
 					} else {
 						$html = sprintf(
 							'<div class="notice-%1$s settings-error notice"><p><strong>%2$s</strong></p></div>',
@@ -338,6 +376,14 @@ class Plugin {
 					echo wp_kses_post( $html );
 				}
 			}
+		}
+		// Output notice endpoint data.
+		if ( $has_notices ) {
+			$args = array(
+				'url'   => rest_url( REST_API::BASE . '/dismiss_notice' ),
+				'nonce' => wp_create_nonce( 'wp_rest' ),
+			);
+			wp_add_inline_script( 'cloudinary', 'var CLDIS = ' . wp_json_encode( $args ), 'before' );
 		}
 	}
 
