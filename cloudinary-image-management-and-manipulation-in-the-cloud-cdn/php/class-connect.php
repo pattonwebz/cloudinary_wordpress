@@ -482,6 +482,7 @@ class Connect implements Config, Setup, Notice {
 					'message'     => $message,
 					'type'        => $level,
 					'dismissible' => true,
+					'duration'    => MONTH_IN_SECONDS,
 				);
 			}
 		}
