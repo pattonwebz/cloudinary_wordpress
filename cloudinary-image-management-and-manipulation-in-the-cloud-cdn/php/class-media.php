@@ -1802,9 +1802,13 @@ class Media implements Setup {
 
 			if ( false === strpos( $image_meta['file'], $cld_file ) ) {
 				$image_meta['file'] = $cld_file;
+				
 				// Match sizes to exclude sizes suffix.
-				foreach ( $image_meta['sizes'] as &$size ) {
-					$size['file'] = basename( $cld_file );
+				if ( isset( $image_meta['sizes'] ) ) {
+					// Match sizes to exclude sizes suffix.
+					foreach ( $image_meta['sizes'] as &$size ) {
+						$size['file'] = basename( $cld_file );
+					}
 				}
 			}
 		}
