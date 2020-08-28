@@ -166,12 +166,22 @@ class Sync implements Setup, Assets {
 	/**
 	 * Check if sync type is required for rendering a Cloudinary URL.
 	 *
-	 * @param string $type The type to check.
+	 * @param string $type          The type to check.
+	 * @param int    $attachment_id The attachment ID.
 	 *
 	 * @return bool
 	 */
-	public function is_required( $type ) {
-		return ! empty( $this->sync_base_struct[ $type ]['required'] );
+	public function is_required( $type, $attachment_id ) {
+		$return = false;
+		if ( isset( $this->sync_base_struct[ $type ]['required'] ) ) {
+			if ( is_callable( $this->sync_base_struct[ $type ]['required'] ) ) {
+				$return = call_user_func( $this->sync_base_struct[ $type ]['required'], $attachment_id );
+			} else {
+				$return = $this->sync_base_struct[ $type ]['required'];
+			}
+		}
+
+		return $return;
 	}
 
 	/**

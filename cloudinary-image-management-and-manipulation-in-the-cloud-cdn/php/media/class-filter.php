@@ -345,12 +345,23 @@ class Filter {
 			if ( $url === $cloudinary_url ) {
 				continue;
 			}
+			
 			// Replace old tag.
 			$new_tag = str_replace( $url, $cloudinary_url, $asset );
+
 			// Check if there is a class set. ( for srcset images in case of a manual url added ).
 			if ( false === strpos( $new_tag, ' class=' ) && ! is_admin() ) {
 				// Add in the class name.
 				$new_tag = str_replace( '/>', ' class="wp-image-' . $attachment_id . '"/>', $new_tag );
+			}
+
+			// Apply lazy loading attribute
+			if ( 
+				apply_filters( 'wp_lazy_loading_enabled', true ) && 
+				false === strpos( $new_tag, 'loading="lazy"' ) && 
+				$clean
+			) {
+				$new_tag = str_replace( '/>', ' loading="lazy" />', $new_tag );
 			}
 
 			// If Cloudinary player is active, this is replaced there.
@@ -686,9 +697,9 @@ class Filter {
 		add_action( 'wp_insert_post_data', array( $this, 'filter_out_cloudinary' ) );
 		add_filter( 'the_editor_content', array( $this, 'filter_out_local' ) );
 		add_filter( 'the_content', array( $this, 'filter_out_local' ), 9 ); // Early to hook before responsive srcsets.
-
 		add_filter( 'wp_prepare_attachment_for_js', array( $this, 'filter_attachment_for_js' ), 11 );
-		// Add support for custom header.
+
+    // Add support for custom header.
 		add_filter( 'get_header_image_tag', array( $this, 'filter_out_local' ) );
 
 		// Add transformations.
