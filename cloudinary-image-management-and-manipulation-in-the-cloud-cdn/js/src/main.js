@@ -4,6 +4,7 @@
  */
 
 // Components
+import 'loading-attribute-polyfill';
 import settings from './components/settings-page';
 import sync from './components/sync';
 import widget from './components/widget';
