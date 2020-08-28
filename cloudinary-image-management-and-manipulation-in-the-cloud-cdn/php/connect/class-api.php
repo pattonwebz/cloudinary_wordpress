@@ -7,6 +7,7 @@
 
 namespace Cloudinary\Connect;
 
+use Cloudinary\Connect;
 use function Cloudinary\get_plugin_instance;
 
 /**
@@ -141,9 +142,6 @@ class Api {
 	 */
 	public function __construct( $connect, $version ) {
 		$this->credentials = $connect->get_credentials();
-		if ( ! empty( $this->credentials['cname'] ) ) {
-			$this->asset_url = $this->credentials['cname'];
-		}
 		$this->plugin_version = $version;
 	}
 
@@ -158,15 +156,22 @@ class Api {
 	 */
 	public function url( $resource, $function = null, $endpoint = false ) {
 		$parts = array();
+
 		if ( $endpoint ) {
 			$parts[] = $this->api_url;
 			$parts[] = $this->api_version;
 		} else {
 			$parts[] = $this->asset_url;
 		}
+		
+		if ( $cname = get_option( Connect::META_KEYS['cname'] ) ) {
+			$parts[0] = $cname;
+		}
+
 		if ( empty( $this->credentials['cname'] ) || $endpoint ) {
 			$parts[] = $this->credentials['cloud_name'];
 		}
+
 		$parts[] = $resource;
 		$parts[] = $function;
 
