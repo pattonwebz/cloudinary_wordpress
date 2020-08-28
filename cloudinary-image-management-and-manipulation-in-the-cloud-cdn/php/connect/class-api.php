@@ -234,7 +234,7 @@ class Api {
 	 */
 	public function cloudinary_url( $public_id = null, $args = array(), $size = array(), $clean = false ) {
 
-		if( null === $public_id ){
+		if ( null === $public_id ) {
 			return 'https://' . $this->url( null, null );
 		}
 		$defaults = array(
