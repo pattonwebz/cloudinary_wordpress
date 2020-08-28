@@ -182,7 +182,8 @@ class Connect implements Config, Setup, Notice {
 		}
 
 		// Check if the given URL has a cname and store it if present.
-		if ( preg_match( '/(?:@\w+)\/([A-Za-z-]+\.cloudinary.com)/', $data['cloudinary_url'], $cname ) ) {
+		if ( preg_match( '/(?:@\w+)\/(([a-z0-9|-]+\.)*[a-z0-9|-]+\.[a-z]+)/', $data['cloudinary_url'], $cname ) ) {
+			$cname = filter_var( $cname[1], FILTER_VALIDATE_DOMAIN );
 			update_option( self::META_KEYS['cname'], $cname[1] );
 		}
 
