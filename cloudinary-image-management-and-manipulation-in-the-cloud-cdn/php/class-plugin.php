@@ -319,7 +319,7 @@ class Plugin {
 	}
 
 	/**
-	 * Dismiss a notice.
+	 * Set a transient with the duration using a token as an identifier.
 	 *
 	 * @param \WP_REST_Request $request The request object.
 	 */
@@ -341,21 +341,22 @@ class Plugin {
 		 *
 		 * An array of classes that implement the Notice interface.
 		 */
-		$components  = array_filter( $this->components, array( $this, 'is_notice_component' ) );
-		$default     = array(
+		$components              = array_filter( $this->components, array( $this, 'is_notice_component' ) );
+		$default                 = array(
 			'message'     => '',
 			'type'        => 'error',
 			'dismissible' => true,
 			'duration'    => 10, // Default dismissible duration is 10 Seconds for save notices etc...
 		);
-		$has_notices = false;
+		$has_dismissible_notices = false;
 		foreach ( $components as $component ) {
-			$notices     = $component->get_notices();
-			$has_notices = true;
+			$notices = $component->get_notices();
 			foreach ( $notices as $notice ) {
 				if ( ! empty( $notice ) && ! empty( $notice['message'] ) ) {
 					$notice = wp_parse_args( $notice, $default );
 					if ( true === $notice['dismissible'] ) {
+						// Convert the whole notice data into a string, and make it a hash.
+						// This allows the same notice to show if it has a change, i.e Quota limits change.
 						$notice_key = md5( wp_json_encode( $notice ) );
 						if ( ! get_transient( $notice_key ) ) {
 							$html = sprintf(
@@ -365,6 +366,8 @@ class Plugin {
 								esc_attr( $notice_key ),
 								esc_attr( $notice['duration'] )
 							);
+							// Flag a dismissible notice has been shown.
+							$has_dismissible_notices = true;
 						}
 					} else {
 						$html = sprintf(
@@ -377,8 +380,8 @@ class Plugin {
 				}
 			}
 		}
-		// Output notice endpoint data.
-		if ( $has_notices ) {
+		// Output notice endpoint data only if a dismissible notice has been shown.
+		if ( $has_dismissible_notices ) {
 			$args = array(
 				'url'   => rest_url( REST_API::BASE . '/dismiss_notice' ),
 				'nonce' => wp_create_nonce( 'wp_rest' ),
