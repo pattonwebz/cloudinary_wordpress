@@ -346,7 +346,7 @@ class Plugin {
 			'message'     => '',
 			'type'        => 'error',
 			'dismissible' => true,
-			'duration'    => HOUR_IN_SECONDS,
+			'duration'    => 10, // Default dismissible duration is 10 Seconds for save notices etc...
 		);
 		$has_notices = false;
 		foreach ( $components as $component ) {
