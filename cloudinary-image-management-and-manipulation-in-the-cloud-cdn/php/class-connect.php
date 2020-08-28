@@ -183,6 +183,47 @@ class Connect implements Config, Setup, Notice {
 	}
 
 	/**
+	 * Check whether a connection was established.
+	 *
+	 * @return boolean  
+	 */
+	public function is_connected() {
+		$signature = get_option( self::META_KEYS['signature'], null );
+		
+		if ( null === $signature ) {
+			return false;
+		}
+		
+		$connect_data = get_option( self::META_KEYS['connect'], [] );
+		$current_url  = isset( $connect_data['cloudinary_url'] ) ? $connect_data['cloudinary_url'] : null;
+		
+		if ( null === $current_url ) {
+			return false;
+		}
+
+		if ( md5( $current_url ) !== $signature ) {
+			return false;
+		}
+
+		$api  = new Connect\Api( $this, $this->plugin->version );
+		$ping = $api->ping();
+
+		if ( is_wp_error( $ping ) || ( is_array( $ping ) && $ping['status'] !== 'ok' ) ) {
+			delete_option( self::META_KEYS['signature'] );
+
+			$this->notices[] = array(
+				'message'     => __( 'You have been disconnected due to an account error.', 'cloudinary' ),
+				'type'        => 'error',
+				'dismissible' => true,
+			);
+
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
 	 * Test the connection url.
 	 *
 	 * @param string $url The url to test.

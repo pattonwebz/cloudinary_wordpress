@@ -87,7 +87,15 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		$this->handles[] = add_menu_page( $this->ui['page_title'], $this->ui['menu_title'] . $count_html, $this->ui['capability'], $this->ui['slug'], null, 'dashicons-cloudinary' );
 		if ( ! empty( $this->ui['pages'] ) ) {
 			foreach ( $this->ui['pages'] as $page ) {
-				if ( ! empty( $page['requires_config'] ) && empty( $this->plugin->config['connect'] ) ) {
+				// If this page has "require_config" set, ensure we're fully connected to cloudinary.
+				if ( 
+					! empty( $page['requires_config'] ) && 
+					( 
+						! $this->plugin->config['connect'] || 
+						! $this->plugin->components['connect'] ||
+						! $this->plugin->components['connect']->is_connected() 
+					) 
+				) {
 					continue;
 				}
 				$this->handles[] = add_submenu_page( $this->ui['slug'], $page['page_title'], $page['menu_title'], $this->ui['capability'], $page['slug'], array( $this, 'render' ) );
