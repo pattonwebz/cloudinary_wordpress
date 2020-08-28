@@ -3,22 +3,22 @@ const Notices = {
     _init: function() {
         let self = this;
         if ( typeof CLDIS !== 'undefined' ) {
-            let triggers = document.getElementsByClassName( 'cld-notice' );
-            [ ...triggers ].forEach( ( trigger ) => {
-                trigger.addEventListener( 'click', ( ev ) => {
+            let notices = document.getElementsByClassName( 'cld-notice' );
+            [ ...notices ].forEach( ( notice ) => {
+                notice.addEventListener( 'click', ( ev ) => {
                     // WordPress has an onClick that cannot be unbound.
                     // So, we have the click on our Notice, and act on the
                     // button as a target.
                     if ( 'notice-dismiss' === ev.target.className ) {
-                        self._dismiss( trigger );
+                        self._dismiss( notice );
                     }
                 } );
             } );
         }
     },
-    _dismiss: function( trigger ) {
-        let token    = trigger.dataset.dismiss;
-        let duration = trigger.dataset.duration;
+    _dismiss: function( notice ) {
+        let token    = notice.dataset.dismiss;
+        let duration = notice.dataset.duration;
         wp.ajax.send( {
             url  : CLDIS.url,
             data : {
@@ -30,7 +30,7 @@ const Notices = {
     },
 };
 
-export default Notices;
-
 // Init.
 window.addEventListener( 'load', Notices._init() );
+
+export default Notices;
