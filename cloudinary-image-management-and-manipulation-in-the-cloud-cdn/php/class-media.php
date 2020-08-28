@@ -375,10 +375,11 @@ class Media implements Setup {
 	 * Attempt to get an attachment_id from a sync key.
 	 *
 	 * @param string $sync_key Key for matching a post_id.
+	 * @param bool   $all      Flag to return all found ID's.
 	 *
-	 * @return int|false The attachment id or false if not found.
+	 * @return int|array|false The attachment id or id's, or false if not found.
 	 */
-	public function get_id_from_sync_key( $sync_key ) {
+	public function get_id_from_sync_key( $sync_key, $all = false ) {
 
 		$meta_query = array(
 			array(
@@ -395,9 +396,9 @@ class Media implements Setup {
 
 		$query         = new \WP_Query( $query_args );
 		$ids           = $query->get_posts();
-		$attachment_id = false;
+		$attachment_id = $ids;
 
-		if ( ! empty( $ids ) ) {
+		if ( ! empty( $ids ) && false === $all ) {
 			// Essentially we should only have a single so use the first.
 			$attachment_id = array_shift( $ids );
 		}
@@ -1175,7 +1176,7 @@ class Media implements Setup {
 	private function create_attachment( $asset, $public_id ) {
 
 		// Create an attachment post.
-		$file_path        = $asset['secure_url'];
+		$file_path        = $asset['url'];
 		$file_name        = basename( $file_path );
 		$file_type        = wp_check_filetype( $file_name, null );
 		$attachment_title = sanitize_file_name( pathinfo( $file_name, PATHINFO_FILENAME ) );
@@ -1203,12 +1204,7 @@ class Media implements Setup {
 		// create a trackable key in post meta.
 		update_post_meta( $attachment_id, '_' . md5( $sync_key ), true );
 		// record a base to ensure primary isn't deleted.
-		update_post_meta( $attachment_id, '_' . md5( $public_id ), true );
-		// Capture the ALT Text.
-		if ( ! empty( $asset['context']['custom']['alt'] ) ) {
-			$alt_text = wp_strip_all_tags( $asset['context']['custom']['alt'] );
-			update_post_meta( $attachment_id, '_wp_attachment_image_alt', $alt_text );
-		}
+		update_post_meta( $attachment_id, '_' . md5( 'base_' . $public_id ), true );
 
 		return $attachment_id;
 	}
@@ -1237,64 +1233,109 @@ class Media implements Setup {
 	}
 
 	/**
+	 * Get the asset payload and process it for importing.
+	 *
+	 * @return array
+	 */
+	public function get_asset_payload() {
+		$args  = array(
+			'asset' => array(
+				'flags' => FILTER_REQUIRE_ARRAY,
+			),
+		);
+		$data  = filter_input_array( INPUT_POST, $args );
+		$asset = array(
+			'version'         => (int) filter_var( $data['asset']['version'], FILTER_SANITIZE_NUMBER_INT ),
+			'public_id'       => filter_var( $data['asset']['public_id'], FILTER_SANITIZE_STRING ),
+			'src'             => filter_var( $data['asset']['secure_url'], FILTER_SANITIZE_URL ),
+			'url'             => filter_var( $data['asset']['secure_url'], FILTER_SANITIZE_URL ),
+			'transformations' => array(),
+			'meta'            => array(),
+		);
+		// Set sync key.
+		$asset['sync_key'] = $asset['public_id'];
+		if ( ! empty( $data['asset']['derived'] ) ) {
+			$asset['url'] = filter_var( $data['asset']['derived'][0]['secure_url'], FILTER_SANITIZE_URL );
+		}
+
+		//convert_media_extension
+		if ( ! $this->is_file_compatible( $asset['url'] ) ) {
+			$asset['url'] = $this->convert_media_extension( $asset['url'] );
+		}
+
+		// Move all context data into the meta key.
+		if ( ! empty( $data['asset']['context'] ) ) {
+			array_walk_recursive( $data['asset']['context'], function ( $value, $key ) use ( &$asset ) {
+				$asset['meta'][ $key ] = filter_var( $value, FILTER_SANITIZE_STRING );
+			} );
+		}
+
+		// Check for transformations.
+		$transformations = $this->get_transformations_from_string( $asset['url'] );
+		if ( ! empty( $transformations ) ) {
+			$asset['sync_key']        .= wp_json_encode( $transformations );
+			$asset['transformations'] = $transformations;
+		}
+		// Attempt to find attachment ID.
+		$asset['attachment_id'] = $this->get_id_from_sync_key( $asset['sync_key'] );
+
+		return $asset;
+	}
+
+	/**
 	 * Create and prepare a down sync asset from Cloudinary.
 	 */
 	public function down_sync_asset() {
 		$nonce = filter_input( INPUT_POST, 'nonce', FILTER_SANITIZE_STRING );
 		if ( wp_verify_nonce( $nonce, 'wp_rest' ) ) {
 
-			$args  = array(
-				'asset' => array(
-					'flags' => FILTER_REQUIRE_ARRAY,
-				),
+
+			$asset = $this->get_asset_payload();
+			// Set a base array for pulling an asset if needed.
+			$base_return = array(
+				'fetch'         => rest_url( REST_API::BASE . '/asset' ),
+				'uploading'     => true,
+				'src'           => $asset['src'],
+				'url'           => $asset['url'],
+				'filename'      => basename( $asset['src'] ),
+				'attachment_id' => $asset['attachment_id'],
 			);
-			$data  = filter_input_array( INPUT_POST, $args );
-			$asset = $data['asset'];
-
-			$public_id = filter_var( $asset['public_id'], FILTER_SANITIZE_STRING );
-			$format    = filter_var( $asset['format'], FILTER_SANITIZE_STRING );
-			$sync_key  = $public_id;
-
-			$src = filter_var( $asset['secure_url'], FILTER_SANITIZE_URL );
-			$url = $src;
-			if ( ! empty( $asset['derived'] ) ) {
-				$url = $asset['derived'][0]['secure_url'];
-			}
-
-			//convert_media_extension
-			if ( ! $this->is_file_compatible( $url ) ) {
-				$url = $this->convert_media_extension( $url );
-			}
-			$transformations = $this->get_transformations_from_string( $url );
-			if ( ! empty( $transformations ) ) {
-				$sync_key                 .= wp_json_encode( $transformations );
-				$asset['transformations'] = $transformations;
-			}
-			// Check Format and url extension.
-			$file_info = pathinfo( $url );
-			if ( $format !== $file_info['extension'] ) {
-				$sync_key .= $file_info['extension'];
-			}
-			// Try to find the Attachment ID in context meta data.
-			$attachment_id = $this->get_id_from_sync_key( $sync_key );
-
-			if ( empty( $attachment_id ) ) {
-				// ensure the url is correct.
-				$asset['secure_url'] = $url;
-				$attachment_id       = $this->create_attachment( $asset, $public_id );
-				$return              = array(
-					'fetch'         => rest_url( REST_API::BASE . '/asset' ),
-					'uploading'     => true,
-					'src'           => $src,
-					'url'           => $url,
-					'filename'      => basename( $src ),
-					'attachment_id' => $attachment_id,
-				);
+			if ( empty( $asset['attachment_id'] ) ) {
+				$return                  = $base_return;
+				$asset['attachment_id']  = $this->create_attachment( $asset, $asset['public_id'] );
+				$return['attachment_id'] = $asset['attachment_id'];
 			} else {
-				$return              = wp_prepare_attachment_for_js( $attachment_id );
-				$return['public_id'] = $public_id;
+				// Capture the ALT Text.
+				if ( ! empty( $asset['meta']['alt'] ) ) {
+					$alt_text = wp_strip_all_tags( $asset['meta']['alt'] );
+					update_post_meta( $asset['attachment_id'], '_wp_attachment_image_alt', $alt_text );
+				}
+				// Compare Version.
+				$current_version = (int) $this->get_post_meta( $asset['attachment_id'], Sync::META_KEYS['version'], true );
+				if ( $current_version !== $asset['version'] ) {
+					// Difference version, remove files, and downsync new files related to this asset.
+					// If this is a different version, we should try find attachments with the base sync key and update the source.
+					$ids    = $this->get_id_from_sync_key( 'base_' . $asset['public_id'], true );
+					$resync = array();
+					foreach ( $ids as $id ) {
+						$meta = wp_get_attachment_metadata( $id );
+						wp_delete_attachment_files( $id, $meta, array(), get_attached_file( $id ) );
+						$this->update_post_meta( $id, Sync::META_KEYS['version'], $asset['version'] );
+						// Set signature for storage, since this will be more effective at downloading or not.
+						$this->sync->set_signature_item( $id, 'storage', '' );
+						if ( $id !== $asset['attachment_id'] ) {
+							$resync[] = wp_prepare_attachment_for_js( $id );
+						}
+					}
+					// Use the primary ID as the main return, and add the resynced assets to that.
+					$return           = wp_prepare_attachment_for_js( $asset['attachment_id'] );
+					$return['resync'] = $resync;
+				} else {
+					$return              = wp_prepare_attachment_for_js( $asset['attachment_id'] );
+					$return['public_id'] = $asset['public_id'];
+				}
 			}
-			$return['transformations'] = $transformations;
+			$return['transformations'] = $asset['transformations'];
 
 			wp_send_json_success( $return );
 		}
