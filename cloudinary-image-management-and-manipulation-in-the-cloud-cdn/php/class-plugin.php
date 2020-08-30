@@ -120,10 +120,10 @@ class Plugin {
 		$this->components['connect']  = new Connect( $this );
 
 		if ( $this->components['connect'] && $this->components['connect']->is_connected() ) {
-			$this->components['sync']  = new Sync( $this );
-			$this->components['api']   = new REST_API( $this );
-			$this->components['media'] = new Media( $this );
-			$this->components['storage']  = new Storage( $this );
+			$this->components['sync']    = new Sync( $this );
+			$this->components['api']     = new REST_API( $this );
+			$this->components['media']   = new Media( $this );
+			$this->components['storage'] = new Storage( $this );
 		}
 	}
 

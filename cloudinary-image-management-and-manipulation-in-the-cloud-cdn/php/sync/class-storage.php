@@ -82,6 +82,30 @@ class Storage implements Notice {
 		add_action( 'cloudinary_register_sync_types', array( $this, 'setup' ), 20 );
 		// Add File validation sync.
 		add_filter( 'cloudinary_sync_base_struct', array( $this, 'add_file_folder_validators' ) );
+		// Add sync storage checks.
+		add_filter( 'cloudinary_render_field', array( $this, 'maybe_disable_connect' ), 10, 2 );
+	}
+
+	/**
+	 * Disable the cloudinary_url input if media is offloaded and warn the user to sync items.
+	 *
+	 * @param array  $field The field settings.
+	 * @param string $slug  The settings slug.
+	 *
+	 * @return array
+	 */
+	public function maybe_disable_connect( $field, $slug ) {
+
+		if ( 'connect' === $slug && 'cloudinary_url' === $field['slug'] ) {
+			$field['description'] = __( 'Please ensure all media is fully synced before changing the Environment variable URL.', 'cloudinary' );
+			if ( 'dual_full' !== $this->settings['offload'] ) {
+				$field['suffix']      = null;
+				$field['description'] = __( 'You can only change the Environment variable URL when storage is set to Cloudinary and WordPress, and all media have been fully synced.', 'cloudinary' );
+				$field['disabled']    = true;
+			}
+		}
+
+		return $field;
 	}
 
 	/**
