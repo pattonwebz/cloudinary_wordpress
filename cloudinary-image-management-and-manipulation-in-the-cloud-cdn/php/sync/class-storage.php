@@ -170,12 +170,16 @@ class Storage implements Notice {
 				update_post_meta( $attachment_id, '_wp_attached_file', $this->media->cloudinary_url( $attachment_id ) );
 				break;
 			case 'dual_low':
-				$url = $this->media->cloudinary_url( $attachment_id, 'full', array( array( 'effect' => 'blur:100', 'quality' => $this->settings['low_res'] . ':440' ) ), null, false, true );
+				$transformations = $this->media->get_transformation_from_meta( $attachment_id );
+				// Add low quality transformations.
+				$transformations[] = array( 'effect' => 'blur:100', 'quality' => $this->settings['low_res'] . ':440' );
+				$url               = $this->media->cloudinary_url( $attachment_id, 'full', $transformations, null, false, true );
 				break;
 			case 'dual_full':
 				if ( ! empty( $previous_state ) && 'dual_full' !== $previous_state ) {
 					// Only do this is it's changing a state.
-					$url = $this->media->cloudinary_url( $attachment_id, '', array(), null, false, false );
+					$transformations = $this->media->get_transformation_from_meta( $attachment_id );
+					$url             = $this->media->cloudinary_url( $attachment_id, '', $transformations, null, false, false );
 				}
 				break;
 		}
@@ -204,6 +208,10 @@ class Storage implements Notice {
 	protected function remove_local_assets( $attachment_id ) {
 		// Delete local versions of images.
 		$meta = wp_get_attachment_metadata( $attachment_id );
+		if ( ! empty( $meta['backup_sizes'] ) ) {
+			// Replace backup sizes.
+			$meta['sizes'] = $meta['backup_sizes'];
+		}
 
 		return wp_delete_attachment_files( $attachment_id, $meta, array(), get_attached_file( $attachment_id ) );
 	}
