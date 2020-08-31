@@ -97,10 +97,10 @@ class Storage implements Notice {
 	public function maybe_disable_connect( $field, $slug ) {
 
 		if ( 'connect' === $slug && 'cloudinary_url' === $field['slug'] ) {
-			$field['description'] = __( 'Please ensure all media is fully synced before changing the Environment variable URL.', 'cloudinary' );
+			$field['description'] = __( 'Please ensure all media is fully synced before changing the environment variable URL.', 'cloudinary' );
 			if ( 'dual_full' !== $this->settings['offload'] ) {
 				$field['suffix']      = null;
-				$field['description'] = __( 'You can only change the Environment variable URL when storage is set to Cloudinary and WordPress, and all media have been fully synced.', 'cloudinary' );
+				$field['description'] = __( 'You can only change the environment variable URL when storage is set to "Cloudinary and WordPress" and all media has been fully synced.', 'cloudinary' );
 				$field['disabled']    = true;
 			}
 		}
