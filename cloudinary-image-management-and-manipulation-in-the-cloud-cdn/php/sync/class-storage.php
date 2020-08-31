@@ -82,6 +82,30 @@ class Storage implements Notice {
 		add_action( 'cloudinary_register_sync_types', array( $this, 'setup' ), 20 );
 		// Add File validation sync.
 		add_filter( 'cloudinary_sync_base_struct', array( $this, 'add_file_folder_validators' ) );
+		// Add sync storage checks.
+		add_filter( 'cloudinary_render_field', array( $this, 'maybe_disable_connect' ), 10, 2 );
+	}
+
+	/**
+	 * Disable the cloudinary_url input if media is offloaded and warn the user to sync items.
+	 *
+	 * @param array  $field The field settings.
+	 * @param string $slug  The settings slug.
+	 *
+	 * @return array
+	 */
+	public function maybe_disable_connect( $field, $slug ) {
+
+		if ( 'connect' === $slug && 'cloudinary_url' === $field['slug'] ) {
+			$field['description'] = __( 'Please ensure all media is fully synced before changing the environment variable URL.', 'cloudinary' );
+			if ( 'dual_full' !== $this->settings['offload'] ) {
+				$field['suffix']      = null;
+				$field['description'] = __( 'You can only change the environment variable URL when storage is set to "Cloudinary and WordPress" and all media has been fully synced.', 'cloudinary' );
+				$field['disabled']    = true;
+			}
+		}
+
+		return $field;
 	}
 
 	/**
@@ -146,12 +170,16 @@ class Storage implements Notice {
 				update_post_meta( $attachment_id, '_wp_attached_file', $this->media->cloudinary_url( $attachment_id ) );
 				break;
 			case 'dual_low':
-				$url = $this->media->cloudinary_url( $attachment_id, 'full', array( array( 'effect' => 'blur:100', 'quality' => $this->settings['low_res'] . ':440' ) ), null, false, true );
+				$transformations = $this->media->get_transformation_from_meta( $attachment_id );
+				// Add low quality transformations.
+				$transformations[] = array( 'effect' => 'blur:100', 'quality' => $this->settings['low_res'] . ':440' );
+				$url               = $this->media->cloudinary_url( $attachment_id, 'full', $transformations, null, false, true );
 				break;
 			case 'dual_full':
 				if ( ! empty( $previous_state ) && 'dual_full' !== $previous_state ) {
 					// Only do this is it's changing a state.
-					$url = $this->media->cloudinary_url( $attachment_id, '', array(), null, false, false );
+					$transformations = $this->media->get_transformation_from_meta( $attachment_id );
+					$url             = $this->media->cloudinary_url( $attachment_id, '', $transformations, null, false, false );
 				}
 				break;
 		}
@@ -180,6 +208,10 @@ class Storage implements Notice {
 	protected function remove_local_assets( $attachment_id ) {
 		// Delete local versions of images.
 		$meta = wp_get_attachment_metadata( $attachment_id );
+		if ( ! empty( $meta['backup_sizes'] ) ) {
+			// Replace backup sizes.
+			$meta['sizes'] = $meta['backup_sizes'];
+		}
 
 		return wp_delete_attachment_files( $attachment_id, $meta, array(), get_attached_file( $attachment_id ) );
 	}

@@ -1318,11 +1318,16 @@ class Media implements Setup {
 					$ids    = $this->get_id_from_sync_key( 'base_' . $asset['public_id'], true );
 					$resync = array();
 					foreach ( $ids as $id ) {
-						$meta = wp_get_attachment_metadata( $id );
-						wp_delete_attachment_files( $id, $meta, array(), get_attached_file( $id ) );
+						// Update the version to the asset.
 						$this->update_post_meta( $id, Sync::META_KEYS['version'], $asset['version'] );
-						// Set signature for storage, since this will be more effective at downloading or not.
-						$this->sync->set_signature_item( $id, 'storage', '' );
+						// Get the storage state, and only set storage signature if we have local copies.
+						$storage_state = $this->get_post_meta( $id, Sync::META_KEYS['storage'], true );
+						if ( 'cld' !== $storage_state ) {
+							// State is local and Cloudinary. So lets force the storage to downsync again.
+							$this->update_post_meta( $id, Sync::META_KEYS['storage'], 'resync' );
+							// Set signature for storage, since this will be more effective at downloading or not.
+							$this->sync->set_signature_item( $id, 'storage', '' );
+						}
 						if ( $id !== $asset['attachment_id'] ) {
 							$resync[] = wp_prepare_attachment_for_js( $id );
 						}
@@ -1802,9 +1807,11 @@ class Media implements Setup {
 
 			if ( false === strpos( $image_meta['file'], $cld_file ) ) {
 				$image_meta['file'] = $cld_file;
-				
+
 				// Match sizes to exclude sizes suffix.
 				if ( isset( $image_meta['sizes'] ) ) {
+					// Create backup sizes.
+					$image_meta['backup_sizes'] = $image_meta['sizes'];
 					// Match sizes to exclude sizes suffix.
 					foreach ( $image_meta['sizes'] as &$size ) {
 						$size['file'] = basename( $cld_file );

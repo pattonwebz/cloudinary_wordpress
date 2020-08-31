@@ -88,13 +88,13 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		if ( ! empty( $this->ui['pages'] ) ) {
 			foreach ( $this->ui['pages'] as $page ) {
 				// If this page has "require_config" set, ensure we're fully connected to cloudinary.
-				if ( 
-					! empty( $page['requires_config'] ) && 
-					( 
-						! $this->plugin->config['connect'] || 
+				if (
+					! empty( $page['requires_config'] ) &&
+					(
+						! $this->plugin->config['connect'] ||
 						! $this->plugin->components['connect'] ||
-						! $this->plugin->components['connect']->is_connected() 
-					) 
+						! $this->plugin->components['connect']->is_connected()
+					)
 				) {
 					continue;
 				}
@@ -179,7 +179,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 			array( $this, 'load_section_content' ),
 			$setting_slug
 		);
-		
+
 		$this->register_section_fields( $tab, $setting_slug );
 	}
 
@@ -194,11 +194,20 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	private function register_section_fields( $tab, $setting_slug ) {
 
 		foreach ( $tab['fields'] as $field_slug => $field ) {
+			$field['slug'] = $field_slug;
+
+			/**
+			 * Filter the field just before rendering to allow field manipulation.
+			 *
+			 * @var array  $field        The field array.
+			 * @var string $setting_slug The setting slug
+			 */
+			$field = apply_filters( 'cloudinary_render_field', $field, $tab['slug'] );
+
 			if ( ! empty( $field['type'] ) && is_callable( $field['type'] ) ) {
 				continue;
 			}
 			$type          = ! empty( $field['type'] ) ? $field['type'] : 'text';
-			$field['slug'] = $field_slug;
 			$args          = $field;
 			$args['class'] = 'field-row-' . $field['slug'] . ' field-' . $type;
 			if ( 'heading' !== $type ) {
@@ -306,21 +315,21 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 				break;
 			case 'radio':
 				foreach ( $field['choices'] as $key => $option ) :
-				?>
-					<input 
-						type="<?php echo esc_attr( $type ); ?>" 
-						class="cld-field regular-<?php echo esc_attr( $type ); ?>" 
-						id="<?php echo esc_attr( $field['label_for'] . '_' . $key ); ?>" 
-						name="<?php echo esc_attr( $setting_slug ); ?>[<?php echo esc_attr( $field['slug'] ); ?>]" 
+					?>
+					<input
+							type="<?php echo esc_attr( $type ); ?>"
+							class="cld-field regular-<?php echo esc_attr( $type ); ?>"
+							id="<?php echo esc_attr( $field['label_for'] . '_' . $key ); ?>"
+							name="<?php echo esc_attr( $setting_slug ); ?>[<?php echo esc_attr( $field['slug'] ); ?>]"
 						<?php if ( ! empty( $field['pattern'] ) ) : ?>
 							pattern="<?php echo esc_attr( $field['pattern'] ); ?>"
-						<?php endif; ?> 
-						data-condition="<?php echo esc_attr( $condition ); ?>" 
-						data-context="<?php echo esc_attr( $context ); ?>" 
-						<?php echo esc_attr( $required ); ?> 
-						<?php checked( $key, $value ); ?> 
-						value="<?php echo esc_attr( $key ); ?>"
-					/> 
+						<?php endif; ?>
+							data-condition="<?php echo esc_attr( $condition ); ?>"
+							data-context="<?php echo esc_attr( $context ); ?>"
+						<?php echo esc_attr( $required ); ?>
+						<?php checked( $key, $value ); ?>
+							value="<?php echo esc_attr( $key ); ?>"
+					/>
 					<label for="<?php echo esc_attr( $field['label_for'] . '_' . $key ); ?>"><?php esc_html_e( $option ); ?></label>
 				<?php
 				endforeach;
@@ -332,7 +341,22 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 				break;
 			default:
 				?>
-				<input <?php echo empty( $field['placeholder'] ) ? '' : sprintf( 'placeholder="%s"', esc_attr( $field['placeholder'] ) ); ?> type="<?php echo esc_attr( $type ); ?>" class="cld-field regular-<?php echo esc_attr( $type ); ?>" id="<?php echo esc_attr( $field['label_for'] ); ?>" name="<?php echo esc_attr( $setting_slug ); ?>[<?php echo esc_attr( $field['slug'] ); ?>]" <?php if ( ! empty( $field['pattern'] ) ) : ?>pattern="<?php echo esc_attr( $field['pattern'] ); ?>"<?php endif; ?> data-condition="<?php echo esc_attr( $condition ); ?>" value="<?php echo esc_attr( $value ); ?>" data-context="<?php echo esc_attr( $context ); ?>" <?php echo esc_attr( $required ); ?>>
+				<input
+					<?php echo empty( $field['placeholder'] ) ? '' : sprintf( 'placeholder="%s"', esc_attr( $field['placeholder'] ) ); ?>
+						type="<?php echo esc_attr( $type ); ?>"
+						class="cld-field regular-<?php echo esc_attr( $type ); ?>"
+						id="<?php echo esc_attr( $field['label_for'] ); ?>"
+						name="<?php echo esc_attr( $setting_slug ); ?>[<?php echo esc_attr( $field['slug'] ); ?>]"
+					<?php if ( ! empty( $field['pattern'] ) ) : ?>
+						pattern="<?php echo esc_attr( $field['pattern'] ); ?>"
+					<?php endif; ?>
+					<?php if ( ! empty( $field['disabled'] ) ) : ?>
+						disabled="disabled"
+					<?php endif; ?>
+						data-condition="<?php echo esc_attr( $condition ); ?>"
+						value="<?php echo esc_attr( $value ); ?>"
+						data-context="<?php echo esc_attr( $context ); ?>"
+					<?php echo esc_attr( $required ); ?>>
 				<?php
 				break;
 		}

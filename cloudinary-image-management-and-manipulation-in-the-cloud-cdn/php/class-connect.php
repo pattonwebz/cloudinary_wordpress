@@ -79,7 +79,7 @@ class Connect implements Config, Setup, Notice {
 		'url'        => 'cloudinary_url',
 		'connect'    => 'cloudinary_connect',
 		'cache'      => 'cloudinary_settings_cache',
-		'cname'		 => 'cloudinary_url_cname',
+		'cname'      => 'cloudinary_url_cname',
 	);
 
 	/**
@@ -178,6 +178,7 @@ class Connect implements Config, Setup, Notice {
 
 		if ( ! empty( $result['message'] ) ) {
 			add_settings_error( 'cloudinary_connect', $result['type'], $result['message'], 'error' );
+
 			return $current;
 		}
 
@@ -187,11 +188,11 @@ class Connect implements Config, Setup, Notice {
 			update_option( self::META_KEYS['cname'], $cname[1] );
 		}
 
-		add_settings_error( 
-			'cloudinary_connect', 
-			'connection_success', 
-			__( 'Successfully connected to Cloudinary.', 'cloudinary' ), 
-			'updated' 
+		add_settings_error(
+			'cloudinary_connect',
+			'connection_success',
+			__( 'Successfully connected to Cloudinary.', 'cloudinary' ),
+			'updated'
 		);
 
 		update_option( self::META_KEYS['signature'], md5( $data['cloudinary_url'] ) );
@@ -202,18 +203,22 @@ class Connect implements Config, Setup, Notice {
 	/**
 	 * Check whether a connection was established.
 	 *
-	 * @return boolean  
+	 * @return boolean
 	 */
 	public function is_connected() {
 		$signature = get_option( self::META_KEYS['signature'], null );
-		
+
 		if ( null === $signature ) {
 			return false;
 		}
-		
+		// Get the last test transient.
+		if ( get_transient( $signature ) ) {
+			return true;
+		}
+
 		$connect_data = get_option( self::META_KEYS['connect'], [] );
 		$current_url  = isset( $connect_data['cloudinary_url'] ) ? $connect_data['cloudinary_url'] : null;
-		
+
 		if ( null === $current_url ) {
 			return false;
 		}
@@ -236,6 +241,8 @@ class Connect implements Config, Setup, Notice {
 
 			return false;
 		}
+		// Set a 30 second transient to prevent continued pinging.
+		set_transient( $signature, true, 30 );
 
 		return true;
 	}
@@ -291,7 +298,7 @@ class Connect implements Config, Setup, Notice {
 		}
 
 		$this->config_from_url( $url );
-		
+
 		$test        = new Connect\Api( $this, $this->plugin->version );
 		$test_result = $test->ping();
 
