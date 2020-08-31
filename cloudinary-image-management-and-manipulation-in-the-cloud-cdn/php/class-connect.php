@@ -155,6 +155,9 @@ class Connect implements Config, Setup, Notice {
 			return $data;
 		}
 
+		// Always clear out CNAME when re-saving.
+		delete_option( self::META_KEYS['cname'] );
+
 		$data['cloudinary_url'] = str_replace( 'CLOUDINARY_URL=', '', $data['cloudinary_url'] );
 		$current                = $this->plugin->config['settings']['connect'];
 
@@ -185,7 +188,7 @@ class Connect implements Config, Setup, Notice {
 		// Check if the given URL has a cname and store it if present.
 		if ( preg_match( '/(?:@\w+)\/(([a-z0-9|-]+\.)*[a-z0-9|-]+\.[a-z]+)/', $data['cloudinary_url'], $cname ) ) {
 			$cname = filter_var( $cname[1], FILTER_VALIDATE_DOMAIN );
-			update_option( self::META_KEYS['cname'], $cname[1] );
+			update_option( self::META_KEYS['cname'], $cname );
 		}
 
 		add_settings_error(
