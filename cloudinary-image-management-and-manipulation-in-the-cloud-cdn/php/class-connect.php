@@ -325,7 +325,7 @@ class Connect implements Config, Setup, Notice {
 			$config_params = array();
 			wp_parse_str( $parsed_url['query'], $config_params );
 			$cname = isset( $config_params['cname'] ) ? $config_params['cname'] : $cname;
-		} else if ( ! empty( $parsed_url['path'] ) ) {
+		} elseif ( ! empty( $parsed_url['path'] ) ) {
 			$cname = ltrim( $parsed_url['path'], '/' );
 		}
 
