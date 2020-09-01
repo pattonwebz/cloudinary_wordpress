@@ -630,12 +630,13 @@ class Media implements Setup {
 	 * @return string Cloudinary URL.
 	 */
 	public function attachment_url( $url, $attachment_id ) {
+		// Previous v1 and Cloudinary only storage.
+		$previous_url = strpos( $url, untrailingslashit( $this->base_url ) );
+		if ( false !== $previous_url ) {
+			return substr( $url, $previous_url );
+		}
 		if ( ! doing_action( 'wp_insert_post_data' ) && false === $this->in_downsize ) {
-			// Previous v1.
-			$previous_url = strpos( $url, untrailingslashit( $this->base_url ) );
-			if ( false !== $previous_url ) {
-				$url = substr( $url, $previous_url );
-			} elseif ( $this->cloudinary_id( $attachment_id ) ) {
+			if ( $this->cloudinary_id( $attachment_id ) ) {
 				$url = $this->cloudinary_url( $attachment_id );
 			}
 		}

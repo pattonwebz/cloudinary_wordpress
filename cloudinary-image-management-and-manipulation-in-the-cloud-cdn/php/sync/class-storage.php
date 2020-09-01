@@ -305,22 +305,6 @@ class Storage implements Notice {
 	}
 
 	/**
-	 * Maybe stop filtering out Cloudinary URLs.
-	 * If storage is Cloudinary only, we need to save full Cloudinary URLS, since local's don't exist.
-	 *
-	 * @param bool $filter_out Flag to stop filtering out.
-	 *
-	 * @return bool
-	 */
-	public function save_cloudinary_links_maybe( $filter_out ) {
-		if ( 'cld' === $this->settings['offload'] ) {
-			$filter_out = false;
-		}
-
-		return $filter_out;
-	}
-
-	/**
 	 * Setup hooks for the filters.
 	 */
 	public function setup() {
@@ -328,7 +312,7 @@ class Storage implements Notice {
 		$this->sync     = $this->plugin->get_component( 'sync' );
 		$this->connect  = $this->plugin->get_component( 'connect' );
 		$this->media    = $this->plugin->get_component( 'media' );
-		$this->download = $this->sync->managers['download'] ? $this->sync->managers['download'] : new Download_Sync( $plugin );
+		$this->download = $this->sync->managers['download'] ? $this->sync->managers['download'] : new Download_Sync( $this->plugin );
 
 		if ( $this->is_ready() ) {
 			$defaults       = array(
@@ -349,8 +333,6 @@ class Storage implements Notice {
 			// Tag the deactivate button.
 			$plugin_file = pathinfo( dirname( CLDN_CORE ), PATHINFO_BASENAME ) . '/' . basename( CLDN_CORE );
 			add_filter( 'plugin_action_links_' . $plugin_file, array( $this, 'tag_deactivate_link' ) );
-			add_filter( 'cloudinary_can_filter_out_cloudinary', array( $this, 'save_cloudinary_links_maybe' ) );
-
 		}
 	}
 }

@@ -243,14 +243,7 @@ class Filter {
 	 * @return array
 	 */
 	public function filter_out_cloudinary( $data ) {
-		/**
-		 * Filter to allow programmatic disabling of Filtering out URLS.
-		 *
-		 * @param bool
-		 */
-		if ( ! apply_filters( 'cloudinary_can_filter_out_cloudinary', true ) ) {
-			return $data;
-		}
+
 		$content = trim( wp_unslash( $data['post_content'] ) );
 		$assets  = $this->get_media_tags( $content );
 
@@ -269,7 +262,10 @@ class Filter {
 			} else {
 				$local_url = wp_get_attachment_url( $attachment_id );
 			}
-
+			// Skip since there is no local available.
+			if ( $this->media->is_cloudinary_url( $local_url ) ) {
+				continue;
+			}
 			$inherit_transformations = $this->media->get_transformation_from_meta( $attachment_id );
 			$transformations         = $this->media->get_transformations_from_string( $url );
 			$transformations         = array_filter( $transformations );
@@ -352,7 +348,7 @@ class Filter {
 			if ( $url === $cloudinary_url ) {
 				continue;
 			}
-			
+
 			// Replace old tag.
 			$new_tag = str_replace( $url, $cloudinary_url, $asset );
 
@@ -363,9 +359,9 @@ class Filter {
 			}
 
 			// Apply lazy loading attribute
-			if ( 
-				apply_filters( 'wp_lazy_loading_enabled', true ) && 
-				false === strpos( $new_tag, 'loading="lazy"' ) && 
+			if (
+				apply_filters( 'wp_lazy_loading_enabled', true ) &&
+				false === strpos( $new_tag, 'loading="lazy"' ) &&
 				$clean
 			) {
 				$new_tag = str_replace( '/>', ' loading="lazy" />', $new_tag );
@@ -390,7 +386,7 @@ class Filter {
 	/**
 	 * Return a Cloudinary URL for an attachment used in JS.
 	 *
-	 * @param array    $attachment The attachment response array.
+	 * @param array $attachment The attachment response array.
 	 *
 	 * @return array
 	 * @uses filter:wp_prepare_attachment_for_js
@@ -433,11 +429,11 @@ class Filter {
 	/**
 	 * Return a Cloudinary URL for an attachment used in a REST REQUEST.
 	 *
-	 * @uses filter:rest_prepare_attachment
-	 *
 	 * @param \WP_REST_Response $attachment The attachment array to be used in JS.
 	 *
 	 * @return \WP_REST_Response
+	 * @uses filter:rest_prepare_attachment
+	 *
 	 */
 	public function filter_attachment_for_rest( $attachment ) {
 		if ( ! isset( $attachment->data['id'] ) ) {
@@ -528,7 +524,7 @@ class Filter {
 			}
 			if ( ! empty( $attachment['transformations'] ) ) {
 				$transformation_string = Api::generate_transformation_string( $attachment['transformations'] );
-				$new_atts             .= ' transformations="' . esc_attr( $transformation_string ) . '"';
+				$new_atts              .= ' transformations="' . esc_attr( $transformation_string ) . '"';
 			}
 			$html = str_replace( $shortcode['args'], $new_atts, $html );
 		}
@@ -706,7 +702,7 @@ class Filter {
 		add_filter( 'the_content', array( $this, 'filter_out_local' ), 9 ); // Early to hook before responsive srcsets.
 		add_filter( 'wp_prepare_attachment_for_js', array( $this, 'filter_attachment_for_js' ), 11 );
 
-    // Add support for custom header.
+		// Add support for custom header.
 		add_filter( 'get_header_image_tag', array( $this, 'filter_out_local' ) );
 
 		// Add transformations.
