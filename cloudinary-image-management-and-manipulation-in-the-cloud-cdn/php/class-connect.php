@@ -343,10 +343,10 @@ class Connect implements Config, Setup, Notice {
 		$is_valid = false;
 
 		if ( defined( 'FILTER_VALIDATE_DOMAIN' ) ) {
-			$is_valid	= filter_var( $domain, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME );
+			$is_valid = filter_var( $domain, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME );
 		} else {
-			$domain		= 'https://' . $domain;
-			$is_valid	= filter_var( $domain, FILTER_VALIDATE_URL );
+			$domain   = 'https://' . $domain;
+			$is_valid = filter_var( $domain, FILTER_VALIDATE_URL );
 		}
 
 		return $is_valid;
