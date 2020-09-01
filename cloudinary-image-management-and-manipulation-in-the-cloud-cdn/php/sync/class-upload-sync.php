@@ -222,7 +222,7 @@ class Upload_Sync {
 			// Check that this wasn't an existing.
 			if ( ! empty( $result['existing'] ) ) {
 				// Check to see if this is the same image.
-				$version = (int) $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['version'], true );
+				$version = $this->media->get_cloudinary_version( $attachment_id );
 				if ( $version !== $result['version'] ) {
 					// New image with the same name.
 					// Add a suffix and try again.
