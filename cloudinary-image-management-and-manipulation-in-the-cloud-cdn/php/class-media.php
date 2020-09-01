@@ -739,7 +739,7 @@ class Media implements Setup {
 		// Setup initial args for cloudinary_url.
 		$pre_args = array(
 			'secure'        => is_ssl(),
-			'version'       => $this->get_post_meta( $attachment_id, Sync::META_KEYS['version'], true ),
+			'version'       => $this->get_cloudinary_version( $attachment_id ),
 			'resource_type' => $resource_type,
 		);
 
@@ -1311,7 +1311,7 @@ class Media implements Setup {
 					update_post_meta( $asset['attachment_id'], '_wp_attachment_image_alt', $alt_text );
 				}
 				// Compare Version.
-				$current_version = (int) $this->get_post_meta( $asset['attachment_id'], Sync::META_KEYS['version'], true );
+				$current_version = $this->get_cloudinary_version( $asset['attachment_id'] );
 				if ( $current_version !== $asset['version'] ) {
 					// Difference version, remove files, and downsync new files related to this asset.
 					// If this is a different version, we should try find attachments with the base sync key and update the source.
@@ -1746,6 +1746,19 @@ class Media implements Setup {
 	}
 
 	/**
+	 * Get the cloudinary version of an attachment.
+	 *
+	 * @param int $attachment_id The attachment_ID.
+	 *
+	 * @return string
+	 */
+	public function get_cloudinary_version( $attachment_id ) {
+		$version = (int) $this->get_post_meta( $attachment_id, Sync::META_KEYS['version'], true );
+
+		return $version ? $version : 1;
+	}
+
+	/**
 	 * Setup the hooks and base_url if configured.
 	 */
 	public function setup() {
@@ -1799,9 +1812,7 @@ class Media implements Setup {
 	 */
 	public function match_file_name_with_cloudinary_source( $image_meta, $attachment_id ) {
 		if ( $this->has_public_id( $attachment_id ) ) {
-
-			$cld_file = $this->get_post_meta( $attachment_id, Sync::META_KEYS['version'], true ) . '/' . $this->get_cloudinary_id( $attachment_id );
-
+			$cld_file = 'v' . $this->get_cloudinary_version( $attachment_id ) . '/' . $this->get_cloudinary_id( $attachment_id );
 			if ( false === strpos( $image_meta['file'], $cld_file ) ) {
 				$image_meta['file'] = $cld_file;
 			}
