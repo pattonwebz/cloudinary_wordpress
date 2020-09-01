@@ -1750,7 +1750,7 @@ class Media implements Setup {
 	 *
 	 * @param int $attachment_id The attachment_ID.
 	 *
-	 * @return string
+	 * @return int
 	 */
 	public function get_cloudinary_version( $attachment_id ) {
 		$version = (int) $this->get_post_meta( $attachment_id, Sync::META_KEYS['version'], true );
