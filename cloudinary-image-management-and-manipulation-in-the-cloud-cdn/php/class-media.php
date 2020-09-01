@@ -1776,7 +1776,7 @@ class Media implements Setup {
 			// Filter live URLS. (functions that return a URL).
 			add_filter( 'wp_calculate_image_srcset', array( $this, 'image_srcset' ), 10, 5 );
 			add_filter( 'wp_calculate_image_srcset_meta', array( $this, 'match_responsive_sources' ), 10, 4 );
-			add_filter( 'wp_get_attachment_metadata', array( $this, 'match_file_name_with_cloudinary_source' ) );
+			add_filter( 'wp_get_attachment_metadata', array( $this, 'match_file_name_with_cloudinary_source' ), 10, 2 );
 			add_filter( 'wp_get_attachment_url', array( $this, 'attachment_url' ), 10, 2 );
 			add_filter( 'image_downsize', array( $this, 'filter_downsize' ), 10, 3 );
 
@@ -1790,20 +1790,16 @@ class Media implements Setup {
 	}
 
 	/**
-	 * In certain situations when images had changes applied to them directly (ie. transformations)
-	 * on Cloudinary, when syncing to WordPress it will append a "-n" to the image file name.
-	 * This can cause a mismatch of file names when WordPress attempts to attach the
-	 * srcset attribute to the image. In this method, we account for this potential
-	 * situation and handle it accordingly by replacing this "-n" name with the original name.
+	 * Ensure the file in image meta is the same as the Cloudinary ID.
 	 *
-	 * @param array $image_meta Meta information of the attachment.
+	 * @param array $image_meta    Meta information of the attachment.
+	 * @param int   $attachment_id The attachment ID.
 	 *
 	 * @return array
 	 */
-	public function match_file_name_with_cloudinary_source( $image_meta ) {
-		if ( isset( $image_meta[ Sync::META_KEYS['cloudinary'] ] ) ) {
-			$extension = pathinfo( $image_meta['file'], PATHINFO_EXTENSION );
-			$cld_file  = $image_meta[ Sync::META_KEYS['cloudinary'] ][ Sync::META_KEYS['public_id'] ] . '.' . $extension;
+	public function match_file_name_with_cloudinary_source( $image_meta, $attachment_id ) {
+		if ( $this->has_public_id( $attachment_id ) ) {
+			$cld_file = $this->get_cloudinary_id( $attachment_id );
 
 			if ( false === strpos( $image_meta['file'], $cld_file ) ) {
 				$image_meta['file'] = $cld_file;
