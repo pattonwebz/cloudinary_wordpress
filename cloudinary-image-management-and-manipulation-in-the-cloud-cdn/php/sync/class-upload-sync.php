@@ -325,7 +325,7 @@ class Upload_Sync {
 	 *
 	 * @param int $attachment_id The attachment id to find and init an update.
 	 */
-	private function update_content( $attachment_id ) {
+	public function update_content( $attachment_id ) {
 		// Search and update link references in content.
 		$content_search = new \WP_Query( array( 's' => 'wp-image-' . $attachment_id, 'fields' => 'ids', 'posts_per_page' => 1000 ) );
 		if ( ! empty( $content_search->found_posts ) ) {

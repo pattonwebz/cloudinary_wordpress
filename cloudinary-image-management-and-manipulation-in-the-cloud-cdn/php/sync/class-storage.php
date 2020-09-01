@@ -196,6 +196,10 @@ class Storage implements Notice {
 		$this->sync->set_signature_item( $attachment_id, 'storage' );
 		$this->sync->set_signature_item( $attachment_id, 'breakpoints' );
 		$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['storage'], $this->settings['offload'] ); // Save the state.
+		// If bringing media back to WordPress, we need to trigger content update to allow unfiltered Cloudinary URL's to be filtered.
+		if ( ! empty( $previous_state ) && 'cld' !== $this->settings['offload'] ) {
+			$this->sync->managers['upload']->update_content( $attachment_id );
+		}
 	}
 
 	/**
@@ -311,7 +315,7 @@ class Storage implements Notice {
 		$this->sync     = $this->plugin->get_component( 'sync' );
 		$this->connect  = $this->plugin->get_component( 'connect' );
 		$this->media    = $this->plugin->get_component( 'media' );
-		$this->download = $this->sync->managers['download'] ? $this->sync->managers['download'] : new Download_Sync( $plugin );
+		$this->download = $this->sync->managers['download'] ? $this->sync->managers['download'] : new Download_Sync( $this->plugin );
 
 		if ( $this->is_ready() ) {
 			$defaults       = array(
@@ -332,8 +336,6 @@ class Storage implements Notice {
 			// Tag the deactivate button.
 			$plugin_file = pathinfo( dirname( CLDN_CORE ), PATHINFO_BASENAME ) . '/' . basename( CLDN_CORE );
 			add_filter( 'plugin_action_links_' . $plugin_file, array( $this, 'tag_deactivate_link' ) );
-
-
 		}
 	}
 }
