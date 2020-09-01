@@ -285,8 +285,8 @@ class Connect implements Config, Setup, Notice {
 			return $result;
 		}
 
-		$cname_str		= $this->extract_cname( $test );
-		$cname_valid	= $this->validate_domain( $cname_str );
+		$cname_str   = $this->extract_cname( $test );
+		$cname_valid = $this->validate_domain( $cname_str );
 
 		if ( $cname_str && ( ! substr_count( $cname_valid, '.' ) || false === $cname_valid ) ) {
 			$result['type']    = 'invalid_cname';
