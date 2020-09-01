@@ -196,6 +196,7 @@ class Storage implements Notice {
 		$this->sync->set_signature_item( $attachment_id, 'storage' );
 		$this->sync->set_signature_item( $attachment_id, 'breakpoints' );
 		$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['storage'], $this->settings['offload'] ); // Save the state.
+		$this->sync->managers['upload']->update_content( $attachment_id );
 	}
 
 	/**
@@ -304,6 +305,22 @@ class Storage implements Notice {
 	}
 
 	/**
+	 * Maybe stop filtering out Cloudinary URLs.
+	 * If storage is Cloudinary only, we need to save full Cloudinary URLS, since local's don't exist.
+	 *
+	 * @param bool $filter_out Flag to stop filtering out.
+	 *
+	 * @return bool
+	 */
+	public function save_cloudinary_links_maybe( $filter_out ) {
+		if ( 'cld' === $this->settings['offload'] ) {
+			$filter_out = false;
+		}
+
+		return $filter_out;
+	}
+
+	/**
 	 * Setup hooks for the filters.
 	 */
 	public function setup() {
@@ -332,7 +349,7 @@ class Storage implements Notice {
 			// Tag the deactivate button.
 			$plugin_file = pathinfo( dirname( CLDN_CORE ), PATHINFO_BASENAME ) . '/' . basename( CLDN_CORE );
 			add_filter( 'plugin_action_links_' . $plugin_file, array( $this, 'tag_deactivate_link' ) );
-
+			add_filter( 'cloudinary_can_filter_out_cloudinary', array( $this, 'save_cloudinary_links_maybe' ) );
 
 		}
 	}

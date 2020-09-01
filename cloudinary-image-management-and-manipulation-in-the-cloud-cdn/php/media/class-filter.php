@@ -243,7 +243,14 @@ class Filter {
 	 * @return array
 	 */
 	public function filter_out_cloudinary( $data ) {
-
+		/**
+		 * Filter to allow programmatic disabling of Filtering out URLS.
+		 *
+		 * @param bool
+		 */
+		if ( ! apply_filters( 'cloudinary_can_filter_out_cloudinary', true ) ) {
+			return $data;
+		}
 		$content = trim( wp_unslash( $data['post_content'] ) );
 		$assets  = $this->get_media_tags( $content );
 
