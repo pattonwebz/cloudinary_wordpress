@@ -1799,20 +1799,11 @@ class Media implements Setup {
 	 */
 	public function match_file_name_with_cloudinary_source( $image_meta, $attachment_id ) {
 		if ( $this->has_public_id( $attachment_id ) ) {
-			$cld_file = $this->get_cloudinary_id( $attachment_id );
+
+			$cld_file = $this->get_post_meta( $attachment_id, Sync::META_KEYS['version'], true ) . '/' . $this->get_cloudinary_id( $attachment_id );
 
 			if ( false === strpos( $image_meta['file'], $cld_file ) ) {
 				$image_meta['file'] = $cld_file;
-
-				// Match sizes to exclude sizes suffix.
-				if ( isset( $image_meta['sizes'] ) ) {
-					// Create backup sizes.
-					$image_meta['backup_sizes'] = $image_meta['sizes'];
-					// Match sizes to exclude sizes suffix.
-					foreach ( $image_meta['sizes'] as &$size ) {
-						$size['file'] = basename( $cld_file );
-					}
-				}
 			}
 		}
 
