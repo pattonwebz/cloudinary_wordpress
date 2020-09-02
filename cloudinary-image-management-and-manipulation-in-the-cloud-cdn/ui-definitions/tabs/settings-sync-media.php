@@ -45,23 +45,6 @@ $struct = array(
 				'dual_low'  => __( 'Cloudinary with low resolution on WordPress', 'cloudinary' ),
 			),
 		),
-		'low_res' => array(
-			'label'       => __( 'Low Resolution', 'cloudinary' ),
-			'description' => __( 'The compression quality to apply to local stored assets.', 'cloudinary' ),
-			'type'        => 'select',
-			'choices'     => array(
-				'40' => '40',
-				'20' => '20',
-				'10' => '10',
-				'5'  => '5',
-				'2'  => '2',
-			),
-			'default'     => '20',
-			'suffix'      => '%',
-			'condition'   => array(
-				'offload' => 'dual_low',
-			),
-		),
 	),
 );
 
