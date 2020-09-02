@@ -326,8 +326,10 @@ class Filter {
 				$transformations = $this->media->get_transformations_from_string( $args['cld_params'] );
 			}
 
-			// Get the WP size from the class name.
-			$wp_size = $this->get_size_from_image_tag( $asset );
+			// Get the size.
+			$wp_size = $this->media->get_crop( $url, $attachment_id );
+
+			// If there is no size, check the tag.
 			if ( false === $wp_size ) {
 				// No class name, so get size from the width and height tags.
 				$wp_size = $this->get_crop_from_image_tag( $asset );
@@ -336,7 +338,7 @@ class Filter {
 				}
 			}
 
-			// Get a cloudinary URL.
+			// Get a Cloudinary URL.
 			$clean                     = ! is_admin(); // Front facing images must not contain a wpsize url variable.
 			$classes                   = $this->get_classes( $asset ); // check if this is a transformation overwrite.
 			$overwrite_transformations = false;
