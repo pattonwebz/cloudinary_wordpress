@@ -157,7 +157,7 @@ class Storage implements Notice {
 	 * @return string
 	 */
 	public function generate_signature( $attachment_id ) {
-		return $this->settings['offload'] . $this->settings['low_res'] . $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true );
+		return $this->settings['offload'] . $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true );
 	}
 
 	/**
@@ -177,7 +177,7 @@ class Storage implements Notice {
 			case 'dual_low':
 				$transformations = $this->media->get_transformation_from_meta( $attachment_id );
 				// Add low quality transformations.
-				$transformations[] = array( 'effect' => 'blur:100', 'quality' => $this->settings['low_res'] . ':440' );
+				$transformations[] = array( 'quality' => 'auto:low' );
 				$url               = $this->media->cloudinary_url( $attachment_id, 'full', $transformations, null, false, true );
 				break;
 			case 'dual_full':
@@ -313,7 +313,6 @@ class Storage implements Notice {
 		if ( $this->is_ready() ) {
 			$defaults       = array(
 				'offload' => 'dual_full',
-				'low_res' => '20',
 			);
 			$settings       = isset( $this->plugin->config['settings']['sync_media'] ) ? $this->plugin->config['settings']['sync_media'] : array();
 			$this->settings = wp_parse_args( $settings, $defaults );
