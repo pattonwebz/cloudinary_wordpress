@@ -474,6 +474,13 @@ class Connect implements Config, Setup, Notice {
 		}
 	}
 
+	/**
+	 * Add our every minute schedule.
+	 *
+	 * @param array $schedules Array of schedules.
+	 *
+	 * @return array
+	 */
 	public function get_status_schedule( $schedules ) {
 		$schedules['every_minute'] = array(
 			'interval' => MINUTE_IN_SECONDS,
@@ -483,6 +490,9 @@ class Connect implements Config, Setup, Notice {
 		return $schedules;
 	}
 
+	/**
+	 * Setup Status cron.
+	 */
 	protected function setup_status_cron() {
 		if ( false === wp_get_schedule( 'cloudinary_status' ) ) {
 			$now = current_time( 'timestamp' );
