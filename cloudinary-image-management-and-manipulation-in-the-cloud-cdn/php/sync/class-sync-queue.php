@@ -190,7 +190,7 @@ class Sync_Queue {
 	 * @return array
 	 */
 	public function get_queue_status() {
-		$queue   = $this->get_queue();
+		$queue   = $this->validate_queue();
 		$pending = 0;
 		foreach ( $this->threads as $thread ) {
 			$pending += count( $queue[ $thread ] );
@@ -234,6 +234,8 @@ class Sync_Queue {
 
 	/**
 	 * Validate the queue is up to date and populate with unsynced assets.
+	 *
+	 * @return array Validated Queue.
 	 */
 	public function validate_queue() {
 
@@ -281,10 +283,16 @@ class Sync_Queue {
 			$chunks     = array_chunk( $ids, $chunk_size );
 			foreach ( $chunks as $index => $chunk ) {
 				$queue[ $this->threads[ $index ] ] = $chunk;
+				// Check thread is still running.
+				if ( $this->is_running() && ! $this->thread_running( $this->threads[ $index ] ) ) {
+					$this->start_thread( $this->threads[ $index ] );
+				}
 			}
 		}
 
 		$this->set_queue( $queue );
+
+		return $queue;
 	}
 
 	/**
