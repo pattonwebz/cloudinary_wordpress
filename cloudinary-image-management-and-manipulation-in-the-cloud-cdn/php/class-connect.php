@@ -305,13 +305,16 @@ class Connect implements Config, Setup, Notice {
 		}
 
 		$this->config_from_url( $url );
-		$test_result = check_status();
+		$test_result = $this->check_status();
 
 		if ( is_wp_error( $test_result ) ) {
-			$result['type']    = 'connection_error';
+			$error = $test_result->get_error_message();
+			if ( 'disabled account' !== strtolower( $error ) ) {
+				// Account Disabled, is still successful, so allow it, else we will never be able to change it.
+				$result['type'] = 'connection_error';
+			}
 			$result['message'] = ucwords( str_replace( '_', ' ', $test_result->get_error_message() ) );
 		} else {
-			$this->api = $test;
 			$this->usage_stats( true );
 		}
 
@@ -336,7 +339,8 @@ class Connect implements Config, Setup, Notice {
 	 * @return array|\WP_Error
 	 */
 	public function test_ping() {
-		$test = new Connect\Api( $this, $this->plugin->version );
+		$test      = new Connect\Api( $this, $this->plugin->version );
+		$this->api = $test;
 
 		return $test->ping();
 	}
