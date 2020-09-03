@@ -69,6 +69,13 @@ class Connect implements Config, Setup, Notice {
 	protected $notices = array();
 
 	/**
+	 * Account Disabled Flag.
+	 *
+	 * @var bool
+	 */
+	public $disabled = false;
+
+	/**
 	 * Holds the meta keys for connect meta to maintain consistency.
 	 */
 	const META_KEYS = array(
@@ -79,7 +86,7 @@ class Connect implements Config, Setup, Notice {
 		'url'        => 'cloudinary_url',
 		'connect'    => 'cloudinary_connect',
 		'cache'      => 'cloudinary_settings_cache',
-		'cname'      => 'cloudinary_url_cname',
+		'status'     => 'cloudinary_status',
 	);
 
 	/**
@@ -95,6 +102,8 @@ class Connect implements Config, Setup, Notice {
 	public function __construct( Plugin $plugin ) {
 		$this->plugin = $plugin;
 		add_filter( 'pre_update_option_cloudinary_connect', array( $this, 'verify_connection' ) );
+		add_filter( 'cron_schedules', array( $this, 'get_status_schedule' ) );
+		add_action( 'cloudinary_status', array( $this, 'check_status' ) );
 	}
 
 	/**
@@ -144,7 +153,6 @@ class Connect implements Config, Setup, Notice {
 	public function verify_connection( $data ) {
 		if ( empty( $data['cloudinary_url'] ) ) {
 			delete_option( self::META_KEYS['signature'] );
-			delete_option( self::META_KEYS['cname'] );
 
 			add_settings_error(
 				'cloudinary_connect',
@@ -164,9 +172,6 @@ class Connect implements Config, Setup, Notice {
 			return $data;
 		}
 
-		// Always clear out CNAME when re-saving.
-		delete_option( self::META_KEYS['cname'] );
-
 		// Pattern match to ensure validity of the provided url
 		if ( ! preg_match( '~' . self::CLOUDINARY_VARIABLE_REGEX . '~', $data['cloudinary_url'] ) ) {
 			add_settings_error(
@@ -185,12 +190,6 @@ class Connect implements Config, Setup, Notice {
 			add_settings_error( 'cloudinary_connect', $result['type'], $result['message'], 'error' );
 
 			return $current;
-		}
-
-		// Check if the given URL has a cname and store it if present.
-		$cname = $this->extract_cname( wp_parse_url( $data['cloudinary_url'] ) );
-		if ( $cname && $this->validate_domain( $cname ) ) {
-			update_option( self::META_KEYS['cname'], $cname );
 		}
 
 		add_settings_error(
@@ -216,11 +215,6 @@ class Connect implements Config, Setup, Notice {
 		if ( null === $signature ) {
 			return false;
 		}
-		
-		// Get the last test transient.
-		if ( get_transient( $signature ) ) {
-			return true;
-		}
 
 		$connect_data = get_option( self::META_KEYS['connect'], [] );
 		$current_url  = isset( $connect_data['cloudinary_url'] ) ? $connect_data['cloudinary_url'] : null;
@@ -233,22 +227,37 @@ class Connect implements Config, Setup, Notice {
 			return false;
 		}
 
-		$api  = new Connect\Api( $this, $this->plugin->version );
-		$ping = $api->ping();
-
-		if ( is_wp_error( $ping ) || ( is_array( $ping ) && $ping['status'] !== 'ok' ) ) {
-			delete_option( self::META_KEYS['signature'] );
-
-			$this->notices[] = array(
-				'message'     => __( 'You have been disconnected due to an account error.', 'cloudinary' ),
-				'type'        => 'error',
-				'dismissible' => true,
-			);
+		$status = get_option( self::META_KEYS['status'], null );
+		if ( is_wp_error( $status ) ) {
+			// Error, we stop here.
+			if ( ! isset( $this->notices['__status'] ) ) {
+				$error   = $status->get_error_message();
+				$message = sprintf(
+				// translators: Placeholder refers the error from API.
+					__( 'Cloudinary Error: %s', 'cloudinary' ),
+					ucwords( $error )
+				);
+				if ( 'disabled account' === strtolower( $error ) ) {
+					// Flag general disabled.
+					$this->disabled = true;
+					$message        = sprintf(
+					// translators: Placeholders are <a> tags.
+						__( 'Cloudinary Account Disabled. %1$s Upgrade your plan %3$s or %2$s submit a support request %3$s for assistance.', 'cloudinary' ),
+						'<a href="https://cloudinary.com/console/upgrade_options" target="_blank">',
+						'<a href="https://support.cloudinary.com/hc/en-us/requests/new" target="_blank">',
+						'</a>'
+					);
+				}
+				$this->notices['__status'] = array(
+					'message'     => $message,
+					'type'        => 'error',
+					'dismissible' => true,
+				);
+			}
 
 			return false;
 		}
-		// Set a 30 second transient to prevent continued pinging.
-		set_transient( $signature, true, 30 );
+
 
 		return true;
 	}
@@ -296,9 +305,7 @@ class Connect implements Config, Setup, Notice {
 		}
 
 		$this->config_from_url( $url );
-
-		$test        = new Connect\Api( $this, $this->plugin->version );
-		$test_result = $test->ping();
+		$test_result = check_status();
 
 		if ( is_wp_error( $test_result ) ) {
 			$result['type']    = 'connection_error';
@@ -312,10 +319,33 @@ class Connect implements Config, Setup, Notice {
 	}
 
 	/**
+	 * Check the status of Cloudinary.
+	 *
+	 * @return array|\WP_Error
+	 */
+	public function check_status() {
+		$status = $this->test_ping();
+		update_option( self::META_KEYS['status'], $status );
+
+		return $status;
+	}
+
+	/**
+	 * Do a ping test on the API.
+	 *
+	 * @return array|\WP_Error
+	 */
+	public function test_ping() {
+		$test = new Connect\Api( $this, $this->plugin->version );
+
+		return $test->ping();
+	}
+
+	/**
 	 * Extracts the CNAME from a parsed connection URL.
 	 *
 	 * @param array $parsed_url
-	 * 
+	 *
 	 * @return string|null
 	 */
 	protected function extract_cname( $parsed_url ) {
@@ -336,7 +366,7 @@ class Connect implements Config, Setup, Notice {
 	 * Safely validate a domain.
 	 *
 	 * @param string $domain
-	 * 
+	 *
 	 * @return bool
 	 */
 	protected function validate_domain( $domain ) {
@@ -416,6 +446,12 @@ class Connect implements Config, Setup, Notice {
 				$this->set_credentials( $config_params );
 			}
 		}
+
+		// Specifically set CNAME
+		$cname = $this->extract_cname( $parts );
+		if ( ! empty( $cname ) ) {
+			$this->set_credentials( array( 'cname' => $cname ) );
+		}
 	}
 
 	/**
@@ -430,6 +466,23 @@ class Connect implements Config, Setup, Notice {
 			$this->config_from_url( $config['cloudinary_url'] );
 			$this->api = new Connect\Api( $this, $this->plugin->version );
 			$this->usage_stats();
+			$this->setup_status_cron();
+		}
+	}
+
+	public function get_status_schedule( $schedules ) {
+		$schedules['every_minute'] = array(
+			'interval' => MINUTE_IN_SECONDS,
+			'display'  => __( 'Every Minute', 'cloudinary' ),
+		);
+
+		return $schedules;
+	}
+
+	protected function setup_status_cron() {
+		if ( false === wp_get_schedule( 'cloudinary_status' ) ) {
+			$now = current_time( 'timestamp' );
+			wp_schedule_event( $now + ( MINUTE_IN_SECONDS ), 'every_minute', 'cloudinary_status' );
 		}
 	}
 
