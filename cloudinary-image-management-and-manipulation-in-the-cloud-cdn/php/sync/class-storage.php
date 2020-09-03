@@ -176,9 +176,12 @@ class Storage implements Notice {
 				break;
 			case 'dual_low':
 				$transformations = $this->media->get_transformation_from_meta( $attachment_id );
-				// Add low quality transformations.
-				$transformations[] = array( 'quality' => 'auto:low' );
-				$url               = $this->media->cloudinary_url( $attachment_id, 'full', $transformations, null, false, true );
+				// Only low res image items.
+				if ( ! $this->media->is_preview_only( $attachment_id ) && wp_attachment_is_image( $attachment_id ) ) {
+					// Add low quality transformations.
+					$transformations[] = array( 'quality' => 'auto:low' );
+				}
+				$url = $this->media->cloudinary_url( $attachment_id, '', $transformations, null, false, true );
 				break;
 			case 'dual_full':
 				if ( ! empty( $previous_state ) && 'dual_full' !== $previous_state ) {
