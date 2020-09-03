@@ -39,10 +39,10 @@ $struct = array(
 			),
 			'type'    => 'select',
 			'default' => 'dual_full',
-			'choices' => array(
+			'choices'     => array(
 				'dual_full' => __( 'Cloudinary and WordPress', 'cloudinary' ),
+				'dual_low'  => __( 'Cloudinary and WordPress (low resolution)', 'cloudinary' ),
 				'cld'       => __( 'Cloudinary only', 'cloudinary' ),
-				'dual_low'  => __( 'Cloudinary with low resolution on WordPress', 'cloudinary' ),
 			),
 		),
 	),
