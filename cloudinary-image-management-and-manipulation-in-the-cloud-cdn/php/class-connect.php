@@ -69,6 +69,13 @@ class Connect implements Config, Setup, Notice {
 	protected $notices = array();
 
 	/**
+	 * Account Disabled Flag.
+	 *
+	 * @var bool
+	 */
+	public $disabled = false;
+
+	/**
 	 * Holds the meta keys for connect meta to maintain consistency.
 	 */
 	const META_KEYS = array(
@@ -219,18 +226,30 @@ class Connect implements Config, Setup, Notice {
 		if ( md5( $current_url ) !== $signature ) {
 			return false;
 		}
-		
+
 		$status = get_option( self::META_KEYS['status'], null );
 		if ( is_wp_error( $status ) ) {
 			// Error, we stop here.
 			if ( ! isset( $this->notices['__status'] ) ) {
-				$error                     = ucwords( str_replace( '_', ' ', $status->get_error_message() ) );
+				$error   = $status->get_error_message();
+				$message = sprintf(
+				// translators: Placeholder refers the error from API.
+					__( 'Cloudinary Error: %s', 'cloudinary' ),
+					ucwords( $error )
+				);
+				if ( 'disabled account' === strtolower( $error ) ) {
+					// Flag general disabled.
+					$this->disabled = true;
+					$message        = sprintf(
+					// translators: Placeholders are <a> tags.
+						__( 'Cloudinary Account Disabled. %1$s Upgrade your plan %3$s or %2$s submit a support request %3$s for assistance.', 'cloudinary' ),
+						'<a href="https://cloudinary.com/console/upgrade_options" target="_blank">',
+						'<a href="https://support.cloudinary.com/hc/en-us/requests/new" target="_blank">',
+						'</a>'
+					);
+				}
 				$this->notices['__status'] = array(
-					'message'     => sprintf(
-					// translators: Placeholder refers the error from API.
-						__( 'Cloudinary Error: %s', 'cloudinary' ),
-						$error
-					),
+					'message'     => $message,
 					'type'        => 'error',
 					'dismissible' => true,
 				);
