@@ -305,7 +305,7 @@ class Connect implements Config, Setup, Notice {
 		}
 
 		$this->config_from_url( $url );
-		$test_result = check_status();
+		$test_result = $this->check_status();
 
 		if ( is_wp_error( $test_result ) ) {
 			$result['type']    = 'connection_error';
