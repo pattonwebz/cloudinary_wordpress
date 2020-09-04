@@ -92,8 +92,8 @@ class Filter {
 	public function get_id_from_tag( $asset ) {
 		$attachment_id = false;
 		// Get attachment id from class name.
-		if ( preg_match( '#class=["|\']?[^"\']*wp-image-([\d]+)[^"\']*["|\']?#i', $asset, $found ) ) {
-			$attachment_id = intval( $found[1] );
+		if ( preg_match( '#class=["|\']?[^"\']*(wp-image-|wp-video-)([\d]+)[^"\']*["|\']?#i', $asset, $found ) ) {
+			$attachment_id = intval( $found[2] );
 		}
 
 		return $attachment_id;
