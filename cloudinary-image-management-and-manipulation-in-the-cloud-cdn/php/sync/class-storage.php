@@ -157,7 +157,15 @@ class Storage implements Notice {
 	 * @return string
 	 */
 	public function generate_signature( $attachment_id ) {
-		return $this->settings['offload'] . $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true );
+		$file_exsts = true;
+		if ( $this->settings['offload'] !== 'cld' ) {
+			$attachment_file = get_attached_file( $attachment_id );
+			if ( ! file_exists( $attachment_file ) ) {
+				$file_exsts = $attachment_file;
+			}
+		}
+
+		return $this->settings['offload'] . $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true ) . $file_exsts;
 	}
 
 	/**
@@ -184,7 +192,8 @@ class Storage implements Notice {
 				$url = $this->media->cloudinary_url( $attachment_id, '', $transformations, null, false, true );
 				break;
 			case 'dual_full':
-				if ( ! empty( $previous_state ) && 'dual_full' !== $previous_state ) {
+				$exists = get_attached_file( $attachment_id );
+				if ( ! empty( $previous_state ) && ! file_exists( $exists ) ) {
 					// Only do this is it's changing a state.
 					$transformations = $this->media->get_transformation_from_meta( $attachment_id );
 					$url             = $this->media->cloudinary_url( $attachment_id, '', $transformations, null, false, false );
