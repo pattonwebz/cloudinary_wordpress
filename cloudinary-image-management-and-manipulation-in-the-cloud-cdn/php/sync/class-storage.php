@@ -157,15 +157,15 @@ class Storage implements Notice {
 	 * @return string
 	 */
 	public function generate_signature( $attachment_id ) {
-		$file_exsts = true;
+		$file_exists = true;
 		if ( $this->settings['offload'] !== 'cld' ) {
 			$attachment_file = get_attached_file( $attachment_id );
 			if ( ! file_exists( $attachment_file ) ) {
-				$file_exsts = $attachment_file;
+				$file_exists = $attachment_file;
 			}
 		}
 
-		return $this->settings['offload'] . $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true ) . $file_exsts;
+		return $this->settings['offload'] . $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true ) . $file_exists;
 	}
 
 	/**
@@ -208,7 +208,7 @@ class Storage implements Notice {
 				$this->remove_local_assets( $attachment_id );
 			}
 			$date = get_post_datetime( $attachment_id );
-			$this->download->download_asset( $attachment_id, $url, $date->format('Y/m') );
+			$this->download->download_asset( $attachment_id, $url, $date->format( 'Y/m' ) );
 		}
 
 		$this->sync->set_signature_item( $attachment_id, 'storage' );
