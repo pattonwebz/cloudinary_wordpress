@@ -207,7 +207,8 @@ class Storage implements Notice {
 			if ( 'cld' !== $previous_state ) {
 				$this->remove_local_assets( $attachment_id );
 			}
-			$this->download->download_asset( $attachment_id, $url );
+			$date = get_post_datetime( $attachment_id );
+			$this->download->download_asset( $attachment_id, $url, $date->format('Y/m') );
 		}
 
 		$this->sync->set_signature_item( $attachment_id, 'storage' );
