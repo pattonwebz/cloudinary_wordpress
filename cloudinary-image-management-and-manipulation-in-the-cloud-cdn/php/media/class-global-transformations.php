@@ -402,11 +402,15 @@ class Global_Transformations {
 			}
 		}
 		$out[] = '</ul>';
+		
 		// Get apply Type.
-		$type  = get_post_meta( $post->ID, self::META_APPLY_KEY . '_terms', true );
-		$out[] = '<label class="cld-tax-order-list-type"><input ' . checked( 'overwrite', $type, false ) . ' type="checkbox" value="overwrite" name="cld_apply_type" />' . __( 'Overwrite', 'cloudinary' ) . '</label>';
+		if ( ! empty( $terms ) ) {
+			$type  = get_post_meta($post->ID, self::META_APPLY_KEY . '_terms', true);
+			$out[] = '<label class="cld-tax-order-list-type"><input ' . checked( 'overwrite', $type, false ) . ' type="checkbox" value="overwrite" name="cld_apply_type" />' . __('Overwrite taxonomy', 'cloudinary') . '</label>';
+		}
+		
 		$out[] = '</div>';
-
+		
 		return implode( $out );
 	}
 
@@ -501,7 +505,7 @@ class Global_Transformations {
 				'<p><label for="%1$s"><input type="hidden" name="%1$s" value="0" /><input type="checkbox" name="%1$s" id="%1$s" value="1" %2$s /> %3$s</label></p>',
 				esc_attr( self::META_FEATURED_IMAGE_KEY ),
 				checked( $field_value, 1, false ),
-				esc_html__( 'Overwrite Transformations', 'cloudinary' )
+				esc_html__( 'Overwrite Global Transformations', 'cloudinary' )
 			);
 		}
 

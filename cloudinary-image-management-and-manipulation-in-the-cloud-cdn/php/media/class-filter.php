@@ -582,7 +582,7 @@ class Filter {
 		return '<# if( data.attachment.attributes.transformations ) { #>
 			<div class="setting cld-overwrite">
 				<label>
-					<span>' . esc_html__( 'Overwrite Transformations', 'cloudinary' ) . '</span>
+					<span>' . esc_html__( 'Overwrite Global Transformations', 'cloudinary' ) . '</span>
 					<input type="checkbox" data-setting="cldoverwrite" value="true"<# if ( data.model.cldoverwrite ) { #> checked="checked"<# } #> />
 				</label>
 			</div>
@@ -598,7 +598,7 @@ class Filter {
 		return '<# if( \'video\' === data.type && data.attachment.attributes.transformations ) { #>
 			<div class="setting cld-overwrite">
 				<label>
-					<span>' . esc_html__( 'Overwrite Transformations', 'cloudinary' ) . '</span>
+					<span>' . esc_html__( 'Overwrite Global Transformations', 'cloudinary' ) . '</span>
 					<input type="checkbox" data-setting="cldoverwrite" value="true"<# if ( data.model.cldoverwrite ) { #> checked="checked"<# } #> />
 				</label>
 			</div>
@@ -616,7 +616,7 @@ class Filter {
 				<label>
 					<span>&nbsp;</span>
 					<input type="checkbox" data-setting="cldoverwrite" value="true" <# if ( data.model.cldoverwrite ) { #>checked="checked"<# } #> />
-					' . esc_html__( 'Overwrite Transformations', 'cloudinary' ) . '
+					' . esc_html__( 'Overwrite Global Transformations', 'cloudinary' ) . '
 				</label>
 			</div>
 		<# } #>';
@@ -632,7 +632,7 @@ class Filter {
 			<div class="setting cld-overwrite">
 				<label>
 					<input type="checkbox" data-setting="cldoverwrite" value="true" <# if ( data.model.cldoverwrite ) { #>checked="checked"<# } #> />
-					' . esc_html__( 'Overwrite Transformations', 'cloudinary' ) . '
+					' . esc_html__( 'Overwrite Global Transformations', 'cloudinary' ) . '
 				</label>
 			</div>
 		<# } #>';
