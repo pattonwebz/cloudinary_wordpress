@@ -405,12 +405,11 @@ class Global_Transformations {
 		
 		// Get apply Type.
 		if ( ! empty( $terms ) ) {
-			$type  = get_post_meta($post->ID, self::META_APPLY_KEY . '_terms', true);
-			$out[] = '<label class="cld-tax-order-list-type"><input ' . checked( 'overwrite', $type, false ) . ' type="checkbox" value="overwrite" name="cld_apply_type" />' . __('Overwrite taxonomy', 'cloudinary') . '</label>';
+			$type  = get_post_meta( $post->ID, self::META_APPLY_KEY . '_terms', true );
+			$out[] = '<label class="cld-tax-order-list-type"><input ' . checked( 'overwrite', $type, false ) . ' type="checkbox" value="overwrite" name="cld_apply_type" />' . __( 'Overwrite taxonomy', 'cloudinary' ) . '</label>';
 		}
 		
 		$out[] = '</div>';
-		
 		return implode( $out );
 	}
 
