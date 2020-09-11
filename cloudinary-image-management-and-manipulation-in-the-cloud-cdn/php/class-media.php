@@ -497,7 +497,7 @@ class Media implements Setup {
 						'wpsize' => $size_name,
 						'width'  => $size['width'],
 						'height' => $size['height'],
-						'crop'   => $cropped ? 'fill' : 'scale',
+						'crop'   => $cropped ? 'fill' : 'fit',
 					);
 					if ( $cropped ) {
 						$wp_size['gravity'] = 'auto';
