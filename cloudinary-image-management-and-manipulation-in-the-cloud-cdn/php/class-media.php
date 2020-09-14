@@ -488,7 +488,7 @@ class Media implements Setup {
 			$additional_sizes = wp_get_additional_image_sizes();
 			foreach ( $meta['sizes'] as $size_name => $size ) {
 				if ( $file === $size['file'] ) {
-					$cropped = false;
+					$cropped = ! wp_image_matches_ratio( $meta['width'], $meta['height'], $size['width'], $size['height'] );
 					if ( isset( $additional_sizes[ $size_name ]['crop'] ) ) {
 						$cropped = $additional_sizes[ $size_name ]['crop'];
 					}
@@ -497,7 +497,7 @@ class Media implements Setup {
 						'wpsize' => $size_name,
 						'width'  => $size['width'],
 						'height' => $size['height'],
-						'crop'   => $cropped ? 'fill' : 'fit',
+						'crop'   => $cropped ? 'fill' : 'scale',
 					);
 					if ( $cropped ) {
 						$wp_size['gravity'] = 'auto';
