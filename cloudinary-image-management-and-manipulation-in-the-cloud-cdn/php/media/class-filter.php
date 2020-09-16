@@ -716,7 +716,16 @@ class Filter {
 		$filter = $this;
 		array_map(
 			function ( $type ) use ( $filter ) {
-				add_filter( 'rest_prepare_' . $type, array( $filter, 'pre_filter_rest_content' ), 10, 3 );
+				$post_type = get_post_type_object( $type );
+				// Check if this is a rest supported type.
+				if ( true === $post_type->show_in_rest ) {
+					if ( post_type_supports( $type, 'thumbnail' ) && ! post_type_supports( $type, 'custom-fields' ) ) {
+						// Add custom fields support to allow working with the meta data in Gutenberg.
+						add_post_type_support( $type, 'custom-fields' );
+					}
+
+					add_filter( 'rest_prepare_' . $type, array( $filter, 'pre_filter_rest_content' ), 10, 3 );
+				}
 			},
 			$types
 		);
