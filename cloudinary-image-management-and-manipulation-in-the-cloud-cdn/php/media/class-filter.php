@@ -552,7 +552,7 @@ class Filter {
 			if ( ! isset( $data['meta'] ) ) {
 				$data['meta'] = $request->get_param( 'meta' );
 				if ( null === $data['meta'] ) {
-					// If null, param doesn't exists, so it's not a save edit, but a load edit.
+					// If null, meta param doesn't exist, so it's not a save edit, but a load edit.
 					$disable = get_post_meta( $post->ID, Global_Transformations::META_FEATURED_IMAGE_KEY, true );
 					// Add the value to the data meta.
 					$data['meta'][ Global_Transformations::META_FEATURED_IMAGE_KEY ] = $disable;
