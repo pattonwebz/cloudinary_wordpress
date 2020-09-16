@@ -548,6 +548,19 @@ class Filter {
 			$content                = $data['content']['raw'];
 			$data['content']['raw'] = $this->filter_out_local( $content );
 
+			// Handle meta if missing due to custom-fields not being supported.
+			if ( ! isset( $data['meta'] ) ) {
+				$data['meta'] = $request->get_param( 'meta' );
+				if ( null === $data['meta'] ) {
+					// If null, param doesn't exists, so it's not a save edit, but a load edit.
+					$disable = get_post_meta( $post->ID, Global_Transformations::META_FEATURED_IMAGE_KEY, true );
+					// Add the value to the data meta.
+					$data['meta'][ Global_Transformations::META_FEATURED_IMAGE_KEY ] = $disable;
+				} else {
+					// If the param was found, its a save edit, to update the meta data.
+					update_post_meta( $post->ID, Global_Transformations::META_FEATURED_IMAGE_KEY, $data['meta'] );
+				}
+			}
 			$response->set_data( $data );
 		}
 
@@ -719,11 +732,7 @@ class Filter {
 				$post_type = get_post_type_object( $type );
 				// Check if this is a rest supported type.
 				if ( true === $post_type->show_in_rest ) {
-					if ( post_type_supports( $type, 'thumbnail' ) && ! post_type_supports( $type, 'custom-fields' ) ) {
-						// Add custom fields support to allow working with the meta data in Gutenberg.
-						add_post_type_support( $type, 'custom-fields' );
-					}
-
+					// Add filter only to rest supported types.
 					add_filter( 'rest_prepare_' . $type, array( $filter, 'pre_filter_rest_content' ), 10, 3 );
 				}
 			},
