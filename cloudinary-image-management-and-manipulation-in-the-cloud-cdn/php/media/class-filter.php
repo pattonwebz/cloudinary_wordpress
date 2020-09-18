@@ -705,6 +705,28 @@ class Filter {
 		return $block;
 	}
 
+
+	/**
+	 * Add filters for Rest API handling.
+	 */
+	public function init_rest_filters() {
+		// Gutenberg compatibility.
+		add_filter( 'rest_prepare_attachment', array( $this, 'filter_attachment_for_rest' ) );
+		$types  = get_post_types_by_support( 'editor' );
+		$filter = $this;
+		array_map(
+			function ( $type ) use ( $filter ) {
+				$post_type = get_post_type_object( $type );
+				// Check if this is a rest supported type.
+				if ( true === $post_type->show_in_rest ) {
+					// Add filter only to rest supported types.
+					add_filter( 'rest_prepare_' . $type, array( $filter, 'pre_filter_rest_content' ), 10, 3 );
+				}
+			},
+			$types
+		);
+	}
+
 	/**
 	 * Setup hooks for the filters.
 	 */
@@ -723,21 +745,8 @@ class Filter {
 		// Filter video codes.
 		add_filter( 'media_send_to_editor', array( $this, 'filter_video_embeds' ), 10, 3 );
 
-		// Gutenberg compatibility.
-		add_filter( 'rest_prepare_attachment', array( $this, 'filter_attachment_for_rest' ) );
-		$types  = get_post_types_by_support( 'editor' );
-		$filter = $this;
-		array_map(
-			function ( $type ) use ( $filter ) {
-				$post_type = get_post_type_object( $type );
-				// Check if this is a rest supported type.
-				if ( true === $post_type->show_in_rest ) {
-					// Add filter only to rest supported types.
-					add_filter( 'rest_prepare_' . $type, array( $filter, 'pre_filter_rest_content' ), 10, 3 );
-				}
-			},
-			$types
-		);
+		// Enable Rest filters.
+		add_action( 'rest_api_init', array( $this, 'init_rest_filters' ) );
 
 		// Remove editors to prevent users from manually editing images in WP.
 		add_filter( 'wp_image_editors', array( $this, 'disable_editors_maybe' ) );
