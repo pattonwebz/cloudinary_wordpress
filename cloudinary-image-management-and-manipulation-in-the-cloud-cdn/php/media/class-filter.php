@@ -712,19 +712,15 @@ class Filter {
 	public function init_rest_filters() {
 		// Gutenberg compatibility.
 		add_filter( 'rest_prepare_attachment', array( $this, 'filter_attachment_for_rest' ) );
-		$types  = get_post_types_by_support( 'editor' );
-		$filter = $this;
-		array_map(
-			function ( $type ) use ( $filter ) {
-				$post_type = get_post_type_object( $type );
-				// Check if this is a rest supported type.
-				if ( true === $post_type->show_in_rest ) {
-					// Add filter only to rest supported types.
-					add_filter( 'rest_prepare_' . $type, array( $filter, 'pre_filter_rest_content' ), 10, 3 );
-				}
-			},
-			$types
-		);
+		$types = get_post_types_by_support( 'editor' );
+		foreach ( $types as $type ) {
+			$post_type = get_post_type_object( $type );
+			// Check if this is a rest supported type.
+			if ( true === $post_type->show_in_rest ) {
+				// Add filter only to rest supported types.
+				add_filter( 'rest_prepare_' . $type, array( $this, 'pre_filter_rest_content' ), 10, 3 );
+			}
+		}
 	}
 
 	/**
