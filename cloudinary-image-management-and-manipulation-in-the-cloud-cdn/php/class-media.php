@@ -1812,7 +1812,7 @@ class Media implements Setup {
 	 * @return array
 	 */
 	public function match_file_name_with_cloudinary_source( $image_meta, $attachment_id ) {
-		if ( is_array( $image_meta ) && ! empty( $image_meta['file'] ) && $this->has_public_id( $attachment_id ) ) {
+		if ( ! empty( $image_meta['file'] ) && $this->has_public_id( $attachment_id ) ) {
 			$cld_file = 'v' . $this->get_cloudinary_version( $attachment_id ) . '/' . $this->get_cloudinary_id( $attachment_id );
 			if ( false === strpos( $image_meta['file'], $cld_file ) ) {
 				$image_meta['file'] = $cld_file;
