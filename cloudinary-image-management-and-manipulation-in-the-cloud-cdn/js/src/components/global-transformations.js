@@ -72,8 +72,8 @@ const Global_Transformations = {
 	},
 	_clearLoading: function( type ) {
 		this.spinner[ type ].style.visibility = 'hidden';
-		this.activeItem               = null;
-		this.preview[ type ].style.opacity      = 1;
+		this.activeItem                       = null;
+		this.preview[ type ].style.opacity    = 1;
 	},
 	_refresh: function( e, type ) {
 		if( e ) {
@@ -91,7 +91,13 @@ const Global_Transformations = {
 				newImg.remove();
 			};
 			newImg.onerror = function() {
-				alert( CLD_GLOBAL_TRANSFORMATIONS[type].error );
+				const error_container = document.getElementById('cld-preview-error');
+
+				if ( error_container ) {
+					error_container.style.display = 'block';
+					error_container.innerHTML = CLD_GLOBAL_TRANSFORMATIONS[type].error;
+				}
+
 				self._clearLoading( type );
 			};
 			newImg.src = new_src;

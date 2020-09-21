@@ -22,6 +22,8 @@ wp_add_inline_script( 'cloudinary', 'CLD_GLOBAL_TRANSFORMATIONS.image = ' . wp_j
 ?>
 
 <div class="global-transformations" id="sample-code-image">
+	<div id="cld-preview-error" class="settings-alert settings-alert-error" style="display: none; margin-bottom: 10px;"></div>
+
 	<div class="global-transformations-preview">
 		<img id="sample-image" style="max-width: 100%;" src="<?php echo esc_url( $preview_src . $sample ); ?>">
 		<button type="button" class="button-primary global-transformations-button" id="refresh-image-preview"><?php esc_html_e( 'Refresh Preview', 'cloudinary' ); ?></button>
