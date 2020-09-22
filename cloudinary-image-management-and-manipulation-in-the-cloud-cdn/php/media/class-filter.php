@@ -378,6 +378,8 @@ class Filter {
 			}
 
 			$content = str_replace( $asset, $new_tag, $content );
+			// Additional URL change for backgrounds etc..
+			$content = str_replace( $url, $cloudinary_url, $content );
 		}
 
 		return $this->filter_video_shortcodes( $content );
