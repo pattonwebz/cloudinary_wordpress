@@ -12,8 +12,10 @@ import Global_Transformations from './components/global-transformations';
 import Terms_Order from './components/terms_order';
 import Media_Library from './components/media-library';
 import Notices from './components/notices';
+import Video from './components/video';
+import Featured from './components/featured-image';
 
-import '../../css/src/main.scss';
+import '../css/main.scss';
 
 // jQuery, because reasons.
 const $ = window.$ = window.jQuery;
@@ -27,5 +29,7 @@ export const cloudinary = {
 	Terms_Order,
 	Media_Library,
 	Notices,
+	Video,
+	Featured
 };
 

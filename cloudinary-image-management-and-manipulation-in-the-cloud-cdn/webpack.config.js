@@ -1,120 +1,43 @@
-/**
- * External dependencies
- */
-const path = require( 'path' );
-const MiniCssExtractPlugin = require( 'mini-css-extract-plugin' );
-const OptimizeCSSAssetsPlugin = require( 'optimize-css-assets-webpack-plugin' );
-const TerserPlugin = require( 'terser-webpack-plugin' );
+const Encore = require( '@symfony/webpack-encore' );
 
-/**
- * WordPress dependencies
- */
-const defaultConfig = require( '@wordpress/scripts/config/webpack.config' );
+if ( ! Encore.isRuntimeEnvironmentConfigured() ) {
+	Encore.configureRuntimeEnvironment( process.env.NODE_ENV || 'dev' );
+}
 
-const sharedConfig = {
-	output: {
-		path: path.resolve( process.cwd(), 'js' ),
-		filename: '[name].js',
-		chunkFilename: '[name].js',
-	},
-	optimization: {
-		minimizer: [
-			new TerserPlugin( {
-				parallel: true,
-				sourceMap: false,
-				cache: true,
-				terserOptions: {
-					output: {
-						comments: /translators:/i,
-					},
-				},
-				extractComments: false,
-			} ),
-			new OptimizeCSSAssetsPlugin( { } ),
-		],
-	},
-};
+// Encore is a small wrapper around Webpack, which makes Webpack configs easy.
+// If further loaders and/or plugins are needed, refer to this page:
+// https://symfony.com/doc/current/frontend/encore/custom-loaders-plugins.html
 
-const cldCore = {
-	...sharedConfig,
-	entry: {
-		'cloudinary': './js/src/main.js',
-	},
-	output: {
-		path: path.resolve( process.cwd(), 'js' ),
-		filename: '[name].js',
-	},
-	module: {
-		rules: [
-			{
-				test: /\.(png|svg|jpg|gif)$/,
-				use: [
-					{
-						loader: 'file-loader',
-						options: {
-							name: '[name].[ext]',
-							outputPath: '../css/'
-						}
-					}
-				]
-			},
-			{
-				test: /\.(woff|woff2|eot|ttf|otf)$/,
-				use: [
-					{
-						loader: 'file-loader',
-						options: {
-							name: '[name].[contenthash].[ext]',
-							outputPath: '../css/fonts/'
-						}
-					}
-				]
-			},
-			{
-				test: /\.(sa|sc|c)ss$/,
-				use: [
-					{
-						loader: MiniCssExtractPlugin.loader,
-						options: {
-							hmr: process.env.NODE_ENV === 'development',
-						},
-					},
-					'css-loader',
-					'sass-loader',
-				],
-			},
-		],
-	},
-	plugins: [
-		new MiniCssExtractPlugin( {
-			filename: '../css/[name].css',
-		} ),
-	],
-	optimization: {
-		...sharedConfig.optimization
-	},
-};
+Encore.setOutputPath( 'assets/dist/' )
+	.setPublicPath( '/assets/dist/' )
 
-const cldBlockEditor = {
-	...defaultConfig,
-	...sharedConfig,
-	entry: {
-		'block-editor': './js/src/blocks.js',
-	},
-	module: {
-		...defaultConfig.module,
-		rules: [
-			...defaultConfig.module.rules,
-			{
-				test: /\.(sa|sc|c)ss$/,
-				use: 'null-loader',
-			},
-		],
-	},
-};
+	.addEntry( 'cloudinary', './assets/js/main.js' )
+	.addStyleEntry( 'video', './assets/css/video.scss')
+	// Add more entries here if needed...
 
+	.copyFiles({
+		from: './assets/css/fonts',
+		to: 'fonts/[path][name].[ext]'
+	})
+	.copyFiles({
+		from: './assets/css',
+		to: '[path][name].[hash:8].[ext]',
+		pattern: /\.svg$/
+	})
 
-module.exports = [
-	cldBlockEditor,
-	cldCore
-];
+	.enableSingleRuntimeChunk()
+	.cleanupOutputBeforeBuild()
+	.enableBuildNotifications()
+	.enableSourceMaps( ! Encore.isProduction() )
+
+	// Enable plugins/loaders
+	.enableSassLoader()
+	.configureBabelPresetEnv( ( config ) => {
+		config.useBuiltIns = 'usage';
+		config.corejs = 3;
+	} )
+	.enableReactPreset()
+	.disableImagesLoader()
+	.addLoader( { test: /\.svg$/, loader: '@svgr/webpack' } );
+
+module.exports = Encore.getWebpackConfig();

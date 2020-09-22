@@ -1,0 +1,21 @@
+{
+  "entrypoints": {
+    "cloudinary": {
+      "js": [
+        "/assets/dist/runtime.js",
+        "/assets/dist/cloudinary.js"
+      ],
+      "css": [
+        "/assets/dist/cloudinary.css"
+      ]
+    },
+    "video": {
+      "js": [
+        "/assets/dist/runtime.js"
+      ],
+      "css": [
+        "/assets/dist/video.css"
+      ]
+    }
+  }
+}

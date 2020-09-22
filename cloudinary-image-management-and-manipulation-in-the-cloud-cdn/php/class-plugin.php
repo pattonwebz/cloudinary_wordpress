@@ -195,8 +195,8 @@ class Plugin {
 	 */
 	public function enqueue_assets() {
 		// Enqueue Main.
-		wp_enqueue_script( 'cloudinary', $this->dir_url . 'js/cloudinary.js', array( 'jquery', 'wp-util' ), $this->version, true );
-		wp_enqueue_style( 'cloudinary', $this->dir_url . 'css/cloudinary.css', null, $this->version );
+		wp_enqueue_script( 'cloudinary', $this->dir_url . 'assets/dist/cloudinary.js', array( 'jquery', 'wp-util' ), $this->version, true );
+		wp_enqueue_style( 'cloudinary', $this->dir_url . 'assets/dist/cloudinary.css', null, $this->version );
 		$components = array_filter( $this->components, array( $this, 'is_active_asset_component' ) );
 
 		// Enqueue components.

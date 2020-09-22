@@ -104,7 +104,7 @@ class Video {
 				if ( ! empty( $has_video ) || ! empty( $video_tags ) ) {
 					// Setup initial scripts.
 					wp_enqueue_style( 'cld-player' );
-					wp_enqueue_style( 'cld-player-local', $this->media->plugin->dir_url . 'css/video.css', null, self::PLAYER_VER );
+					wp_enqueue_style( 'cld-player-local', $this->media->plugin->dir_url . 'assets/dist/video.css', null, self::PLAYER_VER );
 					wp_enqueue_script( 'cld-player' );
 
 					// Init cld script object.
