@@ -495,6 +495,7 @@ class Media implements Setup {
 					// Make the WP Size array.
 					$wp_size = array(
 						'wpsize' => $size_name,
+						'file'   => $size['file'],
 						'width'  => $size['width'],
 						'height' => $size['height'],
 						'crop'   => $cropped ? 'fill' : 'scale',
@@ -744,13 +745,7 @@ class Media implements Setup {
 			'resource_type' => $resource_type,
 		);
 
-		// Check size and correct if string or size.
-		if ( is_string( $size ) || ( is_array( $size ) && 3 === count( $size ) ) ) {
-			$intermediate = image_get_intermediate_size( $attachment_id, $size );
-			if ( is_array( $intermediate ) ) {
-				$size = $this->get_crop( $intermediate['url'], $attachment_id );
-			}
-		}
+		$size = $this->prepare_size( $attachment_id, $size, $clean );
 		if ( false === $overwrite_transformations ) {
 			$overwrite_transformations = $this->maybe_overwrite_featured_image( $attachment_id );
 		}
@@ -787,6 +782,44 @@ class Media implements Setup {
 		 * @return string
 		 */
 		return apply_filters( 'cloudinary_converted_url', $url, $attachment_id, $pre_args );
+	}
+
+	/**
+	 * Prepare the Size array for the Cloudinary URL API.
+	 *
+	 * @param int          $attachment_id The attachment ID.
+	 * @param array|string $size          The size array or slug.
+	 *
+	 * @return array|string
+	 */
+	public function prepare_size( $attachment_id, $size ) {
+		// Check size and correct if string or size.
+		if ( empty( $size ) || 'full' === $size ) {
+			// Maybe get full size if scaled.
+			$meta = wp_get_attachment_metadata( $attachment_id, true );
+			if ( ! empty( $meta['original_image'] ) ) {
+				$size = array(
+					'width'  => $meta['width'],
+					'height' => $meta['height'],
+					'full'   => true,
+				);
+			}
+		} elseif ( is_string( $size ) || ( is_array( $size ) && 3 === count( $size ) ) ) {
+			$intermediate = image_get_intermediate_size( $attachment_id, $size );
+			if ( is_array( $intermediate ) ) {
+				$size = $this->get_crop( $intermediate['url'], $attachment_id );
+			}
+		} elseif ( array_keys( $size ) === array( 0, 1 ) ) {
+			$size = array(
+				'width'  => $size[0],
+				'height' => $size[1],
+			);
+			if ( $size['width'] === $size['height'] ) {
+				$size['crop'] = 'fill';
+			}
+		}
+
+		return $size;
 	}
 
 	/**
