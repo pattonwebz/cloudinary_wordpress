@@ -318,25 +318,20 @@ class Filter {
 				wp_parse_str( $query, $args );
 				$transformations = $this->media->get_transformations_from_string( $args['cld_params'] );
 			}
-
 			// Get the WP size from the class name.
-			$wp_size = $this->get_size_from_image_tag( $asset );
+			$wp_size = $this->media->get_crop( $url, $attachment_id );
 			if ( false === $wp_size ) {
 				// No class name, so get size from the width and height tags.
 				$wp_size = $this->get_crop_from_image_tag( $asset );
-				if ( empty( $wp_size ) ) {
-					$wp_size = 'full'; // Fallback to full if nothing is found at all.
-				}
 			}
 
 			// Get a cloudinary URL.
-			$clean                     = ! is_admin(); // Front facing images must not contain a wpsize url variable.
 			$classes                   = $this->get_classes( $asset ); // check if this is a transformation overwrite.
 			$overwrite_transformations = false;
 			if ( false !== strpos( $classes, 'cld-overwrite' ) ) {
 				$overwrite_transformations = true;
 			}
-			$cloudinary_url = $this->media->cloudinary_url( $attachment_id, $wp_size, $transformations, null, $overwrite_transformations, $clean );
+			$cloudinary_url = $this->media->cloudinary_url( $attachment_id, $wp_size, $transformations, null, $overwrite_transformations );
 
 			if ( $url === $cloudinary_url ) {
 				continue;
