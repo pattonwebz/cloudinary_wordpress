@@ -266,13 +266,6 @@ class Filter {
 			if ( $this->media->is_cloudinary_url( $local_url ) ) {
 				continue;
 			}
-			$inherit_transformations = $this->media->get_transformation_from_meta( $attachment_id );
-			$transformations         = $this->media->get_transformations_from_string( $url );
-			$transformations         = array_filter( $transformations );
-			if ( ! empty( $transformations ) && $inherit_transformations !== $transformations ) {
-				$transformations = Api::generate_transformation_string( $transformations );
-				$local_url       = add_query_arg( 'cld_params', $transformations, $local_url );
-			}
 			// Replace old tag.
 			$content = str_replace( $url, $local_url, $content );
 
