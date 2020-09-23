@@ -1080,7 +1080,7 @@ class Media implements Setup {
 						'width' => $breakpoint['width'],
 					);
 					$sources[ $breakpoint['width'] ] = array(
-						'url'        => $this->cloudinary_url( $attachment_id, $size, $transformations, $cloudinary_id, true ),
+						'url'        => $this->cloudinary_url( $attachment_id, $size, $transformations, $cloudinary_id, $image_meta['overwrite_transformations'] ),
 						'descriptor' => 'w',
 						'value'      => $breakpoint['width'],
 					);
@@ -1106,7 +1106,7 @@ class Media implements Setup {
 		// Use current sources, but convert the URLS.
 		foreach ( $sources as &$source ) {
 			if ( ! $this->is_cloudinary_url( $source['url'] ) ) {
-				$source['url'] = $this->convert_url( $source['url'], $attachment_id, $transformations, true ); // Overwrite transformations applied, since the $transformations includes globals from the primary URL.
+				$source['url'] = $this->convert_url( $source['url'], $attachment_id, $transformations, $image_meta['overwrite_transformations'] ); // Overwrite transformations applied, since the $transformations includes globals from the primary URL.
 			}
 		}
 

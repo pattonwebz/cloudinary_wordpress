@@ -364,8 +364,11 @@ class Filter {
 					$new_tag            = str_replace( $poster, $cloudinary_url, $new_tag );
 				}
 			}
-
-			$content = str_replace( $asset, $new_tag, $content );
+			$image_meta                              = wp_get_attachment_metadata( $attachment_id );
+			$image_meta['file']                      = pathinfo( $cloudinary_id, PATHINFO_FILENAME ) . '/' . pathinfo( $cloudinary_id, PATHINFO_BASENAME );
+			$image_meta['overwrite_transformations'] = $overwrite_transformations;
+			$new_tag                                 = wp_image_add_srcset_and_sizes( $new_tag, $image_meta, $attachment_id );
+			$content                                 = str_replace( $asset, $new_tag, $content );
 		}
 
 		return $this->filter_video_shortcodes( $content );
@@ -700,7 +703,7 @@ class Filter {
 		// Filter URLS within content.
 		add_action( 'wp_insert_post_data', array( $this, 'filter_out_cloudinary' ) );
 		add_filter( 'the_editor_content', array( $this, 'filter_out_local' ) );
-		add_filter( 'the_content', array( $this, 'filter_out_local' ), 9 ); // Early to hook before responsive srcsets.
+		add_filter( 'the_content', array( $this, 'filter_out_local' ), 100 );
 		add_filter( 'wp_prepare_attachment_for_js', array( $this, 'filter_attachment_for_js' ), 11 );
 
 		// Add support for custom header.
@@ -735,5 +738,15 @@ class Filter {
 
 		// Filter for block rendering.
 		add_filter( 'render_block_data', array( $this, 'filter_image_block_pre_render' ), 10, 2 );
+
+		// Cancel out breakpoints till later.
+		add_filter(
+			'wp_img_tag_add_srcset_and_sizes_attr',
+			function ( $add, $image, $context, $attachment_id ) {
+				return ! $this->media->has_public_id( $attachment_id );
+			},
+			10,
+			4
+		);
 	}
 }
