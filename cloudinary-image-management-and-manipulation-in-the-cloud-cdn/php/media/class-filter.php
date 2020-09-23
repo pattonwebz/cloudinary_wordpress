@@ -340,28 +340,27 @@ class Filter {
 			// Replace old tag.
 			$new_tag = str_replace( $url, $cloudinary_url, $asset );
 
-			// Check if there is a class set. ( for srcset images in case of a manual url added ).
-			if ( false === strpos( $new_tag, ' class=' ) && ! is_admin() ) {
-				// Add in the class name.
-				$new_tag = str_replace( '/>', ' class="wp-image-' . $attachment_id . '"/>', $new_tag );
-			}
-
-			// Apply lazy loading attribute
-			if ( apply_filters( 'wp_lazy_loading_enabled', true ) && false === strpos( $new_tag, 'loading="lazy"' ) ) {
-				$new_tag = str_replace( '/>', ' loading="lazy" />', $new_tag );
-			}
-
-			// If Cloudinary player is active, this is replaced there.
-			if ( ! $this->media->video->player_enabled() ) {
-				$poster = $this->get_poster_from_tag( $asset );
-				if ( false !== $poster ) {
-					$post_attachment_id = $this->media->get_id_from_url( $poster );
-					$cloudinary_url     = $this->media->cloudinary_url( $post_attachment_id );
-					$new_tag            = str_replace( $poster, $cloudinary_url, $new_tag );
-				}
-			}
-			// Add srcset on front end.
+			// Add front end features.
 			if ( ! is_admin() ) {
+				// Check if there is a class set. ( for srcset images in case of a manual url added ).
+				if ( false === strpos( $new_tag, ' class=' ) ) {
+					// Add in the class name.
+					$new_tag = str_replace( '/>', ' class="wp-image-' . $attachment_id . '"/>', $new_tag );
+				}
+				// Apply lazy loading attribute
+				if ( apply_filters( 'wp_lazy_loading_enabled', true ) && false === strpos( $new_tag, 'loading="lazy"' ) ) {
+					$new_tag = str_replace( '/>', ' loading="lazy" />', $new_tag );
+				}
+
+				// If Cloudinary player is active, this is replaced there.
+				if ( ! $this->media->video->player_enabled() ) {
+					$poster = $this->get_poster_from_tag( $asset );
+					if ( false !== $poster ) {
+						$post_attachment_id = $this->media->get_id_from_url( $poster );
+						$cloudinary_url     = $this->media->cloudinary_url( $post_attachment_id );
+						$new_tag            = str_replace( $poster, $cloudinary_url, $new_tag );
+					}
+				}
 				$image_meta                              = wp_get_attachment_metadata( $attachment_id );
 				$image_meta['file']                      = pathinfo( $cloudinary_id, PATHINFO_FILENAME ) . '/' . pathinfo( $cloudinary_id, PATHINFO_BASENAME );
 				$image_meta['overwrite_transformations'] = $overwrite_transformations;
