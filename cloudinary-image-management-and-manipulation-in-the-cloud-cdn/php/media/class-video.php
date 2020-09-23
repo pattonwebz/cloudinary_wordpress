@@ -7,6 +7,9 @@
 
 namespace Cloudinary\Media;
 
+use Cloudinary\Connect\Api;
+use Cloudinary\Sync;
+
 /**
  * Class Video.
  *
@@ -312,16 +315,34 @@ class Video {
 			}
 			$args['overwrite_transformations'] = $overwrite_transformations;
 
-			$cloudinary_url  = $this->media->cloudinary_url( $attachment_id, false, false, null, $overwrite_transformations );
+			$cloudinary_url = $this->media->cloudinary_url( $attachment_id, false, false, null, $overwrite_transformations );
 			// Bail replacing the video URL for cases where it doesn't exist.
 			// Cases are, for instance, when the file size is larger than the API limits — free accounts.
 			if ( ! empty( $cloudinary_url ) ) {
+				$video           = wp_get_attachment_metadata( $attachment_id );
 				$transformations = $this->media->get_transformations_from_string( $cloudinary_url, 'video' );
+				$base_format     = pathinfo( $cloudinary_url, PATHINFO_EXTENSION );
+				if ( $video['fileformat'] !== $base_format ) {
+					$transformations[]['fetch_format'] = $video['fileformat'];
+				}
+				// Check if this video URL is eagered.
+				$eagers          = (array) $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['video_eagers'], true );
+				$eagers          = array_filter( $eagers );
+				$eager_signature = md5( Api::generate_transformation_string( $transformations, 'video' ) );
+				if ( ! in_array( $eager_signature, $eagers, true ) ) {
+					$pending_eagers = (array) $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], true );
+					$pending_eagers = array_filter( $pending_eagers );
+					if ( ! isset( $pending_eagers[ $eager_signature ] ) ) {
+						$pending_eagers[ $eager_signature ] = $transformations;
+						$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], $pending_eagers );
+					}
+					//continue;
+				}
 				if ( ! empty( $transformations ) ) {
 					$args['transformation'] = $transformations;
 				}
-				$video = wp_get_attachment_metadata( $attachment_id );
 				if ( $this->player_enabled() ) {
+					$format   = pathinfo( $cloudinary_url, PATHINFO_EXTENSION );
 					$instance = $this->queue_video_config( $attachment_id, $url, $video['fileformat'], $args );
 					// Remove src and replace with an ID.
 					$new_tag = str_replace( 'src="' . $url . '"', 'id="cloudinary-video-' . esc_attr( $instance ) . '"', $tag );

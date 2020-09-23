@@ -287,11 +287,19 @@ class Upload_Sync {
 	public function explicit_update( $attachment_id ) {
 		// Explicit update.
 		$type = $this->sync->get_sync_type( $attachment_id );
-		$args = $this->media->get_breakpoint_options( $attachment_id );
+		if ( wp_attachment_is_image( $attachment_id ) ) {
+			$args        = $this->media->get_breakpoint_options( $attachment_id );
+			$update_type = 'update_breakpoints';
+		} elseif ( wp_attachment_is( 'video', $attachment_id ) ) {
+			$args        = $this->media->get_video_eagers( $attachment_id );
+			$update_type = 'update_eagers';
+		} else {
+			$args = array();
+		}
 		if ( ! empty( $args ) ) {
 			$result = $this->connect->api->explicit( $args );
 			if ( ! is_wp_error( $result ) ) {
-				$this->update_breakpoints( $attachment_id, $result );
+				$this->{$update_type}( $attachment_id, $result );
 			}
 		} else {
 			$this->update_breakpoints( $attachment_id, array() );
@@ -318,6 +326,18 @@ class Upload_Sync {
 			}
 			$this->sync->set_signature_item( $attachment_id, 'breakpoints' );
 		}
+	}
+
+	/**
+	 * Update video eagers for an asset.
+	 *
+	 * @param int   $attachment_id The attachment ID.
+	 * @param array $eagers        Eager URLS.
+	 */
+	public function update_eagers( $attachment_id, $eagers ) {
+
+		//@todo: This would probably be best replaced with an Endpoint to update the Sync::META_KEYS['pending_eagers'] and Sync::META_KEYS['video_eagers']
+		// Remove from pending and add to video.
 	}
 
 	/**

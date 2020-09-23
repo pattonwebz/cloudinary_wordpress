@@ -1759,6 +1759,34 @@ class Media implements Setup {
 		return $version ? $version : 1;
 	}
 
+	public function video_eagers( $attachment_id ) {
+		$eagers = (array) $this->get_post_meta( $attachment_id, Sync::META_KEYS['video_eagers'], true );
+		$eagers = array_filter( $eagers );
+		// Get pending.
+		$pending = $this->get_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], true );
+		if ( ! empty( $pending ) ) {
+			$eagers = array_merge( $eagers, $pending );
+		}
+
+		return '.' . wp_json_encode( $eagers );
+	}
+
+	public function get_video_eagers( $attachment_id ) {
+		$pending         = $this->get_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], true );
+		$args            = array(
+			'public_id'     => $this->get_public_id( $attachment_id ),
+			'resource_type' => 'video',
+			'type'          => 'upload',
+		);
+		$transformations = array();
+		foreach ( $pending as $transformation ) {
+			$transformations[] = Api::generate_transformation_string( $transformation, 'video' );
+		}
+		$args['eager'] = implode( '|', $transformations );
+
+		return $args;
+	}
+
 	/**
 	 * Setup the hooks and base_url if configured.
 	 */

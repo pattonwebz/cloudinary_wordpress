@@ -76,6 +76,8 @@ class Sync implements Setup, Assets {
 		'downloading'    => '_cloudinary_downloading',
 		'process_log'    => '_process_log',
 		'storage'        => '_cloudinary_storage',
+		'video_eagers'   => '_video_eagers',
+		'pending_eagers' => '_pending_eagers',
 	);
 
 	/**
@@ -415,6 +417,17 @@ class Sync implements Setup, Assets {
 				'sync'     => array( $this->managers['upload'], 'upload_asset' ),
 				'state'    => 'uploading',
 				'note'     => __( 'Uploading to new cloud name.', 'cloudinary' ),
+				'required' => true,
+			),
+			'eager_video' => array(
+				'generate' => array( $this->managers['media'], 'video_eagers' ),
+				'validate' => function ( $attachment_id ) {
+					return wp_attachment_is( 'video', $attachment_id );
+				},
+				'priority' => 5.6,
+				'sync'     => array( $this->managers['upload'], 'explicit_update' ),
+				'state'    => 'info syncing',
+				'note'     => __( 'Generating video transformations.', 'cloudinary' ),
 				'required' => true,
 			),
 		);
