@@ -364,11 +364,14 @@ class Filter {
 					$new_tag            = str_replace( $poster, $cloudinary_url, $new_tag );
 				}
 			}
-			$image_meta                              = wp_get_attachment_metadata( $attachment_id );
-			$image_meta['file']                      = pathinfo( $cloudinary_id, PATHINFO_FILENAME ) . '/' . pathinfo( $cloudinary_id, PATHINFO_BASENAME );
-			$image_meta['overwrite_transformations'] = $overwrite_transformations;
-			$new_tag                                 = wp_image_add_srcset_and_sizes( $new_tag, $image_meta, $attachment_id );
-			$content                                 = str_replace( $asset, $new_tag, $content );
+			// Add srcset on front end.
+			if ( ! is_admin() ) {
+				$image_meta                              = wp_get_attachment_metadata( $attachment_id );
+				$image_meta['file']                      = pathinfo( $cloudinary_id, PATHINFO_FILENAME ) . '/' . pathinfo( $cloudinary_id, PATHINFO_BASENAME );
+				$image_meta['overwrite_transformations'] = $overwrite_transformations;
+				$new_tag                                 = wp_image_add_srcset_and_sizes( $new_tag, $image_meta, $attachment_id );
+			}
+			$content = str_replace( $asset, $new_tag, $content );
 		}
 
 		return $this->filter_video_shortcodes( $content );
