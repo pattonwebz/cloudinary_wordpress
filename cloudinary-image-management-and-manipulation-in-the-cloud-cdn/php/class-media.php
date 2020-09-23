@@ -605,9 +605,6 @@ class Media implements Setup {
 		$transformation_chains = explode( '/', $str );
 		$transformations       = array();
 		foreach ( $transformation_chains as $index => $chain ) {
-			if ( false !== strpos( $chain, 'wpsize' ) ) {
-				continue; // A wpsize is not a transformation.
-			}
 			$items = explode( ',', $chain );
 			foreach ( $items as $item ) {
 				$item = trim( $item );
