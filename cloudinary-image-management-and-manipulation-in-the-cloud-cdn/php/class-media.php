@@ -1050,8 +1050,8 @@ class Media implements Setup {
 		if ( ! $cloudinary_id ) {
 			return $sources; // Return WordPress default sources.
 		}
-		// Get transformations from URL.
-		$transformations = $this->get_transformations_from_string( $image_src );
+		// Get transformations if any.
+		$transformations = $this->get_post_meta( $attachment_id, Sync::META_KEYS['transformation'], true );
 		// Use Cloudinary breakpoints for same ratio.
 
 		if ( 'on' === $this->plugin->config['settings']['global_transformations']['enable_breakpoints'] && wp_image_matches_ratio( $image_meta['width'], $image_meta['height'], $size_array[0], $size_array[1] ) ) {
