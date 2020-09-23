@@ -1,12 +1,14 @@
-/* global window wp */
+/* global CLD_VIDEO_PLAYER wp */
 
+/**
+ * WordPress dependencies
+ */
 import { __ } from '@wordpress/i18n';
 import { withSelect } from '@wordpress/data';
-import { cloneElement } from '@wordpress/element';
 import { ToggleControl, PanelBody } from '@wordpress/components';
 
 const Video = {
-	_init: function() {
+	_init() {
 		if ( typeof CLD_VIDEO_PLAYER === 'undefined' ) {
 			return;
 		}
@@ -40,10 +42,9 @@ export default Video;
 // Init.
 Video._init();
 
-let cldAddToggle = function( settings, name ) {
-
+const cldAddToggle = function( settings, name ) {
 	if ( 'core/image' === name || 'core/video' === name ) {
-		if ( !settings.attributes ) {
+		if ( ! settings.attributes ) {
 			settings.attributes = {};
 		}
 
@@ -54,7 +55,6 @@ let cldAddToggle = function( settings, name ) {
 		settings.attributes.transformations = {
 			type: 'boolean',
 		};
-
 	}
 
 	return settings;
@@ -70,53 +70,53 @@ wp.hooks.addFilter( 'blocks.registerBlockType', 'cloudinary/addAttributes', cldA
  * @return {Component} Element.
  */
 const TransformationsToggle = ( props ) => {
-	const {attributes: {overwrite_transformations, transformations}, setAttributes} = props;
+	const { attributes: { overwrite_transformations }, setAttributes } = props;
 
 	return (
-		<PanelBody title={__( 'Transformations', 'cloudinary' )}>
+		<PanelBody title={ __( 'Transformations', 'cloudinary' ) }>
 			<ToggleControl
-				label={__( 'Overwrite Transformations', 'cloudinary' )}
-				checked={overwrite_transformations}
-				onChange={( value ) => {
-					setAttributes( {overwrite_transformations: value} );
-				}}
+				label={ __( 'Overwrite Transformations', 'cloudinary' ) }
+				checked={ overwrite_transformations }
+				onChange={ ( value ) => {
+					setAttributes( { overwrite_transformations: value } );
+				} }
 			/>
 		</PanelBody>
 	);
 };
 
 let ImageInspectorControls = ( props ) => {
-	const {setAttributes, media} = props;
-	const {InspectorControls} = wp.editor;
+	const { setAttributes, media } = props;
+	const { InspectorControls } = wp.editor;
 
 	if ( media && media.transformations ) {
-		setAttributes( {transformations: true} );
+		setAttributes( { transformations: true } );
 	}
 
 	return (
 		<InspectorControls>
-			<TransformationsToggle {...props} />
+			<TransformationsToggle { ...props } />
 		</InspectorControls>
 	);
 };
 
 ImageInspectorControls = withSelect( ( select, ownProps ) => ( {
 	...ownProps,
-	media: ownProps.attributes.id ? select( 'core' ).getMedia( ownProps.attributes.id ) : null
-} ))( ImageInspectorControls );
+	media: ownProps.attributes.id ? select( 'core' ).getMedia( ownProps.attributes.id ) : null,
+} ) )( ImageInspectorControls );
 
 const cldFilterBlocksEdit = ( BlockEdit ) => {
 	return ( props ) => {
-		const {name} = props;
+		const { name } = props;
 		const shouldDisplayInspector = 'core/image' === name || 'core/video' === name;
 
 		return (
 			<>
-				{shouldDisplayInspector ? <ImageInspectorControls {...props} /> : null}
-				<BlockEdit {...props} />
+				{ shouldDisplayInspector ? <ImageInspectorControls { ...props } /> : null }
+				<BlockEdit { ...props } />
 			</>
 		);
-	}
+	};
 };
 
 wp.hooks.addFilter( 'editor.BlockEdit', 'cloudinary/filterEdit', cldFilterBlocksEdit, 20 );

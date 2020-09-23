@@ -1,4 +1,4 @@
-/* global window wp */
+/* global wp cloudinaryApi */
 
 const Sync = {
 	progress: document.getElementById( 'progress-wrapper' ),
@@ -9,15 +9,12 @@ const Sync = {
 	hide: 'none',
 	isRunning: false,
 	getStatus: function getStatus() {
-		var self = this,
-			resourceType = [],
-			url = cloudinaryApi.restUrl + 'cloudinary/v1/attachments',
-			params;
+		const url = cloudinaryApi.restUrl + 'cloudinary/v1/attachments';
 
 		wp.ajax.send( {
-			url: url,
+			url,
 			type: 'GET',
-			beforeSend: function( request ) {
+			beforeSend( request ) {
 				request.setRequestHeader( 'X-WP-Nonce', cloudinaryApi.nonce );
 			},
 		} ).done( function( data ) {
@@ -29,17 +26,16 @@ const Sync = {
 		} );
 	},
 	stopSync: function stopSync() {
-		var self = this,
-			url = cloudinaryApi.restUrl + 'cloudinary/v1/sync';
+		const url = cloudinaryApi.restUrl + 'cloudinary/v1/sync';
 
 		Sync.isRunning = false;
 
 		wp.ajax.send( {
-			url: url,
+			url,
 			data: {
 				stop: true,
 			},
-			beforeSend: function( request ) {
+			beforeSend( request ) {
 				request.setRequestHeader( 'X-WP-Nonce', cloudinaryApi.nonce );
 			},
 		} ).done( function( data ) {
@@ -47,18 +43,17 @@ const Sync = {
 		} );
 	},
 	pushAttachments: function pushAttachments() {
-		var self = this,
-			url = cloudinaryApi.restUrl + 'cloudinary/v1/sync';
+		const url = cloudinaryApi.restUrl + 'cloudinary/v1/sync';
 
 		Sync.isRunning = true;
 		Sync.progress.style.display = Sync.show;
 
 		wp.ajax.send( {
-			url: url,
-			beforeSend: function( request ) {
+			url,
+			beforeSend( request ) {
 				request.setRequestHeader( 'X-WP-Nonce', cloudinaryApi.nonce );
 			},
-		} ).done( function ( data ) {
+		} ).done( function() {
 			setTimeout( Sync.getStatus, 10000 );
 		} );
 	},
@@ -66,19 +61,15 @@ const Sync = {
 		if ( data.percent < 100 && typeof data.started !== 'undefined' ) {
 			this.submitButton.style.display = this.hide;
 			this.stopButton.style.display = this.show;
-		}
-		else if ( data.percent >= 100 && typeof data.started !== 'undefined' ) {
+		} else if ( data.percent >= 100 && typeof data.started !== 'undefined' ) {
 			this.submitButton.style.display = this.hide;
 			this.stopButton.style.display = this.show;
-		}
-		else if ( data.pending > 0 ) {
+		} else if ( data.pending > 0 ) {
 			this.submitButton.style.display = this.show;
 			this.stopButton.style.display = this.hide;
-		}
-		else if ( data.processing > 0 ) {
+		} else if ( data.processing > 0 ) {
 			this.stopButton.style.display = this.show;
-		}
-		else {
+		} else {
 			this.stopButton.style.display = this.hide;
 		}
 
@@ -88,8 +79,7 @@ const Sync = {
 
 		if ( this.isRunning ) {
 			this.progress.style.display = this.show;
-		}
-		else {
+		} else {
 			this.progress.style.display = this.hide;
 		}
 	},
@@ -99,17 +89,15 @@ const Sync = {
 		Sync.submitButton.style.display = Sync.hide;
 		Sync.pushAttachments();
 	},
-	_reset: function _reset( e ) {
+	_reset: function _reset() {
 		Sync.submitButton.style.display = Sync.hide;
 		Sync.getStatus();
 	},
-	_init: function( fn ) {
-
+	_init( fn ) {
 		if ( typeof cloudinaryApi !== 'undefined' ) {
 			if ( document.attachEvent ? document.readyState === 'complete' : document.readyState !== 'loading' ) {
 				fn();
-			}
-			else {
+			} else {
 				document.addEventListener( 'DOMContentLoaded', fn );
 			}
 		}
@@ -119,13 +107,13 @@ const Sync = {
 export default Sync;
 
 // Add it a trigger watch to stop deactivation.
-let triggers = document.getElementsByClassName( 'cld-deactivate' );
+const triggers = document.getElementsByClassName( 'cld-deactivate' );
 [ ...triggers ].forEach( ( trigger ) => {
-    trigger.addEventListener( 'click', function( ev ) {
-        if ( !confirm( wp.i18n.__( 'Caution: Your storage setting is currently set to "Cloudinary only", disabling the plugin will result in broken links to media assets. Are you sure you want to continue?', 'cloudinary' ) ) ) {
-            ev.preventDefault();
-        }
-    } );
+	trigger.addEventListener( 'click', function( ev ) {
+		if ( ! confirm( wp.i18n.__( 'Caution: Your storage setting is currently set to "Cloudinary only", disabling the plugin will result in broken links to media assets. Are you sure you want to continue?', 'cloudinary' ) ) ) {
+			ev.preventDefault();
+		}
+	} );
 } );
 
 // Init.

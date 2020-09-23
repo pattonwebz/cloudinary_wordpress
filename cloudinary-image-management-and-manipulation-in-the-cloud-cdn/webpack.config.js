@@ -9,18 +9,18 @@ if ( ! Encore.isRuntimeEnvironmentConfigured() ) {
 // https://symfony.com/doc/current/frontend/encore/custom-loaders-plugins.html
 
 Encore.setOutputPath( 'assets/dist/' )
-	.setPublicPath('./')
-	.setManifestKeyPrefix('assets/dist/')
+	.setPublicPath( './' )
+	.setManifestKeyPrefix( 'assets/dist/' )
 
 	.addEntry( 'cloudinary', './assets/js/main.js' )
-	.addStyleEntry( 'video', './assets/css/video.scss')
+	.addStyleEntry( 'video', './assets/css/video.scss' )
 	// Add more entries here if needed...
 
-	.copyFiles({
+	.copyFiles( {
 		from: './assets/css',
 		to: '[path][name].[ext]',
-		pattern: /\.svg$/
-	})
+		pattern: /\.svg$/,
+	} )
 
 	.enableSingleRuntimeChunk()
 	.cleanupOutputBeforeBuild()

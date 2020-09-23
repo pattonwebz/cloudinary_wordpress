@@ -1,10 +1,11 @@
-/* global window */
 /**
- * Main JS.
+ * External dependencies
  */
-
-// Components
 import 'loading-attribute-polyfill';
+
+/**
+ * Internal dependencies
+ */
 import settings from './components/settings-page';
 import sync from './components/sync';
 import widget from './components/widget';
@@ -18,7 +19,7 @@ import Featured from './components/featured-image';
 import '../css/main.scss';
 
 // jQuery, because reasons.
-const $ = window.$ = window.jQuery;
+window.$ = window.jQuery;
 
 // Global Constants
 export const cloudinary = {
@@ -30,6 +31,6 @@ export const cloudinary = {
 	Media_Library,
 	Notices,
 	Video,
-	Featured
+	Featured,
 };
 

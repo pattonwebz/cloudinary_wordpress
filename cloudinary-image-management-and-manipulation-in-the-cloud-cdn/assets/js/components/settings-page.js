@@ -1,5 +1,4 @@
-(function() {
-
+( function() {
 	// Disable the "off" dropdown option for Autoplay if
 	// the player isn't set to Cloudinary or if Show Controls if unchecked.
 	const disableAutoplayOff = function() {
@@ -15,24 +14,22 @@
 		} else {
 			offSelection.prop( 'disabled', false );
 		}
-	}
+	};
 
 	disableAutoplayOff();
 	jQuery( document ).on( 'change', '#field-video_player', disableAutoplayOff );
 	jQuery( document ).on( 'change', '#field-video_controls', disableAutoplayOff );
 
 	jQuery( document ).ready( function( $ ) {
-
 		// Initilize instance events
 		$( document ).on( 'tabs.init', function() {
-
-			var tabs     = $( '.settings-tab-trigger' ),
-			    sections = $( '.settings-tab-section' );
+			const tabs = $( '.settings-tab-trigger' ),
+				sections = $( '.settings-tab-section' );
 
 			// Create instance bindings
 			$( this ).on( 'click', '.settings-tab-trigger', function( e ) {
-				var clicked = $( this ),
-				    target  = $( clicked.attr( 'href' ) );
+				const clicked = $( this ),
+					target = $( clicked.attr( 'href' ) );
 
 				// Trigger an instance action.
 				e.preventDefault();
@@ -45,55 +42,53 @@
 
 				// Trigger the tabbed event.
 				$( document ).trigger( 'settings.tabbed', clicked );
-
 			} );
 
 			// Bind conditions.
 			$( '.cld-field' ).not( '[data-condition="false"]' ).each( function() {
-				const field     = $(this);
-				const condition = field.data('condition');
-				for (let f in condition) {
+				const field = $( this );
+				const condition = field.data( 'condition' );
+				for ( const f in condition ) {
 					const value = condition[ f ];
 					const target = $( '#field-' + f );
-					const wrapper = field.closest('tr');
-					target.on('change init', function(){
-						if( this.value === value || this.checked ){
+					const wrapper = field.closest( 'tr' );
+					target.on( 'change init', function() {
+						if ( this.value === value || this.checked ) {
 							wrapper.show();
-						}else{
+						} else {
 							wrapper.hide();
 						}
-					});
-					target.trigger('init');
+					} );
+					target.trigger( 'init' );
 				}
 			} );
 
-			$('#field-cloudinary_url').on('input change', function(){
-				let field = $(this),
+			$( '#field-cloudinary_url' ).on( 'input change', function() {
+				const field = $( this ),
 					value = field.val();
 
-				let reg = new RegExp(/^(?:CLOUDINARY_URL=)?(cloudinary:\/\/){1}(\d)*[:]{1}[^:@]*[@]{1}[^@]*$/g );
-				if( reg.test( value ) ){
+				const reg = new RegExp( /^(?:CLOUDINARY_URL=)?(cloudinary:\/\/){1}(\d)*[:]{1}[^:@]*[@]{1}[^@]*$/g );
+				if ( reg.test( value ) ) {
 					field.addClass( 'settings-valid-field' );
 					field.removeClass( 'settings-invalid-field' );
-				}else{
+				} else {
 					field.removeClass( 'settings-valid-field' );
 					field.addClass( 'settings-invalid-field' );
 				}
-			}).trigger('change');
+			} ).trigger( 'change' );
 
-			$('[name="cloudinary_sync_media[auto_sync]"]').change(function () {
-				if ($(this).val() === 'on') $('#auto-sync-alert-btn').click();
-			});
-
-
+			$( '[name="cloudinary_sync_media[auto_sync]"]' ).change( function() {
+				if ( $( this ).val() === 'on' ) {
+					$( '#auto-sync-alert-btn' ).click();
+				}
+			} );
 		} );
 
 		// On Ready, find all render trigger elements and fire their events.
 		$( '.render-trigger[data-event]' ).each( function() {
-			var trigger = $( this ),
-			    event   = trigger.data( 'event' );
+			const trigger = $( this ),
+				event = trigger.data( 'event' );
 			trigger.trigger( event, this );
 		} );
 	} );
-
-})( window, jQuery );
+}( window, jQuery ) );
