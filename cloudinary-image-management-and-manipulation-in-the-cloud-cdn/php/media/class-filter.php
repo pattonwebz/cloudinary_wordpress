@@ -347,11 +347,7 @@ class Filter {
 			}
 
 			// Apply lazy loading attribute
-			if (
-				apply_filters( 'wp_lazy_loading_enabled', true ) &&
-				false === strpos( $new_tag, 'loading="lazy"' ) &&
-				$clean
-			) {
+			if ( apply_filters( 'wp_lazy_loading_enabled', true ) && false === strpos( $new_tag, 'loading="lazy"' ) ) {
 				$new_tag = str_replace( '/>', ' loading="lazy" />', $new_tag );
 			}
 
