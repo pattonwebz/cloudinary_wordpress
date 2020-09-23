@@ -1,12 +1,14 @@
 {
-  "assets/dist/cloudinary.css": "/assets/dist/cloudinary.css",
-  "assets/dist/cloudinary.js": "/assets/dist/cloudinary.js",
-  "assets/dist/runtime.js": "/assets/dist/runtime.js",
-  "assets/dist/video.css": "/assets/dist/video.css",
-  "assets/dist/fonts/cloudinary.svg": "/assets/dist/fonts/cloudinary.svg",
-  "assets/dist/fonts/cloudinary.eot": "/assets/dist/fonts/cloudinary.eot",
-  "assets/dist/fonts/cloudinary.ttf": "/assets/dist/fonts/cloudinary.ttf",
-  "assets/dist/fonts/cloudinary.woff": "/assets/dist/fonts/cloudinary.woff",
-  "assets/dist/logo-icon.svg": "/assets/dist/logo-icon.65f8575b.svg",
-  "assets/dist/logo.svg": "/assets/dist/logo.2103f0db.svg"
+  "assets/dist/cloudinary.css": "./cloudinary.css",
+  "assets/dist/cloudinary.js": "./cloudinary.js",
+  "assets/dist/runtime.js": "./runtime.js",
+  "assets/dist/video.css": "./video.css",
+  "assets/dist/fonts/cloudinary.woff": "./fonts/cloudinary.34cb260a.woff",
+  "assets/dist/fonts/cloudinary.eot": "./fonts/cloudinary.7e6e75b2.eot",
+  "assets/dist/fonts/cloudinary.ttf": "./fonts/cloudinary.c2afda9d.ttf",
+  "assets/dist/fonts/cloudinary.svg": "./fonts/cloudinary.svg",
+  "assets/dist/images/logo.svg": "./images/logo.f9180629.svg",
+  "assets/dist/loading.svg": "./loading.svg",
+  "assets/dist/logo-icon.svg": "./logo-icon.svg",
+  "assets/dist/logo.svg": "./logo.svg"
 }

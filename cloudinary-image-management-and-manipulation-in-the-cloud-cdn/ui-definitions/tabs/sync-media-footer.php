@@ -33,7 +33,7 @@ if ( ! $this->plugin->components['sync']->managers['queue']->is_running() ) {
 		</button>
 		<span id="progress-wrapper" class="sync-media-progress">
 			<span class="progress-text">
-				<img src="<?php echo esc_url( CLDN_URL . 'css/loading.svg' ); ?>" alt="<?php esc_attr_e( 'Syncing…', 'cloudinary' ); ?>">
+				<img src="<?php echo esc_url( CLDN_URL . 'assets/dist/loading.svg' ); ?>" alt="<?php esc_attr_e( 'Syncing…', 'cloudinary' ); ?>">
 				<?php esc_html_e( 'Syncing…', 'cloudinary' ); ?>
 			</span>
 		</span>
