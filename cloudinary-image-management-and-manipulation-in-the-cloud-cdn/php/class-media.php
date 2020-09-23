@@ -722,7 +722,7 @@ class Media implements Setup {
 	 *
 	 * @return string The converted URL.
 	 */
-	public function cloudinary_url( $attachment_id, $size = array(), $transformations = array(), $cloudinary_id = null, $overwrite_transformations = false, $clean = false ) {
+	public function cloudinary_url( $attachment_id, $size = array(), $transformations = array(), $cloudinary_id = null, $overwrite_transformations = false ) {
 
 		if ( ! ( $cloudinary_id ) ) {
 			$cloudinary_id = $this->cloudinary_id( $attachment_id );
@@ -742,7 +742,7 @@ class Media implements Setup {
 			'resource_type' => $resource_type,
 		);
 
-		$size = $this->prepare_size( $attachment_id, $size, $clean );
+		$size = $this->prepare_size( $attachment_id, $size );
 		if ( false === $overwrite_transformations ) {
 			$overwrite_transformations = $this->maybe_overwrite_featured_image( $attachment_id );
 		}
@@ -1028,7 +1028,7 @@ class Media implements Setup {
 		}
 		$size = $this->get_crop( $url, $attachment_id );
 
-		return $this->cloudinary_url( $attachment_id, $size, $transformations, null, $overwrite_transformations, true );
+		return $this->cloudinary_url( $attachment_id, $size, $transformations, null, $overwrite_transformations );
 	}
 
 	/**
@@ -1111,28 +1111,6 @@ class Media implements Setup {
 		}
 
 		return $sources;
-	}
-
-	/**
-	 * Alter the image sizes metadata to match the Cloudinary ID so that WordPress can detect a matched source for responsive breakpoints.
-	 *
-	 * @param array  $image_meta    The image metadata array.
-	 * @param array  $size_array    The size array.
-	 * @param string $image_src     The image src.
-	 * @param int    $attachment_id The attachment ID.
-	 *
-	 * @return array
-	 */
-	public function match_responsive_sources( $image_meta, $size_array, $image_src, $attachment_id ) {
-		if ( wp_attachment_is_image( $attachment_id ) && ! empty( $image_meta['sizes'] ) ) {
-			$cloudinary_id = $this->cloudinary_id( $attachment_id );
-			if ( $cloudinary_id ) {
-				// Set the file to the Cloudinary ID so that it will be matched.
-				$image_meta['file'] = $cloudinary_id;
-			}
-		}
-
-		return $image_meta;
 	}
 
 	/**
