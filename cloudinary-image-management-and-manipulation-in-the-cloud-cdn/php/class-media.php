@@ -1257,10 +1257,6 @@ class Media implements Setup {
 		$asset['sync_key'] = $asset['public_id'];
 		if ( ! empty( $data['asset']['derived'] ) ) {
 			$asset['url'] = filter_var( $data['asset']['derived'][0]['secure_url'], FILTER_SANITIZE_URL );
-			$format       = pathinfo( $asset['url'], PATHINFO_EXTENSION );
-			if ( $format !== $data['asset']['format'] ) {
-				$asset['sync_key'] .= '.' . $format;
-			}
 		}
 
 		//convert_media_extension
@@ -1278,7 +1274,7 @@ class Media implements Setup {
 		// Check for transformations.
 		$transformations = $this->get_transformations_from_string( $asset['url'] );
 		if ( ! empty( $transformations ) ) {
-			$asset['sync_key']       .= wp_json_encode( $transformations );
+			$asset['sync_key']        .= wp_json_encode( $transformations );
 			$asset['transformations'] = $transformations;
 		}
 		// Attempt to find attachment ID.
