@@ -96,7 +96,6 @@ class Api {
 			'pg'      => 'page',
 			'sp'      => 'streaming_profile',
 			'vs'      => 'video_sampling',
-			'$wpsize' => 'wpsize',
 		),
 		'video' => array(
 			'w'   => 'width',
@@ -203,14 +202,6 @@ class Api {
 
 				foreach ( $item as $type => $value ) { // phpcs:ignore
 					$key = array_search( $type, $transformation_index, true );
-					if ( false !== strpos( $type, 'wpsize' ) ) {
-						if ( ! empty( $item['clean'] ) ) {
-							continue;
-						}
-
-						$value = '!' . $value . '!';
-					}
-
 					if ( false !== $key ) {
 						$transform[] = $key . '_' . $value;
 					}
@@ -267,22 +258,18 @@ class Api {
 		if ( ! empty( $args['transformation'] ) ) {
 			$url_parts[] = self::generate_transformation_string( $args['transformation'] );
 		}
-
+		$base = pathinfo( $public_id );
+		if ( 'image' === $args['resource_type'] ) {
+			$new_path  = $base['filename'] . '/' . $base['basename'];
+			$public_id = str_replace( $base['basename'], $new_path, $public_id );
+		}
 		// Add size.
 		if ( ! empty( $size ) && is_array( $size ) ) {
-			if ( true === $clean ) {
-				$size['clean'] = true;
-			}
-			if ( array_keys( $size ) == array( 0, 1 ) ) {
-				$size = array(
-					'width'  => $size[0],
-					'height' => $size[1],
-				);
-				if ( $size['width'] === $size['height'] ) {
-					$size['crop'] = 'fill';
-				}
-			}
 			$url_parts[] = self::generate_transformation_string( array( $size ) );
+			// add size to ID if scaled.
+			if ( ! empty( $size['file'] ) ) {
+				$public_id = str_replace( $base['basename'], $size['file'], $public_id );
+			}
 		}
 
 		$url_parts[] = $args['version'];
