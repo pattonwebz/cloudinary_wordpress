@@ -762,7 +762,7 @@ class Media implements Setup {
 
 		// Make a copy as not to destroy the options in \Cloudinary::cloudinary_url().
 		$args = $pre_args;
-		$url  = $this->plugin->components['connect']->api->cloudinary_url( $cloudinary_id, $args, $size, $clean );
+		$url  = $this->plugin->components['connect']->api->cloudinary_url( $cloudinary_id, $args, $size );
 
 		// Check if this type is a preview only type. i.e PDF.
 		if ( ! empty( $size ) && $this->is_preview_only( $attachment_id ) ) {

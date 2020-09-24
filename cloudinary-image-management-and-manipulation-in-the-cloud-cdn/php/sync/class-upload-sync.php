@@ -233,7 +233,6 @@ class Upload_Sync {
 				}
 			}
 
-
 			// Set folder Synced.
 			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], $this->media->is_folder_synced( $attachment_id ) );
 			// Set public_id.
