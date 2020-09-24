@@ -217,6 +217,8 @@ class Upload_Sync {
 		// Run the upload Call.
 		$result = $this->connect->api->upload( $attachment_id, $options );
 
+		remove_filter( 'cloudinary_doing_upload', '__return_true' );
+
 		if ( ! is_wp_error( $result ) ) {
 
 			// Check that this wasn't an existing.

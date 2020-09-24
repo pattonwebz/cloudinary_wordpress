@@ -633,7 +633,7 @@ class Media implements Setup {
 		if ( false !== $previous_url ) {
 			return substr( $url, $previous_url );
 		}
-		if ( ! doing_action( 'wp_insert_post_data' ) && false === $this->in_downsize ) {
+		if ( ! doing_action( 'wp_insert_post_data' ) && false === $this->in_downsize && ! apply_filters( 'cloudinary_doing_upload', '__return_false' ) ) {
 			if ( $this->cloudinary_id( $attachment_id ) ) {
 				$url = $this->cloudinary_url( $attachment_id );
 			}
