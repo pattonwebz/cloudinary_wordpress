@@ -1051,6 +1051,8 @@ class Media implements Setup {
 		$transformations = $this->get_post_meta( $attachment_id, Sync::META_KEYS['transformation'], true );
 		// Use Cloudinary breakpoints for same ratio.
 
+		$image_meta['overwrite_transformations'] = ! empty( $image_meta['overwrite_transformations'] ) ? $image_meta['overwrite_transformations'] : false;
+
 		if ( 'on' === $this->plugin->config['settings']['global_transformations']['enable_breakpoints'] && wp_image_matches_ratio( $image_meta['width'], $image_meta['height'], $size_array[0], $size_array[1] ) ) {
 			$meta = $this->get_post_meta( $attachment_id, Sync::META_KEYS['breakpoints'], true );
 			if ( ! empty( $meta ) ) {
