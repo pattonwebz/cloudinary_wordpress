@@ -1678,12 +1678,22 @@ class Media implements Setup {
 	 */
 	public function is_folder_synced( $attachment_id ) {
 
-		$return = true; // By default all assets in WordPress will be synced.
+		$is_folder_synced = true; // By default all assets in WordPress will be synced.
 		if ( $this->sync->been_synced( $attachment_id ) ) {
-			$return = ! empty( $this->get_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], true ) );
+			$is_folder_synced = ! empty( $this->get_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], true ) );
 		}
 
-		return $return;
+		/**
+		 * Filter is folder synced flag.
+		 *
+		 * @param bool $is_folder_synced Flag value for is folder sync.
+		 * @param int  $attachment_id    The attachment ID.
+		 *
+		 * @return bool
+		 */
+		$is_folder_synced = apply_filters( 'cloudinary_is_folder_synced', $is_folder_synced, $attachment_id );
+
+		return (bool) $is_folder_synced;
 	}
 
 	/**

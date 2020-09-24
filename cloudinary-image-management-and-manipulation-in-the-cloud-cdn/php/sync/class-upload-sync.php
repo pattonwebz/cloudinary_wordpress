@@ -201,6 +201,21 @@ class Upload_Sync {
 	 */
 	public function upload_asset( $attachment_id ) {
 
+		add_filter( 'cloudinary_doing_upload', '__return_true' );
+
+		add_filter(
+			'cloudinary_is_folder_synced',
+			function( $is_synced, $post_id ) use ( $attachment_id ) {
+				if ( $post_id === $attachment_id ) {
+					return true;
+				}
+
+				return $is_synced;
+			},
+			10,
+			2
+		);
+
 		$type      = $this->sync->get_sync_type( $attachment_id );
 		$options   = $this->media->get_upload_options( $attachment_id );
 		$public_id = $options['public_id'];
