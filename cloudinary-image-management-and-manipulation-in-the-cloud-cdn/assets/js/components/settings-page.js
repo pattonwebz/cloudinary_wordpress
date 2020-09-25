@@ -48,12 +48,35 @@
 			$( '.cld-field' ).not( '[data-condition="false"]' ).each( function() {
 				const field = $( this );
 				const condition = field.data( 'condition' );
+
 				for ( const f in condition ) {
+					let target = $( '#field-' + f );
 					const value = condition[ f ];
-					const target = $( '#field-' + f );
 					const wrapper = field.closest( 'tr' );
+
+					if ( ! target.length ) {
+						target = $( `[id^=field-${ f }-]` );
+					}
+
 					target.on( 'change init', function() {
-						if ( this.value === value || this.checked ) {
+						let fieldCondition = this.value === value || this.checked;
+
+						if ( Array.isArray( value ) && value.length === 2 ) {
+							switch ( value[ 1 ] ) {
+								case 'neq':
+									console.log( 'initial' );
+									fieldCondition = this.value !== value[ 0 ];
+									break;
+								case 'gt':
+									fieldCondition = this.value > value[ 0 ];
+									break;
+								case 'lt':
+									fieldCondition = this.value < value[ 0 ];
+							}
+							console.log( this.value, value[ 0 ], fieldCondition );
+						}
+
+						if ( fieldCondition ) {
 							wrapper.show();
 						} else {
 							wrapper.hide();

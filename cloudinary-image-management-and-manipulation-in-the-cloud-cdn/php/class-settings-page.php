@@ -319,7 +319,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 					<input
 							type="<?php echo esc_attr( $type ); ?>"
 							class="cld-field regular-<?php echo esc_attr( $type ); ?>"
-							id="<?php echo esc_attr( $field['label_for'] . '_' . $key ); ?>"
+							id="<?php echo esc_attr( $field['label_for'] . '-' . $key ); ?>"
 							name="<?php echo esc_attr( $setting_slug ); ?>[<?php echo esc_attr( $field['slug'] ); ?>]"
 						<?php if ( ! empty( $field['pattern'] ) ) : ?>
 							pattern="<?php echo esc_attr( $field['pattern'] ); ?>"
@@ -330,7 +330,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 						<?php checked( $key, $value ); ?>
 							value="<?php echo esc_attr( $key ); ?>"
 					/>
-					<label for="<?php echo esc_attr( $field['label_for'] . '_' . $key ); ?>"><?php esc_html_e( $option ); ?></label>
+					<label for="<?php echo esc_attr( $field['label_for'] . '-' . $key ); ?>"><?php esc_html_e( $option ); ?></label>
 				<?php
 				endforeach;
 				break;
