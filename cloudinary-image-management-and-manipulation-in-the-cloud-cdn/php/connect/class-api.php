@@ -96,7 +96,6 @@ class Api {
 			'pg'      => 'page',
 			'sp'      => 'streaming_profile',
 			'vs'      => 'video_sampling',
-			'$wpsize' => 'wpsize',
 		),
 		'video' => array(
 			'w'   => 'width',
@@ -141,7 +140,7 @@ class Api {
 	 * @param string The plugin version.
 	 */
 	public function __construct( $connect, $version ) {
-		$this->credentials = $connect->get_credentials();
+		$this->credentials    = $connect->get_credentials();
 		$this->plugin_version = $version;
 		// Use CNAME.
 		if ( ! empty( $this->credentials['cname'] ) ) {
@@ -172,8 +171,12 @@ class Api {
 			$parts[] = $this->credentials['cloud_name'];
 		}
 
-		$parts[] = $resource;
-		$parts[] = $function;
+		if ( false === $endpoint && 'image' === $resource ) {
+			$parts[] = 'images';
+		} else {
+			$parts[] = $resource;
+			$parts[] = $function;
+		}
 
 		$parts = array_filter( $parts );
 		$url   = implode( '/', $parts );
@@ -203,14 +206,6 @@ class Api {
 
 				foreach ( $item as $type => $value ) { // phpcs:ignore
 					$key = array_search( $type, $transformation_index, true );
-					if ( false !== strpos( $type, 'wpsize' ) ) {
-						if ( ! empty( $item['clean'] ) ) {
-							continue;
-						}
-
-						$value = '!' . $value . '!';
-					}
-
 					if ( false !== $key ) {
 						$transform[] = $key . '_' . $value;
 					}
@@ -231,13 +226,12 @@ class Api {
 	 * Generate a Cloudinary URL.
 	 *
 	 * @param string|null $public_id The Public ID to get a url for.
-	 * @param array  $args      Additional args.
-	 * @param array  $size      The WP Size array.
-	 * @param bool   $clean     Flag to produce a non variable size url.
+	 * @param array       $args      Additional args.
+	 * @param array       $size      The WP Size array.
 	 *
 	 * @return string
 	 */
-	public function cloudinary_url( $public_id = null, $args = array(), $size = array(), $clean = false ) {
+	public function cloudinary_url( $public_id = null, $args = array(), $size = array() ) {
 
 		if ( null === $public_id ) {
 			return 'https://' . $this->url( null, null );
@@ -267,22 +261,18 @@ class Api {
 		if ( ! empty( $args['transformation'] ) ) {
 			$url_parts[] = self::generate_transformation_string( $args['transformation'] );
 		}
-
+		$base = pathinfo( $public_id );
+		if ( 'image' === $args['resource_type'] ) {
+			$new_path  = $base['filename'] . '/' . $base['basename'];
+			$public_id = str_replace( $base['basename'], $new_path, $public_id );
+		}
 		// Add size.
 		if ( ! empty( $size ) && is_array( $size ) ) {
-			if ( true === $clean ) {
-				$size['clean'] = true;
-			}
-			if ( array_keys( $size ) == array( 0, 1 ) ) {
-				$size = array(
-					'width'  => $size[0],
-					'height' => $size[1],
-				);
-				if ( $size['width'] === $size['height'] ) {
-					$size['crop'] = 'fill';
-				}
-			}
 			$url_parts[] = self::generate_transformation_string( array( $size ) );
+			// add size to ID if scaled.
+			if ( ! empty( $size['file'] ) ) {
+				$public_id = str_replace( $base['basename'], $size['file'], $public_id );
+			}
 		}
 
 		$url_parts[] = $args['version'];
@@ -418,7 +408,7 @@ class Api {
 		$url                 = $this->url( $resource, 'upload', true );
 		$args                = $this->clean_args( $args );
 		$disable_https_fetch = get_transient( '_cld_disable_http_upload' );
-		$file_url            = wp_get_attachment_url( $attachment_id );
+		$file_url            = wp_get_original_image_url( $attachment_id );
 		$media               = get_plugin_instance()->get_component( 'media' );
 		if ( $media && $media->is_cloudinary_url( $file_url ) ) {
 			// If this is a Cloudinary URL, then we can use it to fetch from that location.
@@ -430,7 +420,7 @@ class Api {
 		} else {
 			// We should have the file in args at this point, but if the transient was set, it will be defaulting here.
 			if ( empty( $args['file'] ) ) {
-				$args['file'] = get_attached_file( $attachment_id );
+				$args['file'] = wp_get_original_image_path( $attachment_id );
 			}
 			// Headers indicate chunked upload.
 			if ( empty( $headers ) ) {
@@ -466,7 +456,7 @@ class Api {
 		// Hook in flag to allow for non accessible URLS.
 		if ( is_wp_error( $result ) ) {
 			$error = $result->get_error_message();
-			$code = $result->get_error_code();
+			$code  = $result->get_error_code();
 			/**
 			 * If there's an error and the file is a URL in the error message,
 			 * it's likely due to CURL or the location does not support URL file attachments.

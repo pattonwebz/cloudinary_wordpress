@@ -189,14 +189,14 @@ class Storage implements Notice {
 					// Add low quality transformations.
 					$transformations[] = array( 'quality' => 'auto:low' );
 				}
-				$url = $this->media->cloudinary_url( $attachment_id, '', $transformations, null, false, true );
+				$url = $this->media->cloudinary_url( $attachment_id, '', $transformations, null, false );
 				break;
 			case 'dual_full':
 				$exists = get_attached_file( $attachment_id );
 				if ( ! empty( $previous_state ) && ! file_exists( $exists ) ) {
 					// Only do this is it's changing a state.
 					$transformations = $this->media->get_transformation_from_meta( $attachment_id );
-					$url             = $this->media->cloudinary_url( $attachment_id, '', $transformations, null, false, false );
+					$url             = $this->media->cloudinary_url( $attachment_id, '', $transformations, null, false );
 				}
 				break;
 		}
