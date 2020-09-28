@@ -204,7 +204,7 @@ class Upload_Sync {
 		$type       = $this->sync->get_sync_type( $attachment_id );
 		$options    = $this->media->get_upload_options( $attachment_id );
 		$public_id  = $options['public_id'];
-		$try_remote = 'cloud_name' === $type ? 'file' : false;
+		$try_remote = 'cloud_name' === $type ? false : true;
 
 		// Add the suffix before uploading.
 		if ( $this->media->get_public_id( $attachment_id ) === $public_id ) {
@@ -216,7 +216,7 @@ class Upload_Sync {
 		}
 
 		// Run the upload Call.
-		$result = $this->connect->api->upload( $attachment_id, $options, $try_remote );
+		$result = $this->connect->api->upload( $attachment_id, $options, array(), $try_remote );
 
 		if ( ! is_wp_error( $result ) ) {
 
