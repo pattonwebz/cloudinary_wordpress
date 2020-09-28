@@ -228,6 +228,7 @@ class Api {
 	 * @param string|null $public_id The Public ID to get a url for.
 	 * @param array       $args      Additional args.
 	 * @param array       $size      The WP Size array.
+	 * @param bool        $clean     Flag to produce a non variable size url.
 	 *
 	 * @return string
 	 */
@@ -398,10 +399,11 @@ class Api {
 	 * @param int   $attachment_id Attachment ID to upload.
 	 * @param array $args          Array of upload options.
 	 * @param array $headers       Additional headers to use in upload.
+	 * @param bool  $try_remote    Flag to try_remote upload.
 	 *
 	 * @return array|\WP_Error
 	 */
-	public function upload( $attachment_id, $args, $headers = array() ) {
+	public function upload( $attachment_id, $args, $headers = array(), $try_remote = true ) {
 
 		$resource            = ! empty( $args['resource_type'] ) ? $args['resource_type'] : 'image';
 		$resource            = $this->convert_resource_type( $resource );
@@ -415,7 +417,7 @@ class Api {
 			$disable_https_fetch = false;
 		}
 		// Check if we can try http file upload.
-		if ( empty( $headers ) && empty( $disable_https_fetch ) ) {
+		if ( empty( $headers ) && empty( $disable_https_fetch ) && true === $try_remote ) {
 			$args['file'] = $file_url;
 		} else {
 			// We should have the file in args at this point, but if the transient was set, it will be defaulting here.
