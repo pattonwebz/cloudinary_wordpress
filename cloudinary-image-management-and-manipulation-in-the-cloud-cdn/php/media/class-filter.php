@@ -350,12 +350,13 @@ class Filter {
 					// Add in the class name.
 					$new_tag = str_replace( '/>', ' class="wp-image-' . $attachment_id . '"/>', $new_tag );
 				}
-				
-        $new_tag = $this->add_lazy_loading_attribute( $new_tag );
-			
-        if ( $video_tag = $this->check_fmp4_presence( $cloudinary_url, $attachment_id ) ) {
-          $new_tag = $video_tag;
-        }
+
+				$new_tag   = $this->add_lazy_loading_attribute( $new_tag );
+				$video_tag = $this->check_fmp4_presence( $cloudinary_url, $attachment_id );
+
+				if ( $video_tag ) {
+					$new_tag = $video_tag;
+				}
 
 				// If Cloudinary player is active, this is replaced there.
 				if ( ! $this->media->video->player_enabled() ) {
@@ -384,7 +385,7 @@ class Filter {
 	 *
 	 * @param string $new_tag
 	 * @param bool   $is_admin
-	 * 
+	 *
 	 * @return string
 	 */
 	protected function add_lazy_loading_attribute( $new_tag, $is_admin = false ) {
@@ -404,7 +405,7 @@ class Filter {
 	 *
 	 * @param string $cloudinary_url
 	 * @param int    $attachment_id
-	 * 
+	 *
 	 * @return string|null
 	 */
 	protected function check_fmp4_presence( $cloudinary_url, $attachment_id ) {
@@ -421,7 +422,7 @@ class Filter {
 				);
 			}
 		}
-		
+
 		return $return;
 	}
 
@@ -488,7 +489,9 @@ class Filter {
 			$attachment->data['source_url'] = $this->media->cloudinary_url( $attachment->data['id'], false );
 		}
 
-		if ( $has_transformations = ! empty( $this->media->get_transformation_from_meta( $attachment->data['id'] ) ) ) {
+		$has_transformations = ! empty( $this->media->get_transformation_from_meta( $attachment->data['id'] ) );
+
+		if ( $has_transformations ) {
 			$attachment->data['transformations'] = $has_transformations;
 		}
 
