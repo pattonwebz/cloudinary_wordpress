@@ -185,12 +185,13 @@ class Download_Sync {
 	/**
 	 * Download an attachment source to the file system.
 	 *
-	 * @param int    $attachment_id The attachment ID.
-	 * @param string $source        The optional source to download.
+	 * @param int         $attachment_id The attachment ID.
+	 * @param string      $source        The optional source to download.
+	 * @param string|null $date          The date of the attachment to set storage folders.
 	 *
 	 * @return array|\WP_Error
 	 */
-	public function download_asset( $attachment_id, $source = null ) {
+	public function download_asset( $attachment_id, $source = null, $date = null ) {
 		require_once ABSPATH . 'wp-admin/includes/image.php';
 		require_once ABSPATH . 'wp-admin/includes/media.php';
 		if ( empty( $source ) ) {
@@ -200,7 +201,7 @@ class Download_Sync {
 		$file_name = basename( $source );
 		try {
 			// Prime a file to stream to.
-			$upload = wp_upload_bits( $file_name, null, 'temp' );
+			$upload = wp_upload_bits( $file_name, null, 'temp', $date );
 			if ( ! empty( $upload['error'] ) ) {
 				return new \WP_Error( 'download_error', $upload['error'] );
 			}
