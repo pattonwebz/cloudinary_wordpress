@@ -291,7 +291,7 @@ class Upload_Sync {
 		$args        = array();
 		$update_type = 'update_breakpoints';
 		if ( wp_attachment_is_image( $attachment_id ) ) {
-			$args        = $this->media->get_breakpoint_options( $attachment_id );
+			$args = $this->media->get_breakpoint_options( $attachment_id );
 		} elseif ( wp_attachment_is( 'video', $attachment_id ) ) {
 			$args        = $this->media->get_pending_eagers( $attachment_id );
 			$update_type = 'update_eagers';
@@ -307,7 +307,6 @@ class Upload_Sync {
 			$this->update_breakpoints( $attachment_id, array() );
 			$result = true;
 		}
-		$this->sync->set_signature_item( $attachment_id, $type );
 
 		return $result;
 	}
@@ -340,6 +339,7 @@ class Upload_Sync {
 
 		// Remove from pending and add to video.
 		if ( ! empty( $result['eager'] ) ) {
+			$updated        = false;
 			$eagers         = (array) $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['video_eagers'], true );
 			$pending_eagers = (array) $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], true );
 			foreach ( $result['eager'] as $eager ) {
@@ -349,11 +349,16 @@ class Upload_Sync {
 						unset( $pending_eagers[ $signature ] );
 					}
 					$eagers[] = $signature;
+					$updated  = true;
 				}
 			}
 			// Update what was done.
 			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['video_eagers'], $eagers );
 			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], $pending_eagers );
+			if ( true === $updated ) {
+				// Only update signature if something happend.
+				$this->sync->set_signature_item( $attachment_id, 'eager_video' );
+			}
 		}
 	}
 
