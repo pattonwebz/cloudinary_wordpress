@@ -10,11 +10,13 @@ let FeaturedTransformationsToggle = ( props ) => {
 
     return (
         <>
-            <ToggleControl
-                label={ __( 'Overwrite Global Transformations', 'cloudinary' ) }
-                checked={ props.overwrite_featured_transformations }
-                onChange={ ( value ) => props.setOverwrite( value ) }
-            />
+            { props.modalClass &&
+                <ToggleControl
+                    label={ __( 'Overwrite Transformations', 'cloudinary' ) }
+                    checked={ props.overwrite_featured_transformations }
+                    onChange={ ( value ) => props.setOverwrite( value ) }
+                />
+            }
         </>
     );
 };
