@@ -288,13 +288,13 @@ class Sync implements Setup, Assets {
 	public function generate_public_id( $attachment_id ) {
 
 		$cld_folder = $this->managers['media']->get_cloudinary_folder();
-		if( wp_attachment_is_image( $attachment_id ) ) {
+		if ( wp_attachment_is_image( $attachment_id ) ) {
 			$file = wp_get_original_image_path( $attachment_id );
 		} else {
 			$file = get_attached_file( $attachment_id );
 		}
-		$file_info  = pathinfo( $file );
-		$public_id  = $cld_folder . $file_info['filename'];
+		$file_info = pathinfo( $file );
+		$public_id = $cld_folder . $file_info['filename'];
 
 		return ltrim( $public_id, '/' );
 	}
