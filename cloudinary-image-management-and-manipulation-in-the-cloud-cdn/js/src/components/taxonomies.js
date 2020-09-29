@@ -7,11 +7,16 @@ if ( toggler ) {
     const arrowIcon = document.querySelector( '.cloudinary-collapsible__toggle button i' );
   
     content.style.display = isHidden ? 'block' : 'none'
+
+    const arrowDown = 'dashicons-arrow-down-alt2';
+    const arrowUp = 'dashicons-arrow-up-alt2';
   
-    if ( arrowIcon.classList.contains( 'dashicons-arrow-down-alt2' ) ) {
-      arrowIcon.classList.replace( 'dashicons-arrow-down-alt2', 'dashicons-arrow-up-alt2' );
+    if ( arrowIcon.classList.contains( arrowDown ) ) {
+      arrowIcon.classList.remove(arrowDown)
+      arrowIcon.classList.add(arrowUp)
     } else {
-      arrowIcon.classList.replace( 'dashicons-arrow-up-alt2', 'dashicons-arrow-down-alt2' );
+      arrowIcon.classList.remove(arrowUp)
+      arrowIcon.classList.add(arrowDown)
     }
   } );
 }
