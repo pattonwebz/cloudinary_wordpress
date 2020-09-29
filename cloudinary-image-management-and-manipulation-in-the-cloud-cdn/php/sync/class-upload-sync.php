@@ -287,16 +287,16 @@ class Upload_Sync {
 	 */
 	public function explicit_update( $attachment_id ) {
 		// Explicit update.
-		$type = $this->sync->get_sync_type( $attachment_id );
+		$type        = $this->sync->get_sync_type( $attachment_id );
+		$args        = array();
+		$update_type = 'update_breakpoints';
 		if ( wp_attachment_is_image( $attachment_id ) ) {
 			$args        = $this->media->get_breakpoint_options( $attachment_id );
-			$update_type = 'update_breakpoints';
 		} elseif ( wp_attachment_is( 'video', $attachment_id ) ) {
 			$args        = $this->media->get_pending_eagers( $attachment_id );
 			$update_type = 'update_eagers';
-		} else {
-			$args = array();
 		}
+
 		if ( ! empty( $args ) ) {
 			$result = $this->connect->api->explicit( $args );
 			if ( is_wp_error( $result ) ) {
