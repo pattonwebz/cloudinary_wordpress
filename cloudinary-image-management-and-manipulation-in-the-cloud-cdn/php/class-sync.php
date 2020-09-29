@@ -420,7 +420,7 @@ class Sync implements Setup, Assets {
 				'required' => true,
 			),
 			'eager_video' => array(
-				'generate' => array( $this->managers['media'], 'video_eagers' ),
+				'generate' => array( $this->managers['media'], 'generate_eager_signature' ),
 				'validate' => function ( $attachment_id ) {
 					return wp_attachment_is( 'video', $attachment_id );
 				},

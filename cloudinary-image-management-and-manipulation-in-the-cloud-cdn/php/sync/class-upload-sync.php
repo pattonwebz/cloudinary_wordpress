@@ -292,16 +292,17 @@ class Upload_Sync {
 			$args        = $this->media->get_breakpoint_options( $attachment_id );
 			$update_type = 'update_breakpoints';
 		} elseif ( wp_attachment_is( 'video', $attachment_id ) ) {
-			$args        = $this->media->get_video_eagers( $attachment_id );
+			$args        = $this->media->get_pending_eagers( $attachment_id );
 			$update_type = 'update_eagers';
 		} else {
 			$args = array();
 		}
 		if ( ! empty( $args ) ) {
 			$result = $this->connect->api->explicit( $args );
-			if ( ! is_wp_error( $result ) ) {
-				$this->{$update_type}( $attachment_id, $result );
+			if ( is_wp_error( $result ) ) {
+				return $result;
 			}
+			$this->{$update_type}( $attachment_id, $result );
 		} else {
 			$this->update_breakpoints( $attachment_id, array() );
 			$result = true;
@@ -333,12 +334,27 @@ class Upload_Sync {
 	 * Update video eagers for an asset.
 	 *
 	 * @param int   $attachment_id The attachment ID.
-	 * @param array $eagers        Eager URLS.
+	 * @param array $result        Eager URLS.
 	 */
-	public function update_eagers( $attachment_id, $eagers ) {
+	public function update_eagers( $attachment_id, $result ) {
 
-		//@todo: This would probably be best replaced with an Endpoint to update the Sync::META_KEYS['pending_eagers'] and Sync::META_KEYS['video_eagers']
 		// Remove from pending and add to video.
+		if ( ! empty( $result['eager'] ) ) {
+			$eagers         = (array) $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['video_eagers'], true );
+			$pending_eagers = (array) $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], true );
+			foreach ( $result['eager'] as $eager ) {
+				if ( empty( $eager['status'] ) && ! empty( $eager['transformation'] ) ) {
+					$signature = md5( $eager['transformation'] );
+					if ( isset( $pending_eagers[ $signature ] ) ) {
+						unset( $pending_eagers[ $signature ] );
+					}
+					$eagers[] = $signature;
+				}
+			}
+			// Update what was done.
+			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['video_eagers'], $eagers );
+			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], $pending_eagers );
+		}
 	}
 
 	/**

@@ -223,7 +223,7 @@ class Video {
 
 		if ( isset( $attr['autoplay'] ) ) {
 			$args['autoplay'] = 'true' === $attr['autoplay'];
-			$args['muted'] = 'true' === $attr['autoplay'];
+			$args['muted']    = 'true' === $attr['autoplay'];
 		}
 		if ( isset( $attr['loop'] ) ) {
 			$args['loop'] = 'true' === $attr['loop'];
@@ -289,7 +289,7 @@ class Video {
 			// Enable Autoplay for this video.
 			if ( false !== strpos( $tag, 'autoplay' ) ) {
 				$args['autoplayMode'] = $this->config['video_autoplay_mode']; // if on, use defined mode.
-				$args['muted'] = 'always' === $this->config['video_autoplay_mode'];
+				$args['muted']        = 'always' === $this->config['video_autoplay_mode'];
 			}
 			// Enable Loop.
 			if ( false !== strpos( $tag, 'loop' ) ) {
@@ -336,13 +336,14 @@ class Video {
 						$pending_eagers[ $eager_signature ] = $transformations;
 						$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], $pending_eagers );
 					}
-					//continue;
+					// Queue up for syncing.
+					$this->media->sync->add_to_sync( $attachment_id );
+					continue; // skip this video, and deliver from local.
 				}
 				if ( ! empty( $transformations ) ) {
 					$args['transformation'] = $transformations;
 				}
 				if ( $this->player_enabled() ) {
-					$format   = pathinfo( $cloudinary_url, PATHINFO_EXTENSION );
 					$instance = $this->queue_video_config( $attachment_id, $url, $video['fileformat'], $args );
 					// Remove src and replace with an ID.
 					$new_tag = str_replace( 'src="' . $url . '"', 'id="cloudinary-video-' . esc_attr( $instance ) . '"', $tag );
@@ -385,8 +386,8 @@ class Video {
 				if ( empty( $config['size'] ) && ! empty( $config['transformation'] ) && ! $this->media->get_crop_from_transformation( $config['transformation'] ) ) {
 					$config['fluid'] = true;
 				}
-				
-				$config['controls'] = 'on' === $this->config['video_controls'] ? true : false;
+
+				$config['controls']      = 'on' === $this->config['video_controls'] ? true : false;
 				$cld_videos[ $instance ] = $config;
 			}
 
@@ -502,7 +503,7 @@ class Video {
 			// Filter for block rendering.
 			add_filter( 'render_block_data', array( $this, 'filter_video_block_pre_render' ), 10, 2 );
 		}
-		
+
 		add_action( 'wp_print_styles', array( $this, 'init_player' ) );
 		add_action( 'wp_footer', array( $this, 'print_video_scripts' ) );
 

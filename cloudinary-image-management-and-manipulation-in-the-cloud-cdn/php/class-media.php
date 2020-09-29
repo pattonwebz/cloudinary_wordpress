@@ -1767,7 +1767,14 @@ class Media implements Setup {
 		return $version ? $version : 1;
 	}
 
-	public function video_eagers( $attachment_id ) {
+	/**
+	 * Generate an eager transformations signature.
+	 *
+	 * @param int $attachment_id The attachment ID.
+	 *
+	 * @return string
+	 */
+	public function generate_eager_signature( $attachment_id ) {
 		$eagers = (array) $this->get_post_meta( $attachment_id, Sync::META_KEYS['video_eagers'], true );
 		$eagers = array_filter( $eagers );
 		// Get pending.
@@ -1779,18 +1786,24 @@ class Media implements Setup {
 		return '.' . wp_json_encode( $eagers );
 	}
 
-	public function get_video_eagers( $attachment_id ) {
-		$pending         = $this->get_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], true );
-		$args            = array(
+	/**
+	 * Get pending Eager transformations.
+	 *
+	 * @param int $attachment_id The attachment ID.
+	 *
+	 * @return array
+	 */
+	public function get_pending_eagers( $attachment_id ) {
+		$pending = (array) $this->get_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], true );
+		$pending = array_filter( $pending );
+		$args    = array(
 			'public_id'     => $this->get_public_id( $attachment_id ),
 			'resource_type' => 'video',
 			'type'          => 'upload',
 		);
-		$transformations = array();
-		foreach ( $pending as $transformation ) {
-			$transformations[] = Api::generate_transformation_string( $transformation, 'video' );
-		}
-		$args['eager'] = implode( '|', $transformations );
+		/// only do a single eager per cycle.
+		$transformation = array_shift( $pending );
+		$args['eager']  = Api::generate_transformation_string( $transformation, 'video' );
 
 		return $args;
 	}
