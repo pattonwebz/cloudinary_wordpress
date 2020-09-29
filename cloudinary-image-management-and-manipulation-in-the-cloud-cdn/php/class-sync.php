@@ -422,9 +422,14 @@ class Sync implements Setup, Assets {
 			'eager_video' => array(
 				'generate' => array( $this->managers['media'], 'generate_eager_signature' ),
 				'validate' => function ( $attachment_id ) {
-					return wp_attachment_is( 'video', $attachment_id );
+					$pending = false;
+					if ( wp_attachment_is( 'video', $attachment_id ) ) {
+						$pending = $this->managers['media']->get_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], true );
+					}
+
+					return ! empty( $pending );
 				},
-				'priority' => 5.6,
+				'priority' => 35,
 				'sync'     => array( $this->managers['upload'], 'explicit_update' ),
 				'state'    => 'info syncing',
 				'note'     => __( 'Generating video transformations.', 'cloudinary' ),

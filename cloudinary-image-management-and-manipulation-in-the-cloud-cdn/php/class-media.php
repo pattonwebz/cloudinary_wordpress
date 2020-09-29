@@ -1801,9 +1801,11 @@ class Media implements Setup {
 			'resource_type' => 'video',
 			'type'          => 'upload',
 		);
-		/// only do a single eager per cycle.
-		$transformation = array_shift( $pending );
-		$args['eager']  = Api::generate_transformation_string( $transformation, 'video' );
+		if ( ! empty( $pending ) ) {
+			// Only do a single eager per cycle.
+			$transformation = array_shift( $pending );
+			$args['eager']  = Api::generate_transformation_string( $transformation, 'video' );
+		}
 
 		return $args;
 	}
