@@ -306,6 +306,11 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 				<input data-condition="<?php echo esc_attr( $condition ); ?>" type="<?php echo esc_attr( $type ); ?>" class="cld-field regular-<?php echo esc_attr( $type ); ?>" id="<?php echo esc_attr( $field['label_for'] ); ?>" name="<?php echo esc_attr( $setting_slug ); ?>[<?php echo esc_attr( $field['slug'] ); ?>]" min="<?php echo esc_attr( $field['min'] ); ?>" max="<?php echo esc_attr( $field['max'] ); ?>" value="<?php echo esc_attr( $value ); ?>" data-context="<?php echo esc_attr( $context ); ?>" <?php echo esc_attr( $required ); ?>>
 				<?php
 				break;
+			case 'color':
+				?>
+				<input data-condition="<?php echo esc_attr( $condition ); ?>" type="text" class="cld-field regular-<?php echo esc_attr( $type ); ?>" id="<?php echo esc_attr( $field['label_for'] ); ?>" name="<?php echo esc_attr( $setting_slug ); ?>[<?php echo esc_attr( $field['slug'] ); ?>]" value="<?php echo esc_attr( $value ); ?>" data-context="<?php echo esc_attr( $context ); ?>" <?php echo esc_attr( $required ); ?>>
+				<?php
+				break;
 			case 'checkbox':
 				// Place a hidden field before it, to set unchecked value to off.
 				?>

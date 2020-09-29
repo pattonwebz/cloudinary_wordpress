@@ -7,7 +7,15 @@
 
 $struct = array(
 	'heading'     => __( 'Gallery Block and Widget', 'cloudinary' ),
-	'hide_button' => true,
+	'hide_button' => false,
+	'assets'      => array(
+		'style'  => array(
+			'wp-color-picker',
+		),
+		'script' => array(
+			'wp-color-picker',
+		),
+	),
 	'fields'      => array(
 		'enable_gallery'                    => array(
 			'label'   => __( 'Enable Gallery', 'cloudinary' ),
@@ -18,6 +26,7 @@ $struct = array(
 		'color_header'                      => array(
 			'type'  => 'heading',
 			'label' => __( 'Colors', 'cloudinary' ),
+			'description' => __( 'Set the type of transition that occurs when switching the images in the gallery.', 'cloudinary' ),
 		),
 		'primary_color'                     => array(
 			'label' => __( 'Primary Color', 'cloudinary' ),
@@ -105,15 +114,18 @@ $struct = array(
 			),
 		),
 		'zoom_viewer_position'              => array(
-			'label'   => __( 'Zoom Viewer Position', 'cloudinary' ),
-			'type'    => 'select',
-			'choices' => array(
+			'label'     => __( 'Zoom Viewer Position', 'cloudinary' ),
+			'type'      => 'select',
+			'choices'   => array(
 				'top'    => __( 'Top', 'cloudinary' ),
 				'right'  => __( 'Right', 'cloudinary' ),
 				'left'   => __( 'Left', 'cloudinary' ),
 				'bottom' => __( 'Bottom', 'cloudinary' ),
 			),
-			'default' => 'none',
+			'default'   => 'none',
+			'condition' => array(
+				'zoom' => array( 'none', 'neq' ),
+			),
 		),
 		'carousel_header'                   => array(
 			'type'  => 'heading',

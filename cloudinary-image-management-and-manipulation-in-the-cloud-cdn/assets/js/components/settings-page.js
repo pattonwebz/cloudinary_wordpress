@@ -21,6 +21,8 @@
 	jQuery( document ).on( 'change', '#field-video_controls', disableAutoplayOff );
 
 	jQuery( document ).ready( function( $ ) {
+		$( '.regular-color' ).wpColorPicker();
+
 		// Initilize instance events
 		$( document ).on( 'tabs.init', function() {
 			const tabs = $( '.settings-tab-trigger' ),
@@ -58,13 +60,18 @@
 						target = $( `[id^=field-${ f }-]` );
 					}
 
-					target.on( 'change init', function() {
+					let fieldIsSet = false;
+
+					target.on( 'change init', function( _, isInit = false ) {
+						if ( fieldIsSet && isInit ) {
+							return;
+						}
+
 						let fieldCondition = this.value === value || this.checked;
 
 						if ( Array.isArray( value ) && value.length === 2 ) {
 							switch ( value[ 1 ] ) {
 								case 'neq':
-									console.log( 'initial' );
 									fieldCondition = this.value !== value[ 0 ];
 									break;
 								case 'gt':
@@ -73,7 +80,6 @@
 								case 'lt':
 									fieldCondition = this.value < value[ 0 ];
 							}
-							console.log( this.value, value[ 0 ], fieldCondition );
 						}
 
 						if ( fieldCondition ) {
@@ -81,8 +87,11 @@
 						} else {
 							wrapper.hide();
 						}
+
+						fieldIsSet = true;
 					} );
-					target.trigger( 'init' );
+
+					target.trigger( 'init', true );
 				}
 			} );
 
