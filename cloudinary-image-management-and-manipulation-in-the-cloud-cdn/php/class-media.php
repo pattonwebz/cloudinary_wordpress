@@ -10,6 +10,7 @@ namespace Cloudinary;
 use Cloudinary\Component\Setup;
 use Cloudinary\Connect\Api;
 use Cloudinary\Media\Filter;
+use Cloudinary\Media\Gallery;
 use Cloudinary\Media\Upgrade;
 use Cloudinary\Media\Global_Transformations;
 use Cloudinary\Media\Video;
@@ -89,6 +90,13 @@ class Media implements Setup {
 	 * @var \Cloudinary\Media\Video.
 	 */
 	public $video;
+
+	/**
+	 * Gallery instance.
+	 *
+	 * @var \Cloudinary\Media\Gallery.
+	 */
+	public $gallery;
 
 	/**
 	 * Sync instance.
@@ -1771,10 +1779,13 @@ class Media implements Setup {
 			$this->sync              = $this->plugin->components['sync'];
 
 			// Internal components.
+			$this->gallery                = new Gallery( $this->plugin->config['settings']['gallery'] );
 			$this->filter                 = new Filter( $this );
 			$this->upgrade                = new Upgrade( $this );
 			$this->global_transformations = new Global_Transformations( $this );
 			$this->video                  = new Video( $this );
+
+			echo($this->gallery->get_json()); exit;
 
 			// Set the max image size registered in WordPress.
 			$this->get_max_width();
