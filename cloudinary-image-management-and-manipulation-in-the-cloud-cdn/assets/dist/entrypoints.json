@@ -9,6 +9,12 @@
         "./cloudinary.css"
       ]
     },
+    "block-editor": {
+      "js": [
+        "./runtime.js",
+        "./block-editor.js"
+      ]
+    },
     "video": {
       "js": [
         "./runtime.js"

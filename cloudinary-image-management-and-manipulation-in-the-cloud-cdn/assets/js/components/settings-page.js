@@ -21,7 +21,9 @@
 	jQuery( document ).on( 'change', '#field-video_controls', disableAutoplayOff );
 
 	jQuery( document ).ready( function( $ ) {
-		$( '.regular-color' ).wpColorPicker();
+		if ( $.isFunction( $.fn.wpColorPicker ) ) {
+			$( '.regular-color' ).wpColorPicker();
+		}
 
 		// Initilize instance events
 		$( document ).on( 'tabs.init', function() {

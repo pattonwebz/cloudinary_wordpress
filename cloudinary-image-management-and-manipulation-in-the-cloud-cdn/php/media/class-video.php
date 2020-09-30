@@ -7,6 +7,8 @@
 
 namespace Cloudinary\Media;
 
+use Cloudinary\Media;
+
 /**
  * Class Video.
  *
@@ -19,7 +21,7 @@ class Video {
 	 *
 	 * @since   0.1
 	 *
-	 * @var     \Cloudinary\Media Instance of the plugin.
+	 * @var     Media Instance of the plugin.
 	 */
 	private $media;
 
@@ -71,9 +73,9 @@ class Video {
 	/**
 	 * Video constructor.
 	 *
-	 * @param \Cloudinary\Media $media The plugin.
+	 * @param Media $media The plugin.
 	 */
-	public function __construct( \Cloudinary\Media $media ) {
+	public function __construct( Media $media ) {
 		$this->media  = $media;
 		$this->config = $this->media->plugin->config['settings']['global_video_transformations'];
 
@@ -199,8 +201,8 @@ class Video {
 		// If not CLD video init, return default.
 		if ( false === $this->player_enabled ) {
 			return $html;
-		};
-		// Check for override flag.
+		}
+        // Check for override flag.
 		$overwrite_transformations = false;
 		if ( ! empty( $attr['cldoverwrite'] ) ) {
 			$overwrite_transformations = true;
@@ -422,7 +424,7 @@ class Video {
 	 * Enqueue BLock Assets
 	 */
 	public function enqueue_block_assets() {
-		wp_enqueue_script( 'cloudinary-block', $this->media->plugin->dir_url . 'js/block-editor.js', null, $this->media->plugin->version, true );
+		wp_enqueue_script( 'cloudinary-block', $this->media->plugin->dir_url . 'assets/dist/block-editor.js', array(), $this->media->plugin->version, true );
 		wp_add_inline_script( 'cloudinary-block', 'var CLD_VIDEO_PLAYER = ' . wp_json_encode( $this->config ), 'before' );
 	}
 

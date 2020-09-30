@@ -1,4 +1,5 @@
 {
+  "assets/dist/block-editor.js": "./block-editor.js",
   "assets/dist/cloudinary.css": "./cloudinary.css",
   "assets/dist/cloudinary.js": "./cloudinary.js",
   "assets/dist/runtime.js": "./runtime.js",

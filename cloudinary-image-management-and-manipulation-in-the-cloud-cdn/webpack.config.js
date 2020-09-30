@@ -13,6 +13,7 @@ Encore.setOutputPath( 'assets/dist/' )
 	.setManifestKeyPrefix( 'assets/dist/' )
 
 	.addEntry( 'cloudinary', './assets/js/main.js' )
+	.addEntry( 'block-editor', './assets/js/blocks.js' )
 	.addStyleEntry( 'video', './assets/css/video.scss' )
 	// Add more entries here if needed...
 
@@ -29,6 +30,7 @@ Encore.setOutputPath( 'assets/dist/' )
 
 	// Enable plugins/loaders
 	.enableSassLoader()
+	.addExternals( [ 'lodash', '_' ] )
 	.configureBabelPresetEnv( ( config ) => {
 		config.useBuiltIns = 'usage';
 		config.corejs = 3;

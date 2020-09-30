@@ -12,6 +12,10 @@ use Cloudinary\Component\Config;
 use Cloudinary\Component\Notice;
 use Cloudinary\Component\Setup;
 use Cloudinary\Sync\Storage;
+use WP_REST_Request;
+use WP_REST_Server;
+use const E_USER_WARNING;
+use const WPCOM_IS_VIP_ENV;
 
 /**
  * Main plugin bootstrap file.
@@ -132,7 +136,7 @@ class Plugin {
 	 *
 	 * @param $component
 	 *
-	 * @return \Cloudinary\Connect|\Cloudinary\Media|\Cloudinary\REST_API|\Cloudinary\Settings_Page|\Cloudinary\Sync|null
+	 * @return Connect|Media|REST_API|Settings_Page|Sync|null
 	 */
 	public function get_component( $component ) {
 		$return = null;
@@ -182,7 +186,7 @@ class Plugin {
 	public function rest_endpoints( $endpoints ) {
 
 		$endpoints['dismiss_notice'] = array(
-			'method'   => \WP_REST_Server::CREATABLE,
+			'method'   => WP_REST_Server::CREATABLE,
 			'callback' => array( $this, 'rest_dismiss_notice' ),
 			'args'     => array(),
 		);
@@ -325,9 +329,9 @@ class Plugin {
 	/**
 	 * Set a transient with the duration using a token as an identifier.
 	 *
-	 * @param \WP_REST_Request $request The request object.
+	 * @param WP_REST_Request $request The request object.
 	 */
-	public function rest_dismiss_notice( \WP_REST_Request $request ) {
+	public function rest_dismiss_notice( WP_REST_Request $request ) {
 		$token    = $request->get_param( 'token' );
 		$duration = $request->get_param( 'duration' );
 
@@ -487,7 +491,7 @@ class Plugin {
 	 * @return bool
 	 */
 	public function is_wpcom_vip_prod() {
-		return ( defined( '\WPCOM_IS_VIP_ENV' ) && \WPCOM_IS_VIP_ENV );
+		return ( defined( '\WPCOM_IS_VIP_ENV' ) && WPCOM_IS_VIP_ENV );
 	}
 
 	/**
@@ -496,7 +500,7 @@ class Plugin {
 	 * @param string $message Warning message.
 	 * @param int    $code    Warning code.
 	 */
-	public function trigger_warning( $message, $code = \E_USER_WARNING ) {
+	public function trigger_warning( $message, $code = E_USER_WARNING ) {
 		if ( ! $this->is_wpcom_vip_prod() ) {
 			// @phpcs:disable
 			trigger_error( esc_html( get_class( $this ) . ': ' . $message ), $code );
