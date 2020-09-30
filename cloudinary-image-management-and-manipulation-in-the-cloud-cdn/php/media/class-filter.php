@@ -367,6 +367,8 @@ class Filter {
 				$new_tag                                 = wp_image_add_srcset_and_sizes( $new_tag, $image_meta, $attachment_id );
 			}
 			$content = str_replace( $asset, $new_tag, $content );
+			// Additional URL change for backgrounds etc..
+			$content = str_replace( $url, $cloudinary_url, $content );
 		}
 
 		return $this->filter_video_shortcodes( $content );
@@ -584,7 +586,7 @@ class Filter {
 		return '<# if( data.attachment.attributes.transformations ) { #>
 			<div class="setting cld-overwrite">
 				<label>
-					<span>' . esc_html__( 'Overwrite Transformations', 'cloudinary' ) . '</span>
+					<span>' . esc_html__( 'Overwrite Global Transformations', 'cloudinary' ) . '</span>
 					<input type="checkbox" data-setting="cldoverwrite" value="true"<# if ( data.model.cldoverwrite ) { #> checked="checked"<# } #> />
 				</label>
 			</div>
@@ -600,7 +602,7 @@ class Filter {
 		return '<# if( \'video\' === data.type && data.attachment.attributes.transformations ) { #>
 			<div class="setting cld-overwrite">
 				<label>
-					<span>' . esc_html__( 'Overwrite Transformations', 'cloudinary' ) . '</span>
+					<span>' . esc_html__( 'Overwrite Global Transformations', 'cloudinary' ) . '</span>
 					<input type="checkbox" data-setting="cldoverwrite" value="true"<# if ( data.model.cldoverwrite ) { #> checked="checked"<# } #> />
 				</label>
 			</div>
@@ -618,7 +620,7 @@ class Filter {
 				<label>
 					<span>&nbsp;</span>
 					<input type="checkbox" data-setting="cldoverwrite" value="true" <# if ( data.model.cldoverwrite ) { #>checked="checked"<# } #> />
-					' . esc_html__( 'Overwrite Transformations', 'cloudinary' ) . '
+					' . esc_html__( 'Overwrite Global Transformations', 'cloudinary' ) . '
 				</label>
 			</div>
 		<# } #>';
@@ -634,7 +636,7 @@ class Filter {
 			<div class="setting cld-overwrite">
 				<label>
 					<input type="checkbox" data-setting="cldoverwrite" value="true" <# if ( data.model.cldoverwrite ) { #>checked="checked"<# } #> />
-					' . esc_html__( 'Overwrite Transformations', 'cloudinary' ) . '
+					' . esc_html__( 'Overwrite Global Transformations', 'cloudinary' ) . '
 				</label>
 			</div>
 		<# } #>';
