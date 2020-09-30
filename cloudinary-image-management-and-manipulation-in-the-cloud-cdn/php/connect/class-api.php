@@ -412,6 +412,7 @@ class Api {
 		$disable_https_fetch = get_transient( '_cld_disable_http_upload' );
 		$file_url            = wp_get_original_image_url( $attachment_id );
 		$media               = get_plugin_instance()->get_component( 'media' );
+		$tempfile            = false;
 		if ( $media && $media->is_cloudinary_url( $file_url ) ) {
 			// If this is a Cloudinary URL, then we can use it to fetch from that location.
 			$disable_https_fetch = false;
@@ -431,7 +432,6 @@ class Api {
 					return $this->upload_large( $attachment_id, $args );
 				}
 			}
-			$tempfile = false;
 			if ( false !== strpos( $args['file'], 'vip://' ) ) {
 				$args['file'] = $this->create_local_copy( $args['file'] );
 				if ( is_wp_error( $args['file'] ) ) {
