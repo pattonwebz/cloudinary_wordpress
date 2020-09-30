@@ -287,14 +287,13 @@ class Upload_Sync {
 	 */
 	public function explicit_update( $attachment_id ) {
 		// Explicit update.
-		$type        = $this->sync->get_sync_type( $attachment_id );
-		$args        = array();
-		$update_type = 'update_breakpoints';
+		$type   = $this->sync->get_sync_type( $attachment_id );
+		$args   = array();
+		$result = false;
 		if ( wp_attachment_is_image( $attachment_id ) ) {
 			$args = $this->media->get_breakpoint_options( $attachment_id );
 		} elseif ( wp_attachment_is( 'video', $attachment_id ) ) {
-			$args        = $this->media->get_pending_eagers( $attachment_id );
-			$update_type = 'update_eagers';
+			$args = $this->media->get_pending_eagers( $attachment_id );
 		}
 
 		if ( ! empty( $args ) ) {
@@ -302,10 +301,10 @@ class Upload_Sync {
 			if ( is_wp_error( $result ) ) {
 				return $result;
 			}
-			$this->{$update_type}( $attachment_id, $result );
-		} else {
-			$this->update_breakpoints( $attachment_id, array() );
-			$result = true;
+			// Handle breakpoints signature.
+			if ( 'breakpoints' === $type ) {
+				$this->update_breakpoints( $attachment_id, array() );
+			}
 		}
 
 		return $result;
@@ -326,39 +325,6 @@ class Upload_Sync {
 				$this->media->delete_post_meta( $attachment_id, Sync::META_KEYS['breakpoints'] );
 			}
 			$this->sync->set_signature_item( $attachment_id, 'breakpoints' );
-		}
-	}
-
-	/**
-	 * Update video eagers for an asset.
-	 *
-	 * @param int   $attachment_id The attachment ID.
-	 * @param array $result        Eager URLS.
-	 */
-	public function update_eagers( $attachment_id, $result ) {
-
-		// Remove from pending and add to video.
-		if ( ! empty( $result['eager'] ) ) {
-			$updated        = false;
-			$eagers         = (array) $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['video_eagers'], true );
-			$pending_eagers = (array) $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], true );
-			foreach ( $result['eager'] as $eager ) {
-				if ( empty( $eager['status'] ) && ! empty( $eager['transformation'] ) ) {
-					$signature = md5( $eager['transformation'] );
-					if ( isset( $pending_eagers[ $signature ] ) ) {
-						unset( $pending_eagers[ $signature ] );
-					}
-					$eagers[] = $signature;
-					$updated  = true;
-				}
-			}
-			// Update what was done.
-			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['video_eagers'], $eagers );
-			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], $pending_eagers );
-			if ( true === $updated ) {
-				// Only update signature if something happend.
-				$this->sync->set_signature_item( $attachment_id, 'eager_video' );
-			}
 		}
 	}
 

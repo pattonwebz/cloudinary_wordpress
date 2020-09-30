@@ -1794,17 +1794,24 @@ class Media implements Setup {
 	 * @return array
 	 */
 	public function get_pending_eagers( $attachment_id ) {
-		$pending = (array) $this->get_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], true );
-		$pending = array_filter( $pending );
-		$args    = array(
-			'public_id'     => $this->get_public_id( $attachment_id ),
-			'resource_type' => 'video',
-			'type'          => 'upload',
+		$pending          = (array) $this->get_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], true );
+		$pending          = array_filter( $pending );
+		$notification_url = rest_url( REST_API::BASE . '/eager/' . $attachment_id );
+		$args             = array(
+			'public_id'              => $this->get_public_id( $attachment_id ),
+			'resource_type'          => 'video',
+			'type'                   => 'upload',
+			'overwrite'              => false,
+			'eager_async'            => true,
+			'eager_notification_url' => $notification_url,
 		);
 		if ( ! empty( $pending ) ) {
 			// Only do a single eager per cycle.
-			$transformation = array_shift( $pending );
-			$args['eager']  = Api::generate_transformation_string( $transformation, 'video' );
+			foreach ( $pending as $eager ) {
+
+				$args['eager'][] = Api::generate_transformation_string( $eager, 'video' );
+			}
+			$args['eager'] = implode( '|', $args['eager'] );
 		}
 
 		return $args;
