@@ -2,7 +2,7 @@
 Contributors: Cloudinary, XWP, Automattic
 Tags: image, video, DAM, optimization, CDN
 Requires at least: 4.7
-Tested up to: 5.4.2
+Tested up to: 5.5.1
 Requires PHP: 5.6
 Stable tag: trunk
 License: GPLv2
@@ -107,6 +107,7 @@ The following plugins/themes/page-builders might not be fully compatible with th
 * Goodlayers
 * Leopard
 * Cube Portfolio
+* Smush
 
 
 == Screenshots ==
@@ -121,6 +122,34 @@ The following plugins/themes/page-builders might not be fully compatible with th
 9. Easily Configure Your Account
 
 == Changelog ==
+
+= 2.2.1 (30 Sep 2020) = 
+
+Fixes and Improvements:
+
+* Fixed an error when toggling 'featured image overwrite' on a custom post type
+
+
+= 2.2.0 (08 Sep 2020) = 
+
+New Features: 
+
+* You can now off-load all assets from WordPress to Cloudinary!!
+* Automatically convert unsupported media file types (such as INDD, PSD, TIFF, etc) to WordPress supported file types
+* Synchronization mechanism was re-built and now exposes a more granular status updates
+* Lazy load polyfills for outdated browsers
+* Add the ability to overwrite the global transformation to a feature image
+* High quota usage alert is now dismissable
+* Updated Cloudinary brand
+
+
+Fixes and Improvements:
+
+* Sync tab UI improvements 
+* Various performance improvements  
+* Fixed an issues where excessive transformations being created due to breakpoints not disabling
+* Sync assets to allow for unique naming, to prevent overwriting existing items
+ 
 
 = 2.1.9 (04 Aug 2020) = 
 
