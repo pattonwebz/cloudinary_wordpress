@@ -410,8 +410,12 @@ class Api {
 		$url                 = $this->url( $resource, 'upload', true );
 		$args                = $this->clean_args( $args );
 		$disable_https_fetch = get_transient( '_cld_disable_http_upload' );
-		$file_url            = wp_get_original_image_url( $attachment_id );
-		$media               = get_plugin_instance()->get_component( 'media' );
+		if ( wp_attachment_is_image( $attachment_id ) ) {
+			$file_url = wp_get_original_image_url( $attachment_id );
+		} else {
+			$file_url = wp_get_attachment_url( $attachment_id );
+		}
+		$media = get_plugin_instance()->get_component( 'media' );
 		if ( $media && $media->is_cloudinary_url( $file_url ) ) {
 			// If this is a Cloudinary URL, then we can use it to fetch from that location.
 			$disable_https_fetch = false;
