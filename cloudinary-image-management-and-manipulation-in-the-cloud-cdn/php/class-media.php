@@ -1726,7 +1726,7 @@ class Media implements Setup {
 	 */
 	public function maybe_overwrite_featured_image( $attachment_id ) {
 		$overwrite = false;
-		if ( $this->doing_featured_image && $this->doing_featured_image === $attachment_id ) {
+		if ( $this->doing_featured_image && $this->doing_featured_image === (int) $attachment_id ) {
 			$overwrite = (bool) $this->get_post_meta( get_the_ID(), Global_Transformations::META_FEATURED_IMAGE_KEY, true );
 		}
 
@@ -1740,7 +1740,7 @@ class Media implements Setup {
 	 * @param int $attachment_id The thumbnail ID.
 	 */
 	public function set_doing_featured( $post_id, $attachment_id ) {
-		$this->doing_featured_image = $attachment_id;
+		$this->doing_featured_image = (int) $attachment_id;
 		add_action( 'end_fetch_post_thumbnail_html', function () {
 			$this->doing_featured_image = false;
 		} );
@@ -1812,7 +1812,7 @@ class Media implements Setup {
 	 * @return array
 	 */
 	public function match_file_name_with_cloudinary_source( $image_meta, $attachment_id ) {
-		if ( $this->has_public_id( $attachment_id ) ) {
+		if ( ! empty( $image_meta['file'] ) && $this->has_public_id( $attachment_id ) ) {
 			$cld_file = 'v' . $this->get_cloudinary_version( $attachment_id ) . '/' . $this->get_cloudinary_id( $attachment_id );
 			if ( false === strpos( $image_meta['file'], $cld_file ) ) {
 				$image_meta['file'] = $cld_file;

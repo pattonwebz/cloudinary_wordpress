@@ -548,6 +548,19 @@ class Filter {
 			$content                = $data['content']['raw'];
 			$data['content']['raw'] = $this->filter_out_local( $content );
 
+			// Handle meta if missing due to custom-fields not being supported.
+			if ( ! isset( $data['meta'] ) ) {
+				$data['meta'] = $request->get_param( 'meta' );
+				if ( null === $data['meta'] ) {
+					// If null, meta param doesn't exist, so it's not a save edit, but a load edit.
+					$disable = get_post_meta( $post->ID, Global_Transformations::META_FEATURED_IMAGE_KEY, true );
+					// Add the value to the data meta.
+					$data['meta'][ Global_Transformations::META_FEATURED_IMAGE_KEY ] = $disable;
+				} else {
+					// If the param was found, its a save edit, to update the meta data.
+					update_post_meta( $post->ID, Global_Transformations::META_FEATURED_IMAGE_KEY, (bool) $data['meta'][ Global_Transformations::META_FEATURED_IMAGE_KEY ] );
+				}
+			}
 			$response->set_data( $data );
 		}
 
@@ -692,6 +705,24 @@ class Filter {
 		return $block;
 	}
 
+
+	/**
+	 * Add filters for Rest API handling.
+	 */
+	public function init_rest_filters() {
+		// Gutenberg compatibility.
+		add_filter( 'rest_prepare_attachment', array( $this, 'filter_attachment_for_rest' ) );
+		$types = get_post_types_by_support( 'editor' );
+		foreach ( $types as $type ) {
+			$post_type = get_post_type_object( $type );
+			// Check if this is a rest supported type.
+			if ( true === $post_type->show_in_rest ) {
+				// Add filter only to rest supported types.
+				add_filter( 'rest_prepare_' . $type, array( $this, 'pre_filter_rest_content' ), 10, 3 );
+			}
+		}
+	}
+
 	/**
 	 * Setup hooks for the filters.
 	 */
@@ -710,16 +741,8 @@ class Filter {
 		// Filter video codes.
 		add_filter( 'media_send_to_editor', array( $this, 'filter_video_embeds' ), 10, 3 );
 
-		// Gutenberg compatibility.
-		add_filter( 'rest_prepare_attachment', array( $this, 'filter_attachment_for_rest' ) );
-		$types  = get_post_types_by_support( 'editor' );
-		$filter = $this;
-		array_map(
-			function ( $type ) use ( $filter ) {
-				add_filter( 'rest_prepare_' . $type, array( $filter, 'pre_filter_rest_content' ), 10, 3 );
-			},
-			$types
-		);
+		// Enable Rest filters.
+		add_action( 'rest_api_init', array( $this, 'init_rest_filters' ) );
 
 		// Remove editors to prevent users from manually editing images in WP.
 		add_filter( 'wp_image_editors', array( $this, 'disable_editors_maybe' ) );
