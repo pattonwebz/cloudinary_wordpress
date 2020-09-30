@@ -1758,7 +1758,7 @@ class Media implements Setup {
 	 */
 	public function maybe_overwrite_featured_image( $attachment_id ) {
 		$overwrite = false;
-		if ( $this->doing_featured_image && $this->doing_featured_image === $attachment_id ) {
+		if ( $this->doing_featured_image && $this->doing_featured_image === (int) $attachment_id ) {
 			$overwrite = (bool) $this->get_post_meta( get_the_ID(), Global_Transformations::META_FEATURED_IMAGE_KEY, true );
 		}
 
@@ -1772,7 +1772,7 @@ class Media implements Setup {
 	 * @param int $attachment_id The thumbnail ID.
 	 */
 	public function set_doing_featured( $post_id, $attachment_id ) {
-		$this->doing_featured_image = $attachment_id;
+		$this->doing_featured_image = (int) $attachment_id;
 		add_action( 'end_fetch_post_thumbnail_html', function () {
 			$this->doing_featured_image = false;
 		} );
