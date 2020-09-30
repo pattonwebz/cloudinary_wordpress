@@ -160,7 +160,15 @@ class Storage implements Notice {
 	 * @return string
 	 */
 	public function generate_signature( $attachment_id ) {
-		return $this->settings['offload'] . $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true );
+		$file_exists = true;
+		if ( $this->settings['offload'] !== 'cld' ) {
+			$attachment_file = get_attached_file( $attachment_id );
+			if ( ! file_exists( $attachment_file ) ) {
+				$file_exists = $attachment_file;
+			}
+		}
+
+		return $this->settings['offload'] . $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true ) . $file_exists;
 	}
 
 	/**
@@ -184,13 +192,14 @@ class Storage implements Notice {
 					// Add low quality transformations.
 					$transformations[] = array( 'quality' => 'auto:low' );
 				}
-				$url = $this->media->cloudinary_url( $attachment_id, '', $transformations, null, false, true );
+				$url = $this->media->cloudinary_url( $attachment_id, '', $transformations, null, false );
 				break;
 			case 'dual_full':
-				if ( ! empty( $previous_state ) && 'dual_full' !== $previous_state ) {
+				$exists = get_attached_file( $attachment_id );
+				if ( ! empty( $previous_state ) && ! file_exists( $exists ) ) {
 					// Only do this is it's changing a state.
 					$transformations = $this->media->get_transformation_from_meta( $attachment_id );
-					$url             = $this->media->cloudinary_url( $attachment_id, '', $transformations, null, false, false );
+					$url             = $this->media->cloudinary_url( $attachment_id, '', $transformations, null, false );
 				}
 				break;
 		}
@@ -201,7 +210,8 @@ class Storage implements Notice {
 			if ( 'cld' !== $previous_state ) {
 				$this->remove_local_assets( $attachment_id );
 			}
-			$this->download->download_asset( $attachment_id, $url );
+			$date = get_post_datetime( $attachment_id );
+			$this->download->download_asset( $attachment_id, $url, $date->format( 'Y/m' ) );
 		}
 
 		$this->sync->set_signature_item( $attachment_id, 'storage' );
