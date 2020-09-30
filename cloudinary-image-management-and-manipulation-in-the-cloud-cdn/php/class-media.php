@@ -633,7 +633,19 @@ class Media implements Setup {
 		if ( false !== $previous_url ) {
 			return substr( $url, $previous_url );
 		}
-		if ( ! doing_action( 'wp_insert_post_data' ) && false === $this->in_downsize ) {
+		if (
+			! doing_action( 'wp_insert_post_data' )
+			&& false === $this->in_downsize
+			/**
+			 * Filter doing upload.
+			 * If so, return the default attachment URL.
+			 *
+			 * @param bool Default false.
+			 *
+			 * @return bool
+			 */
+			&& ! apply_filters( 'cloudinary_doing_upload', false )
+		) {
 			if ( $this->cloudinary_id( $attachment_id ) ) {
 				$url = $this->cloudinary_url( $attachment_id );
 			}
@@ -762,7 +774,7 @@ class Media implements Setup {
 
 		// Make a copy as not to destroy the options in \Cloudinary::cloudinary_url().
 		$args = $pre_args;
-		$url  = $this->plugin->components['connect']->api->cloudinary_url( $cloudinary_id, $args, $size, $clean );
+		$url  = $this->plugin->components['connect']->api->cloudinary_url( $cloudinary_id, $args, $size );
 
 		// Check if this type is a preview only type. i.e PDF.
 		if ( ! empty( $size ) && $this->is_preview_only( $attachment_id ) ) {
@@ -1050,6 +1062,8 @@ class Media implements Setup {
 		// Get transformations if any.
 		$transformations = $this->get_post_meta( $attachment_id, Sync::META_KEYS['transformation'], true );
 		// Use Cloudinary breakpoints for same ratio.
+
+		$image_meta['overwrite_transformations'] = ! empty( $image_meta['overwrite_transformations'] ) ? $image_meta['overwrite_transformations'] : false;
 
 		if ( 'on' === $this->plugin->config['settings']['global_transformations']['enable_breakpoints'] && wp_image_matches_ratio( $image_meta['width'], $image_meta['height'], $size_array[0], $size_array[1] ) ) {
 			$meta = $this->get_post_meta( $attachment_id, Sync::META_KEYS['breakpoints'], true );
@@ -1676,12 +1690,22 @@ class Media implements Setup {
 	 */
 	public function is_folder_synced( $attachment_id ) {
 
-		$return = true; // By default all assets in WordPress will be synced.
+		$is_folder_synced = true; // By default all assets in WordPress will be synced.
 		if ( $this->sync->been_synced( $attachment_id ) ) {
-			$return = ! empty( $this->get_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], true ) );
+			$is_folder_synced = ! empty( $this->get_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], true ) );
 		}
 
-		return $return;
+		/**
+		 * Filter is folder synced flag.
+		 *
+		 * @param bool $is_folder_synced Flag value for is folder sync.
+		 * @param int  $attachment_id    The attachment ID.
+		 *
+		 * @return bool
+		 */
+		$is_folder_synced = apply_filters( 'cloudinary_is_folder_synced', $is_folder_synced, $attachment_id );
+
+		return (bool) $is_folder_synced;
 	}
 
 	/**
