@@ -11,8 +11,8 @@ use Cloudinary\Component\Setup;
 use Cloudinary\Connect\Api;
 use Cloudinary\Media\Filter;
 use Cloudinary\Media\Gallery;
-use Cloudinary\Media\Upgrade;
 use Cloudinary\Media\Global_Transformations;
+use Cloudinary\Media\Upgrade;
 use Cloudinary\Media\Video;
 
 /**
@@ -332,7 +332,7 @@ class Media implements Setup {
 	 *
 	 * @return int The attachment id or 0 if not found.
 	 */
-	public function get_id_from_url( $url ) {
+	public function get_id_from_url( $url, $return_public_id = false ) {
 		if ( $this->is_cloudinary_url( $url ) ) {
 			$path  = wp_parse_url( $url, PHP_URL_PATH );
 			$parts = explode( '/', ltrim( $path, '/' ) );
@@ -353,6 +353,14 @@ class Media implements Setup {
 			if ( ! empty( $transformations ) ) {
 				$sync_key .= wp_json_encode( $transformations );
 			}
+
+			if ( $return_public_id ) {
+			    return array(
+                    'public_id'       => $public_id,
+                    'transformations' => $transformations,
+                );
+			}
+
 			$attachment_id = $this->get_id_from_sync_key( $sync_key );
 
 		} else {
@@ -1779,13 +1787,13 @@ class Media implements Setup {
 			$this->sync              = $this->plugin->components['sync'];
 
 			// Internal components.
-			$this->gallery                = new Gallery( $this->plugin->config['settings']['gallery'] );
+			$this->gallery                = new Gallery( $this );
 			$this->filter                 = new Filter( $this );
 			$this->upgrade                = new Upgrade( $this );
 			$this->global_transformations = new Global_Transformations( $this );
 			$this->video                  = new Video( $this );
 
-			echo($this->gallery->get_json()); exit;
+//			echo($this->gallery->get_json()); exit;
 
 			// Set the max image size registered in WordPress.
 			$this->get_max_width();
