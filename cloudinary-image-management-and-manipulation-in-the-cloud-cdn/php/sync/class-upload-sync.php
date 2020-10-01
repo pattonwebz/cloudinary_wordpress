@@ -201,6 +201,21 @@ class Upload_Sync {
 	 */
 	public function upload_asset( $attachment_id ) {
 
+		add_filter( 'cloudinary_doing_upload', '__return_true' );
+
+		add_filter(
+			'cloudinary_is_folder_synced',
+			function( $is_synced, $post_id ) use ( $attachment_id ) {
+				if ( $post_id === $attachment_id ) {
+					return true;
+				}
+
+				return $is_synced;
+			},
+			10,
+			2
+		);
+
 		$type       = $this->sync->get_sync_type( $attachment_id );
 		$options    = $this->media->get_upload_options( $attachment_id );
 		$public_id  = $options['public_id'];
@@ -218,6 +233,8 @@ class Upload_Sync {
 		// Run the upload Call.
 		$result = $this->connect->api->upload( $attachment_id, $options, array(), $try_remote );
 
+		remove_filter( 'cloudinary_doing_upload', '__return_true' );
+
 		if ( ! is_wp_error( $result ) ) {
 
 			// Check that this wasn't an existing.
@@ -233,7 +250,6 @@ class Upload_Sync {
 					return $this->upload_asset( $attachment_id );
 				}
 			}
-
 
 			// Set folder Synced.
 			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], $this->media->is_folder_synced( $attachment_id ) );
