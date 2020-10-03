@@ -202,7 +202,7 @@ class Video {
 		if ( false === $this->player_enabled ) {
 			return $html;
 		}
-        // Check for override flag.
+		// Check for override flag.
 		$overwrite_transformations = false;
 		if ( ! empty( $attr['cldoverwrite'] ) ) {
 			$overwrite_transformations = true;

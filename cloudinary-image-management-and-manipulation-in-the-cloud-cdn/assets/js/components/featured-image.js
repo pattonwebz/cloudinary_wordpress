@@ -6,7 +6,7 @@
 import { __ } from '@wordpress/i18n';
 
 import { ToggleControl } from '@wordpress/components';
-import { withSelect, withDispatch } from '@wordpress/data';
+import { withDispatch, withSelect } from '@wordpress/data';
 
 // Set our component.
 let FeaturedTransformationsToggle = ( props ) => {
@@ -25,7 +25,7 @@ let FeaturedTransformationsToggle = ( props ) => {
 
 // Setup our properties.
 FeaturedTransformationsToggle = withSelect( ( select ) => ( {
-	overwrite_featured_transformations: select( 'core/editor' ).getEditedPostAttribute( 'meta' )._cloudinary_featured_overwrite ?? false,
+	overwrite_featured_transformations: select( 'core/editor' )?.getEditedPostAttribute( 'meta' )._cloudinary_featured_overwrite ?? false,
 } ) )( FeaturedTransformationsToggle );
 
 // Setup our update method.
@@ -47,7 +47,7 @@ const cldFilterFeatured = ( BlockEdit ) => {
 			<>
 				<BlockEdit { ...props } />
 				{ !! props.value &&
-				<FeaturedTransformationsToggle { ...props } />
+					<FeaturedTransformationsToggle { ...props } />
 				}
 			</>
 		);

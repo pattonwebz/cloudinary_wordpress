@@ -90,10 +90,11 @@ class Gallery implements \JsonSerializable {
 				$value = $this->parse_dot_notation( $value );
 			}
 
-			foreach ( array_reverse( explode( '.', $key ) ) as $key ) {
-				$value = array( $key => $value );
+			foreach ( array_reverse( explode( '.', $key ) ) as $inner_key ) {
+				$value = array( $inner_key => $value );
 			}
 
+			/** @noinspection SlowArrayOperationsInLoopInspection */
 			$result = array_merge_recursive( $result, $value );
 		}
 
@@ -155,9 +156,16 @@ class Gallery implements \JsonSerializable {
 	 * Register assets for the gallery.
 	 */
 	public function register_scripts_styles() {
-		wp_enqueue_script( 'cld-gallery', 'https://product-gallery.cloudinary.com/all.js', null, '1', true );
+		wp_enqueue_script( 'cld-gallery', 'https://product-gallery.cloudinary.com/all.js', null, $this->media->plugin->version, true );
 	}
 
+	/**
+	 * This is a woocommerce gallery hook which is run for each gallery item.
+	 *
+	 * @param string $html
+	 * @param int    $attachment_id
+	 * @return string
+	 */
 	public function override_woocommerce_gallery( $html, $attachment_id ) {
 		$public_id = $this->media->get_public_id( $attachment_id, true );
 		return '<script>galleryOptions.mediaAssets.push("' . esc_js( $public_id ) . '");</script>';
@@ -185,10 +193,31 @@ class Gallery implements \JsonSerializable {
 	 * Setup hooks for the gallery.
 	 */
 	public function setup_hooks() {
-		add_filter( 'woocommerce_single_product_image_thumbnail_html', array( $this, 'override_woocommerce_gallery' ), 10, 2 );
-		add_filter( 'wp_head', array( $this, 'add_config_to_head' ) );
-		add_filter( 'script_loader_tag', array( $this, 'prepare_gallery_assets' ), 10, 2 );
+		if ( ! is_admin() ) {
+			add_filter( 'woocommerce_single_product_image_thumbnail_html', array( $this, 'override_woocommerce_gallery' ), 10, 2 );
+			add_filter( 'wp_head', array( $this, 'add_config_to_head' ) );
+			add_filter( 'script_loader_tag', array( $this, 'prepare_gallery_assets' ), 10, 2 );
+			$this->register_scripts_styles();
+		}
 
-		$this->register_scripts_styles();
+		add_action(
+			'enqueue_block_editor_assets',
+			function () {
+				wp_enqueue_script(
+					'cloudinary-block-js',
+					$this->media->plugin->dir_url . 'assets/dist/block-editor.js',
+					array(),
+					$this->media->plugin->version
+				);
+			}
+		);
+
+		register_block_type(
+			'cloudinary/gallery',
+			array(
+				'editor_script' => 'cloudinary-block-js',
+				'category'      => 'common',
+			)
+		);
 	}
 }
