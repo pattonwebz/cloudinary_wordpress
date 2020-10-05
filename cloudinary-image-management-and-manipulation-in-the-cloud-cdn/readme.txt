@@ -8,10 +8,10 @@ Stable tag: trunk
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Use Cloudinary to efficiently create, manage and deliver images, videos, and other media, personalized and optimized for every device and channel.
+Use Cloudinary's plguin to efficiently create, manage and deliver images, videos, and other media, personalized and optimized for every device and channel.
 
 == Description ==
-Cloudinary makes automating your image, video, and rich media workflow easy, offering a variety of features. From media upload to image optimization, video transcoding and manipulation through delivery via global CDNs, everything is offered from within the plugin.
+Cloudinary's [award-winning plugin](https://www.businesswire.com/news/home/20200923005566/en/Cloudinary-Wins-2020-MarTech-Breakthrough-Award-for-Best-WordPress-Plugin) makes automating your image, video, and rich media workflow easy, offering a variety of features. From media upload to image optimization, video transcoding and manipulation through delivery via global CDNs, everything is offered from within the plugin.
 
 Optimize your site performance and user experience with faster page load times, advanced auto-responsive delivery, and better visual experience. Automate image quality and video encoding settings, scale and crop images using AI to focus on the most important region, apply comprehensive video and image manipulations and effects, and deliver optimized media experiences to any device in any resolution or pixel density. 
 
@@ -122,6 +122,19 @@ The following plugins/themes/page-builders might not be fully compatible with th
 9. Easily Configure Your Account
 
 == Changelog ==
+
+= 2.3.0 (05 Oct 2020) = 
+
+New Features:
+
+* Added a poster image for video asset
+
+Fixes and improvements:
+
+* Re-sync assets to user specified folder instead of root
+* Store the original uploaded image to cloudinary
+* Fixed 'Resource not found' error when changing credentials
+* Fixed incompatibility with text media block
 
 = 2.2.1 (30 Sep 2020) = 
 
