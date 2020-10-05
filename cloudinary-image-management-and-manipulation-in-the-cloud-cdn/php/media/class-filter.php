@@ -729,6 +729,7 @@ class Filter {
 
 		// Add transformations.
 		add_filter( 'media_send_to_editor', array( $this, 'transform_to_editor' ), 10, 3 );
+
 		// Filter video codes.
 		add_filter( 'media_send_to_editor', array( $this, 'filter_video_embeds' ), 10, 3 );
 
