@@ -75,7 +75,7 @@ const TransformationsToggle = ( props ) => {
 	return (
 		<PanelBody title={__( 'Transformations', 'cloudinary' )}>
 			<ToggleControl
-				label={__( 'Overwrite Transformations', 'cloudinary' )}
+				label={__( 'Overwrite Global Transformations', 'cloudinary' )}
 				checked={overwrite_transformations}
 				onChange={( value ) => {
 					setAttributes( {overwrite_transformations: value} );

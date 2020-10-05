@@ -495,6 +495,7 @@ class Media implements Setup {
 					// Make the WP Size array.
 					$wp_size = array(
 						'wpsize' => $size_name,
+						'file'   => $size['file'],
 						'width'  => $size['width'],
 						'height' => $size['height'],
 						'crop'   => $cropped ? 'fill' : 'scale',
@@ -604,9 +605,6 @@ class Media implements Setup {
 		$transformation_chains = explode( '/', $str );
 		$transformations       = array();
 		foreach ( $transformation_chains as $index => $chain ) {
-			if ( false !== strpos( $chain, 'wpsize' ) ) {
-				continue; // A wpsize is not a transformation.
-			}
 			$items = explode( ',', $chain );
 			foreach ( $items as $item ) {
 				$item = trim( $item );
@@ -635,7 +633,19 @@ class Media implements Setup {
 		if ( false !== $previous_url ) {
 			return substr( $url, $previous_url );
 		}
-		if ( ! doing_action( 'wp_insert_post_data' ) && false === $this->in_downsize ) {
+		if (
+			! doing_action( 'wp_insert_post_data' )
+			&& false === $this->in_downsize
+			/**
+			 * Filter doing upload.
+			 * If so, return the default attachment URL.
+			 *
+			 * @param bool Default false.
+			 *
+			 * @return bool
+			 */
+			&& ! apply_filters( 'cloudinary_doing_upload', false )
+		) {
 			if ( $this->cloudinary_id( $attachment_id ) ) {
 				$url = $this->cloudinary_url( $attachment_id );
 			}
@@ -724,7 +734,7 @@ class Media implements Setup {
 	 *
 	 * @return string The converted URL.
 	 */
-	public function cloudinary_url( $attachment_id, $size = array(), $transformations = array(), $cloudinary_id = null, $overwrite_transformations = false, $clean = false ) {
+	public function cloudinary_url( $attachment_id, $size = array(), $transformations = array(), $cloudinary_id = null, $overwrite_transformations = false ) {
 
 		if ( ! ( $cloudinary_id ) ) {
 			$cloudinary_id = $this->cloudinary_id( $attachment_id );
@@ -744,13 +754,7 @@ class Media implements Setup {
 			'resource_type' => $resource_type,
 		);
 
-		// Check size and correct if string or size.
-		if ( is_string( $size ) || ( is_array( $size ) && 3 === count( $size ) ) ) {
-			$intermediate = image_get_intermediate_size( $attachment_id, $size );
-			if ( is_array( $intermediate ) ) {
-				$size = $this->get_crop( $intermediate['url'], $attachment_id );
-			}
-		}
+		$size = $this->prepare_size( $attachment_id, $size );
 		if ( false === $overwrite_transformations ) {
 			$overwrite_transformations = $this->maybe_overwrite_featured_image( $attachment_id );
 		}
@@ -770,7 +774,7 @@ class Media implements Setup {
 
 		// Make a copy as not to destroy the options in \Cloudinary::cloudinary_url().
 		$args = $pre_args;
-		$url  = $this->plugin->components['connect']->api->cloudinary_url( $cloudinary_id, $args, $size, $clean );
+		$url  = $this->plugin->components['connect']->api->cloudinary_url( $cloudinary_id, $args, $size );
 
 		// Check if this type is a preview only type. i.e PDF.
 		if ( ! empty( $size ) && $this->is_preview_only( $attachment_id ) ) {
@@ -787,6 +791,44 @@ class Media implements Setup {
 		 * @return string
 		 */
 		return apply_filters( 'cloudinary_converted_url', $url, $attachment_id, $pre_args );
+	}
+
+	/**
+	 * Prepare the Size array for the Cloudinary URL API.
+	 *
+	 * @param int          $attachment_id The attachment ID.
+	 * @param array|string $size          The size array or slug.
+	 *
+	 * @return array|string
+	 */
+	public function prepare_size( $attachment_id, $size ) {
+		// Check size and correct if string or size.
+		if ( empty( $size ) || 'full' === $size ) {
+			// Maybe get full size if scaled.
+			$meta = wp_get_attachment_metadata( $attachment_id, true );
+			if ( ! empty( $meta['original_image'] ) ) {
+				$size = array(
+					'width'  => $meta['width'],
+					'height' => $meta['height'],
+					'full'   => true,
+				);
+			}
+		} elseif ( is_string( $size ) || ( is_array( $size ) && 3 === count( $size ) ) ) {
+			$intermediate = image_get_intermediate_size( $attachment_id, $size );
+			if ( is_array( $intermediate ) ) {
+				$size = $this->get_crop( $intermediate['url'], $attachment_id );
+			}
+		} elseif ( array_keys( $size ) === array( 0, 1 ) ) {
+			$size = array(
+				'width'  => $size[0],
+				'height' => $size[1],
+			);
+			if ( $size['width'] === $size['height'] ) {
+				$size['crop'] = 'fill';
+			}
+		}
+
+		return $size;
 	}
 
 	/**
@@ -998,7 +1040,7 @@ class Media implements Setup {
 		}
 		$size = $this->get_crop( $url, $attachment_id );
 
-		return $this->cloudinary_url( $attachment_id, $size, $transformations, null, $overwrite_transformations, true );
+		return $this->cloudinary_url( $attachment_id, $size, $transformations, null, $overwrite_transformations );
 	}
 
 	/**
@@ -1017,9 +1059,11 @@ class Media implements Setup {
 		if ( ! $cloudinary_id ) {
 			return $sources; // Return WordPress default sources.
 		}
-		// Get transformations from URL.
-		$transformations = $this->get_transformations_from_string( $image_src );
+		// Get transformations if any.
+		$transformations = $this->get_post_meta( $attachment_id, Sync::META_KEYS['transformation'], true );
 		// Use Cloudinary breakpoints for same ratio.
+
+		$image_meta['overwrite_transformations'] = ! empty( $image_meta['overwrite_transformations'] ) ? $image_meta['overwrite_transformations'] : false;
 
 		if ( 'on' === $this->plugin->config['settings']['global_transformations']['enable_breakpoints'] && wp_image_matches_ratio( $image_meta['width'], $image_meta['height'], $size_array[0], $size_array[1] ) ) {
 			$meta = $this->get_post_meta( $attachment_id, Sync::META_KEYS['breakpoints'], true );
@@ -1050,7 +1094,7 @@ class Media implements Setup {
 						'width' => $breakpoint['width'],
 					);
 					$sources[ $breakpoint['width'] ] = array(
-						'url'        => $this->cloudinary_url( $attachment_id, $size, $transformations, $cloudinary_id, true ),
+						'url'        => $this->cloudinary_url( $attachment_id, $size, $transformations, $cloudinary_id, $image_meta['overwrite_transformations'] ),
 						'descriptor' => 'w',
 						'value'      => $breakpoint['width'],
 					);
@@ -1076,33 +1120,11 @@ class Media implements Setup {
 		// Use current sources, but convert the URLS.
 		foreach ( $sources as &$source ) {
 			if ( ! $this->is_cloudinary_url( $source['url'] ) ) {
-				$source['url'] = $this->convert_url( $source['url'], $attachment_id, $transformations, true ); // Overwrite transformations applied, since the $transformations includes globals from the primary URL.
+				$source['url'] = $this->convert_url( $source['url'], $attachment_id, $transformations, $image_meta['overwrite_transformations'] ); // Overwrite transformations applied, since the $transformations includes globals from the primary URL.
 			}
 		}
 
 		return $sources;
-	}
-
-	/**
-	 * Alter the image sizes metadata to match the Cloudinary ID so that WordPress can detect a matched source for responsive breakpoints.
-	 *
-	 * @param array  $image_meta    The image metadata array.
-	 * @param array  $size_array    The size array.
-	 * @param string $image_src     The image src.
-	 * @param int    $attachment_id The attachment ID.
-	 *
-	 * @return array
-	 */
-	public function match_responsive_sources( $image_meta, $size_array, $image_src, $attachment_id ) {
-		if ( wp_attachment_is_image( $attachment_id ) && ! empty( $image_meta['sizes'] ) ) {
-			$cloudinary_id = $this->cloudinary_id( $attachment_id );
-			if ( $cloudinary_id ) {
-				// Set the file to the Cloudinary ID so that it will be matched.
-				$image_meta['file'] = $cloudinary_id;
-			}
-		}
-
-		return $image_meta;
 	}
 
 	/**
@@ -1668,12 +1690,22 @@ class Media implements Setup {
 	 */
 	public function is_folder_synced( $attachment_id ) {
 
-		$return = true; // By default all assets in WordPress will be synced.
+		$is_folder_synced = true; // By default all assets in WordPress will be synced.
 		if ( $this->sync->been_synced( $attachment_id ) ) {
-			$return = ! empty( $this->get_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], true ) );
+			$is_folder_synced = ! empty( $this->get_post_meta( $attachment_id, Sync::META_KEYS['folder_sync'], true ) );
 		}
 
-		return $return;
+		/**
+		 * Filter is folder synced flag.
+		 *
+		 * @param bool $is_folder_synced Flag value for is folder sync.
+		 * @param int  $attachment_id    The attachment ID.
+		 *
+		 * @return bool
+		 */
+		$is_folder_synced = apply_filters( 'cloudinary_is_folder_synced', $is_folder_synced, $attachment_id );
+
+		return (bool) $is_folder_synced;
 	}
 
 	/**
@@ -1789,8 +1821,6 @@ class Media implements Setup {
 
 			// Filter live URLS. (functions that return a URL).
 			add_filter( 'wp_calculate_image_srcset', array( $this, 'image_srcset' ), 10, 5 );
-			add_filter( 'wp_calculate_image_srcset_meta', array( $this, 'match_responsive_sources' ), 10, 4 );
-			add_filter( 'wp_get_attachment_metadata', array( $this, 'match_file_name_with_cloudinary_source' ), 10, 2 );
 			add_filter( 'wp_get_attachment_url', array( $this, 'attachment_url' ), 10, 2 );
 			add_filter( 'image_downsize', array( $this, 'filter_downsize' ), 10, 3 );
 
@@ -1801,24 +1831,5 @@ class Media implements Setup {
 			// Hook into Featured Image cycle.
 			add_action( 'begin_fetch_post_thumbnail_html', array( $this, 'set_doing_featured' ), 10, 2 );
 		}
-	}
-
-	/**
-	 * Ensure the file in image meta is the same as the Cloudinary ID.
-	 *
-	 * @param array $image_meta    Meta information of the attachment.
-	 * @param int   $attachment_id The attachment ID.
-	 *
-	 * @return array
-	 */
-	public function match_file_name_with_cloudinary_source( $image_meta, $attachment_id ) {
-		if ( ! empty( $image_meta['file'] ) && $this->has_public_id( $attachment_id ) ) {
-			$cld_file = 'v' . $this->get_cloudinary_version( $attachment_id ) . '/' . $this->get_cloudinary_id( $attachment_id );
-			if ( false === strpos( $image_meta['file'], $cld_file ) ) {
-				$image_meta['file'] = $cld_file;
-			}
-		}
-
-		return $image_meta;
 	}
 }
