@@ -223,9 +223,10 @@ class Gallery implements \JsonSerializable {
 			add_filter( 'woocommerce_single_product_image_thumbnail_html', array( $this, 'override_woocommerce_gallery' ), 10, 2 );
 			add_filter( 'wp_head', array( $this, 'add_config_to_head' ) );
 			add_filter( 'script_loader_tag', array( $this, 'prepare_gallery_assets' ), 10, 2 );
-			$this->frontend_scripts_styles();
 		} else {
 			add_action( 'enqueue_block_editor_assets', array( $this, 'block_editor_scripts_styles' ) );
 		}
+
+		$this->frontend_scripts_styles();
 	}
 }

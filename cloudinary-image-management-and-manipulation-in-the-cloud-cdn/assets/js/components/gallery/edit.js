@@ -34,6 +34,7 @@ import {
 	ZOOM_TRIGGER,
 	ZOOM_TYPE,
 } from './options';
+import { publicIdFromUrl } from './utils';
 
 const Edit = ( {
 	setAttributes,
@@ -63,15 +64,63 @@ const Edit = ( {
 	const setAttr = ( attribute, value ) => setAttributes( { [ attribute ]: value } );
 
 	return <div>
-		<MediaPlaceholder
-			labels={ { title: __( 'Cloudinary Gallery', 'cloudinary' ) } }
-			icon="format-gallery"
-			allowedTypes={ ALLOWED_MEDIA_TYPES }
-			multiple
-			onSelect={ ( selections ) => {
-				console.log( selections );
-			} }
-		/>
+		<>
+			<div id="cld-gallery"></div>
+			<MediaPlaceholder
+				labels={ { title: __( 'Cloudinary Gallery', 'cloudinary' ) } }
+				icon="format-gallery"
+				allowedTypes={ ALLOWED_MEDIA_TYPES }
+				multiple
+				onSelect={ ( selections ) => {
+					const publicIds = selections.map( ( image ) => publicIdFromUrl( image.url ) );
+
+					cloudinary.galleryWidget( {
+						container: '#cld-gallery',
+						cloudName: CLDN.mloptions.cloud_name,
+						mediaAssets: publicIds,
+						displayProps: {
+							mode: 'classic',
+							columns: 1,
+							spacing: 15,
+						},
+						aspectRatio: '3:4',
+						transformation: {
+							crop: 'fill',
+						},
+						bgColor: 'transparent',
+						carouselLocation: 'left',
+						carouselOffset: 20,
+						navigation: 'always',
+						thumbnailProps: {
+							mediaSymbolSize: 42,
+							spacing: 20,
+							width: 90,
+							height: 90,
+							navigationFloat: true,
+							navigationShape: 'radius',
+							navigationSize: 40,
+							navigationColor: '#ffffff',
+							selectedStyle: 'all',
+							selectedBorderPosition: 'all',
+							selectedBorderWidth: 4,
+							mediaSymbolShape: 'none',
+						},
+						navigationButtonProps: {
+							shape: 'rectangle',
+							iconColor: '#ffffff',
+							color: '#000',
+							size: 52,
+							navigationPosition: 'offset',
+							navigationOffset: 12,
+						},
+						themeProps: {
+							primary: '#000000',
+							active: '#777777',
+						},
+					} ).render();
+				} }
+			/>
+		</>
 		<InspectorControls>
 			<PanelBody title={ __( 'Layout', 'cloudinary' ) }>
 				{ LAYOUT_OPTIONS.map( ( layoutStyle ) => (
