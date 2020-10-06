@@ -488,7 +488,7 @@ class Media implements Setup {
 			$additional_sizes = wp_get_additional_image_sizes();
 			foreach ( $meta['sizes'] as $size_name => $size ) {
 				if ( $file === $size['file'] ) {
-					$cropped = false;
+					$cropped = ! wp_image_matches_ratio( $meta['width'], $meta['height'], $size['width'], $size['height'] );
 					if ( isset( $additional_sizes[ $size_name ]['crop'] ) ) {
 						$cropped = $additional_sizes[ $size_name ]['crop'];
 					}
