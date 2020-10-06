@@ -15,6 +15,15 @@
         "./block-editor.js"
       ]
     },
+    "block-gallery": {
+      "js": [
+        "./runtime.js",
+        "./block-gallery.js"
+      ],
+      "css": [
+        "./block-gallery.css"
+      ]
+    },
     "video": {
       "js": [
         "./runtime.js"

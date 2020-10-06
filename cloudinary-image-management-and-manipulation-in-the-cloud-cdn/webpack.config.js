@@ -14,6 +14,7 @@ Encore.setOutputPath( 'assets/dist/' )
 
 	.addEntry( 'cloudinary', './assets/js/main.js' )
 	.addEntry( 'block-editor', './assets/js/blocks.js' )
+	.addEntry( 'block-gallery', './assets/js/components/gallery/index.js' )
 	.addStyleEntry( 'video', './assets/css/video.scss' )
 	// Add more entries here if needed...
 
@@ -31,6 +32,9 @@ Encore.setOutputPath( 'assets/dist/' )
 	// Enable plugins/loaders
 	.enableSassLoader()
 	.addExternals( [ 'lodash', '_' ] )
+	.addExternals( { '@wordpress/blocks': 'wp.blocks' } )
+	.addExternals( { '@wordpress/block-editor': 'wp.editor' } )
+	.addExternals( { '@wordpress/element': 'wp.element' } )
 	.configureBabelPresetEnv( ( config ) => {
 		config.useBuiltIns = 'usage';
 		config.corejs = 3;

@@ -1,7 +1,6 @@
 /**
  * Internal dependencies
  */
-import Gallery from './components/gallery';
 import Video from './components/video';
 import Featured from './components/featured-image';
 
@@ -12,5 +11,4 @@ window.$ = window.jQuery;
 export const cloudinaryBlocks = {
 	Video,
 	Featured,
-	Gallery,
 };

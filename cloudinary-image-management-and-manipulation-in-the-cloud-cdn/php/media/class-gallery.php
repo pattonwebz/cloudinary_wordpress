@@ -153,10 +153,36 @@ class Gallery implements \JsonSerializable {
 	}
 
 	/**
-	 * Register assets for the gallery.
+	 * Register frontend assets for the gallery.
 	 */
-	public function register_scripts_styles() {
-		wp_enqueue_script( 'cld-gallery', 'https://product-gallery.cloudinary.com/all.js', null, $this->media->plugin->version, true );
+	public function frontend_scripts_styles() {
+		wp_enqueue_script(
+			'cld-gallery',
+			'https://product-gallery.cloudinary.com/all.js',
+			array(),
+			$this->media->plugin->version,
+			true
+		);
+	}
+
+	/**
+	 * Register blocked editor assets for the gallery.
+	 */
+	public function block_editor_scripts_styles() {
+		wp_enqueue_style(
+			'cloudinary-gallery-block-css',
+			$this->media->plugin->dir_url . 'assets/dist/block-gallery.css',
+			array(),
+			$this->media->plugin->version
+		);
+
+		wp_enqueue_script(
+			'cloudinary-gallery-block-js',
+			$this->media->plugin->dir_url . 'assets/dist/block-gallery.js',
+			array( 'wp-blocks', 'wp-editor', 'wp-element' ),
+			$this->media->plugin->version,
+			true
+		);
 	}
 
 	/**
@@ -197,27 +223,9 @@ class Gallery implements \JsonSerializable {
 			add_filter( 'woocommerce_single_product_image_thumbnail_html', array( $this, 'override_woocommerce_gallery' ), 10, 2 );
 			add_filter( 'wp_head', array( $this, 'add_config_to_head' ) );
 			add_filter( 'script_loader_tag', array( $this, 'prepare_gallery_assets' ), 10, 2 );
-			$this->register_scripts_styles();
+			$this->frontend_scripts_styles();
+		} else {
+			add_action( 'enqueue_block_editor_assets', array( $this, 'block_editor_scripts_styles' ) );
 		}
-
-		add_action(
-			'enqueue_block_editor_assets',
-			function () {
-				wp_enqueue_script(
-					'cloudinary-block-js',
-					$this->media->plugin->dir_url . 'assets/dist/block-editor.js',
-					array(),
-					$this->media->plugin->version
-				);
-			}
-		);
-
-		register_block_type(
-			'cloudinary/gallery',
-			array(
-				'editor_script' => 'cloudinary-block-js',
-				'category'      => 'common',
-			)
-		);
 	}
 }
