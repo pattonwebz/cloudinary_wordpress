@@ -3,7 +3,15 @@
  */
 import { __ } from '@wordpress/i18n';
 import { InspectorControls, MediaPlaceholder } from '@wordpress/block-editor';
-import { Button, ButtonGroup, ColorPalette, PanelBody, SelectControl, ToggleControl } from '@wordpress/components';
+import {
+	Button,
+	ButtonGroup,
+	ColorPalette,
+	PanelBody,
+	RangeControl,
+	SelectControl,
+	ToggleControl,
+} from '@wordpress/components';
 
 /**
  * Internal dependencies
@@ -13,10 +21,16 @@ import Radio from './radio';
 import {
 	ALLOWED_MEDIA_TYPES,
 	ASPECT_RATIOS,
+	CAROUSEL_LOCATION,
+	CAROUSEL_STYLE,
 	COLORS,
 	FADE_TRANSITIONS,
 	LAYOUT_OPTIONS,
+	MEDIA_ICON_SHAPE,
 	NAVIGATION,
+	NAVIGATION_BUTTON_SHAPE,
+	SELECTED_BORDER_POSITION,
+	SELECTED_STYLE,
 	ZOOM_TRIGGER,
 	ZOOM_TYPE,
 } from './options';
@@ -34,16 +48,23 @@ const Edit = ( {
 		showZoom,
 		zoomType,
 		zoomTrigger,
+		carouselLocation,
+		carouselOffset,
+		carouselStyle,
+		width,
+		height,
+		navigationButtonShape,
+		selectedStyle,
+		selectedBorderPosition,
+		selectedBorderWidth,
+		mediaIconShape,
 	},
 } ) => {
-	const onLayoutChange = ( selectedLayout ) => setAttributes( { layout: selectedLayout } );
-	const onNavigationClick = ( selectedNavigation ) => setAttributes( { navigation: selectedNavigation } );
-	const onZoomTypeClick = ( selectedType ) => setAttributes( { zoomType: selectedType } );
-	const onZoomTriggerClick = ( selectedTriggeer ) => setAttributes( { zoomTrigger: selectedTriggeer } );
+	const setAttr = ( attribute, value ) => setAttributes( { [ attribute ]: value } );
 
 	return <div>
 		<MediaPlaceholder
-			labels={ { title: __( 'Cloudinary Gallery' ) } }
+			labels={ { title: __( 'Cloudinary Gallery', 'cloudinary' ) } }
 			icon="format-gallery"
 			allowedTypes={ ALLOWED_MEDIA_TYPES }
 			multiple
@@ -52,12 +73,12 @@ const Edit = ( {
 			} }
 		/>
 		<InspectorControls>
-			<PanelBody title={ __( 'Layout' ) }>
+			<PanelBody title={ __( 'Layout', 'cloudinary' ) }>
 				{ LAYOUT_OPTIONS.map( ( layoutStyle ) => (
 					<Radio
-						key={ layoutStyle.name }
+						key={ layoutStyle.name + '-layout' }
 						name={ layoutStyle.name }
-						onChange={ onLayoutChange }
+						onChange={ ( value ) => setAttr( 'layout', value ) }
 						icon={ layoutStyle.icon }
 						current={ layout }
 					>
@@ -65,7 +86,7 @@ const Edit = ( {
 					</Radio>
 				) ) }
 			</PanelBody>
-			<PanelBody title={ __( 'Color Palette' ) }>
+			<PanelBody title={ __( 'Color Palette', 'cloudinary' ) }>
 				<p>{ __( 'Primary', 'cloudinary' ) }</p>
 				<ColorPalette
 					colors={ COLORS }
@@ -92,7 +113,7 @@ const Edit = ( {
 					onChange={ ( value ) => setAttributes( { activeColor: value } ) }
 				/>
 			</PanelBody> }
-			<PanelBody title={ __( 'Main Viewer Parameters' ) }>
+			<PanelBody title={ __( 'Main Viewer Parameters', 'cloudinary' ) }>
 				<SelectControl
 					label={ __( 'Aspect Ratio', 'cloudinary' ) }
 					value={ aspectRatio }
@@ -104,10 +125,10 @@ const Edit = ( {
 					<ButtonGroup>
 						{ NAVIGATION.map( ( navType ) => (
 							<Button
-								key={ navType.value }
+								key={ navType.value + '-navigation' }
 								isDefault
 								isPrimary={ navType.value === navigation }
-								onClick={ () => onNavigationClick( navType.value ) }
+								onClick={ () => setAttr( 'navigation', navType.value ) }
 							>
 								{ navType.label }
 							</Button>
@@ -124,14 +145,14 @@ const Edit = ( {
 						<p>{ __( 'Zoom Type', 'cloudinary' ) }</p>
 						<p>
 							<ButtonGroup>
-								{ ZOOM_TYPE.map( ( type ) => (
+								{ ZOOM_TYPE.map( ( item ) => (
 									<Button
-										key={ type.value }
+										key={ item.value + '-zoom-type' }
 										isDefault
-										isPrimary={ type.value === zoomType }
-										onClick={ () => onZoomTypeClick( type.value ) }
+										isPrimary={ item.value === zoomType }
+										onClick={ () => setAttr( 'zoomType', item.value ) }
 									>
-										{ type.label }
+										{ item.label }
 									</Button>
 								) ) }
 							</ButtonGroup>
@@ -139,20 +160,125 @@ const Edit = ( {
 						<p>{ __( 'Zoom Trigger', 'cloudinary' ) }</p>
 						<p>
 							<ButtonGroup>
-								{ ZOOM_TRIGGER.map( ( trigger ) => (
+								{ ZOOM_TRIGGER.map( ( item ) => (
 									<Button
-										key={ trigger.value }
+										key={ item.value + '-zoom-trigger' }
 										isDefault
-										isPrimary={ trigger.value === zoomTrigger }
-										onClick={ () => onZoomTriggerClick( trigger.value ) }
+										isPrimary={ item.value === zoomTrigger }
+										onClick={ () => setAttr( 'zoomTrigger', item.value ) }
 									>
-										{ trigger.label }
+										{ item.label }
 									</Button>
 								) ) }
 							</ButtonGroup>
 						</p>
 					</> }
 				</div>
+			</PanelBody>
+			<PanelBody title={ __( 'Carousel Parameters', 'cloudinary' ) }>
+				<p>{ __( 'Carousel Location', 'cloudinary' ) }</p>
+				<p>
+					<ButtonGroup>
+						{ CAROUSEL_LOCATION.map( ( item ) => (
+							<Button
+								key={ item.value + '-carousel-location' }
+								isDefault
+								isPrimary={ item.value === carouselLocation }
+								onClick={ () => setAttr( 'carouselLocation', item.value ) }
+							>
+								{ item.label }
+							</Button>
+						) ) }
+					</ButtonGroup>
+				</p>
+				<RangeControl
+					label={ __( 'Carousel Offset', 'cloudinary' ) }
+					value={ carouselOffset }
+					onChange={ ( offset ) => setAttributes( { carouselOffset: offset } ) }
+					min={ 0 }
+					max={ 100 }
+				/>
+				<p>{ __( 'Carousel Style', 'cloudinary' ) }</p>
+				<p>
+					<ButtonGroup>
+						{ CAROUSEL_STYLE.map( ( item ) => (
+							<Button
+								key={ item.value + '-carousel-style' }
+								isDefault
+								isPrimary={ item.value === carouselStyle }
+								onClick={ () => setAttr( 'carouselStyle', item.value ) }
+							>
+								{ item.label }
+							</Button>
+						) ) }
+					</ButtonGroup>
+				</p>
+				<RangeControl
+					label={ __( 'Width', 'cloudinary' ) }
+					value={ width }
+					onChange={ ( newWidth ) => setAttributes( { width: newWidth } ) }
+					min={ 0 }
+					max={ 300 }
+				/>
+				<RangeControl
+					label={ __( 'Height', 'cloudinary' ) }
+					value={ height }
+					onChange={ ( newHeight ) => setAttributes( { height: newHeight } ) }
+					min={ 0 }
+					max={ 300 }
+				/>
+				<p>{ __( 'Navigation Button Shape', 'cloudinary' ) }</p>
+				{ NAVIGATION_BUTTON_SHAPE.map( ( item ) => (
+					<Radio
+						key={ item.name + '-navigation-button-shape' }
+						name={ item.name }
+						onChange={ ( value ) => setAttr( 'navigationButtonShape', value ) }
+						icon={ item.icon }
+						current={ navigationButtonShape }
+					>
+						{ item.label }
+					</Radio>
+				) ) }
+				<p>{ __( 'Selected Style', 'cloudinary' ) }</p>
+				<p>
+					<ButtonGroup>
+						{ SELECTED_STYLE.map( ( item ) => (
+							<Button
+								key={ item.value + '-selected-style' }
+								isDefault
+								isPrimary={ item.value === selectedStyle }
+								onClick={ () => setAttr( 'selectedStyle', item.value ) }
+							>
+								{ item.label }
+							</Button>
+						) ) }
+					</ButtonGroup>
+				</p>
+				<SelectControl
+					label={ __( 'Selected Border Position', 'cloudinary' ) }
+					value={ selectedBorderPosition }
+					options={ SELECTED_BORDER_POSITION }
+					onChange={ ( value ) => setAttributes( { selectedBorderPosition: value } ) }
+				/>
+				<RangeControl
+					label={ __( 'Selected Border Width', 'cloudinary' ) }
+					value={ selectedBorderWidth }
+					onChange={ ( newBw ) => setAttributes( { selectedBorderWidth: newBw } ) }
+					min={ 0 }
+					max={ 10 }
+				/>
+				<p>{ __( 'Media Shape Icon', 'cloudinary' ) }</p>
+				{ MEDIA_ICON_SHAPE.map( ( item ) => (
+					<Radio
+						key={ item.name + '-media' }
+						name={ item.name }
+						onChange={ ( value ) => setAttr( 'mediaIconShape', value ) }
+						icon={ item.icon }
+						current={ mediaIconShape }
+					>
+						{ item.label }
+					</Radio>
+				) ) }
 			</PanelBody>
 		</InspectorControls>
 	</div>;

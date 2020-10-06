@@ -6,7 +6,17 @@ import { __ } from '@wordpress/i18n';
 /**
  * Internal dependencies
  */
-import { LayoutClassic, LayoutGridOneColumn, LayoutGridThreeColumn, LayoutGridTwoColumn } from './icons';
+import {
+	LayoutClassic,
+	LayoutGridOneColumn,
+	LayoutGridThreeColumn,
+	LayoutGridTwoColumn,
+	ShapeNone,
+	ShapeRadius,
+	ShapeRectangle,
+	ShapeRound,
+	ShapeSquare,
+} from './icons';
 
 export const LAYOUT_OPTIONS = [
 	{
@@ -74,4 +84,83 @@ export const ZOOM_TYPE = [
 export const ZOOM_TRIGGER = [
 	{ label: __( 'Click', 'cloudinary' ), value: 'click' },
 	{ label: __( 'Hover', 'cloudinary' ), value: 'hover' },
+];
+
+export const CAROUSEL_LOCATION = [
+	{ label: __( 'Left', 'cloudinary' ), value: 'left' },
+	{ label: __( 'Right', 'cloudinary' ), value: 'right' },
+	{ label: __( 'Top', 'cloudinary' ), value: 'top' },
+];
+
+export const CAROUSEL_STYLE = [
+	{ label: __( 'Thumbnails', 'cloudinary' ), value: 'thumbnails' },
+	{ label: __( 'Indicators', 'cloudinary' ), value: 'indicators' },
+	{ label: __( 'None', 'cloudinary' ), value: 'none' },
+];
+
+export const NAVIGATION_BUTTON_SHAPE = [
+	{
+		name: 'round',
+		icon: <ShapeRound />,
+		label: __( 'Round', 'cloudinary' ),
+	},
+	{
+		name: 'radius',
+		icon: <ShapeRadius />,
+		label: __( 'Radius', 'cloudinary' ),
+	},
+	{
+		name: 'none',
+		icon: <ShapeNone />,
+		label: __( 'None', 'cloudinary' ),
+	},
+	{
+		name: 'square',
+		icon: <ShapeSquare />,
+		label: __( 'Square', 'cloudinary' ),
+	},
+	{
+		name: 'rectangle',
+		icon: <ShapeRectangle />,
+		label: __( 'Rectangle', 'cloudinary' ),
+	},
+];
+
+export const SELECTED_STYLE = [
+	{ label: __( 'All', 'cloudinary' ), value: 'all' },
+	{ label: __( 'Border', 'cloudinary' ), value: 'border' },
+	{ label: __( 'Gradient', 'cloudinary' ), value: 'gradient' },
+];
+
+export const SELECTED_BORDER_POSITION = [
+	{ label: __( 'All', 'cloudinary' ), value: 'all' },
+	{ label: __( 'Top', 'cloudinary' ), value: 'top' },
+	{ label: __( 'Top-Bottom', 'cloudinary' ), value: 'top-bottom' },
+	{ label: __( 'Left-Right', 'cloudinary' ), value: 'left-right' },
+	{ label: __( 'Bottom', 'cloudinary' ), value: 'bottom' },
+	{ label: __( 'Left', 'cloudinary' ), value: 'left' },
+	{ label: __( 'Right', 'cloudinary' ), value: 'right' },
+];
+
+export const MEDIA_ICON_SHAPE = [
+	{
+		name: 'round',
+		icon: <ShapeRound />,
+		label: __( 'Round', 'cloudinary' ),
+	},
+	{
+		name: 'radius',
+		icon: <ShapeRadius />,
+		label: __( 'Radius', 'cloudinary' ),
+	},
+	{
+		name: 'none',
+		icon: <ShapeNone />,
+		label: __( 'None', 'cloudinary' ),
+	},
+	{
+		name: 'square',
+		icon: <ShapeSquare />,
+		label: __( 'Square', 'cloudinary' ),
+	},
 ];
