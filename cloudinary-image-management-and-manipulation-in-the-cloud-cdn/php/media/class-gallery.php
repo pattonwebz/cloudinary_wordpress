@@ -16,6 +16,8 @@ use Cloudinary\Media;
  */
 class Gallery implements \JsonSerializable {
 	/**
+	 * Flag on whether this page is a WooCommerce product page with a gallery.
+	 *
 	 * @var bool
 	 */
 	protected $is_woo_page = false;
@@ -59,7 +61,7 @@ class Gallery implements \JsonSerializable {
 		unset( $config['enable_gallery'], $config['custom_settings'] );
 
 		$config = $this->prepare_config( $config );
-		$config = $this->parse_dot_notation( $config );
+		$config = $this->expand_dot_notation( $config );
 		$config = $this->array_filter_recursive(
 			$config,
 			function ( $item ) {
@@ -88,11 +90,11 @@ class Gallery implements \JsonSerializable {
 	 *
 	 * @return array
 	 */
-	public function parse_dot_notation( array $input ) {
+	public function expand_dot_notation( array $input ) {
 		$result = array();
 		foreach ( $input as $key => $value ) {
 			if ( is_array( $value ) ) {
-				$value = $this->parse_dot_notation( $value );
+				$value = $this->expand_dot_notation( $value );
 			}
 
 			foreach ( array_reverse( explode( '.', $key ) ) as $inner_key ) {
@@ -223,23 +225,31 @@ class Gallery implements \JsonSerializable {
 		// phpcs:enable
 	}
 
+	/**
+	 * Deals with rendering the gallery in a WooCommerce or Post Block setting.
+	 *
+	 * @param string $html   The HTML to output.
+	 * @param string $handle Current JS handle.
+	 *
+	 * @return string
+	 */
 	public function prepare_gallery_assets( $html, $handle ) {
 		if ( 'cld-gallery' === $handle ) {
 			$is_woo = $this->is_woo_page ? 'true' : 'false';
 			$html  .= <<<SCRIPT_TAG
 <script>
-	var configElements = document.querySelectorAll('[data-cloudinary-gallery-config]') || [];
+	var configElements = document.querySelectorAll( '[data-cloudinary-gallery-config]' );
 	
-	if (configElements.length) {
-		configElements.forEach(function (el) {
-			var configJson = decodeURIComponent(el.getAttribute('data-cloudinary-gallery-config'));
-			var options = JSON.parse(configJson);
+	if ( configElements.length ) {
+		configElements.forEach( function ( el ) {
+			var configJson = decodeURIComponent( el.getAttribute( 'data-cloudinary-gallery-config' ) );
+			var options = JSON.parse( configJson );
 			options.container = '.' + options.container;
-			cloudinary.galleryWidget(options).render();
+			cloudinary.galleryWidget( options ).render();
 
 		});
-	} else if ({$is_woo}) {
-		cloudinary.galleryWidget(galleryOptions).render();
+	} else if ( {$is_woo} ) {
+		cloudinary.galleryWidget( galleryOptions ).render();
 	}
 
 </script>
