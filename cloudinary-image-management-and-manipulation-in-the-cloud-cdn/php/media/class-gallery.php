@@ -16,6 +16,11 @@ use Cloudinary\Media;
  */
 class Gallery implements \JsonSerializable {
 	/**
+	 * @var bool
+	 */
+	protected $is_woo_page = false;
+
+	/**
 	 * @var Media
 	 */
 	protected $media;
@@ -183,6 +188,12 @@ class Gallery implements \JsonSerializable {
 			$this->media->plugin->version,
 			true
 		);
+
+		wp_localize_script(
+			'cloudinary-gallery-block-js',
+			'defaultGalleryConfig',
+			$this->get_config()
+		);
 	}
 
 	/**
@@ -193,11 +204,16 @@ class Gallery implements \JsonSerializable {
 	 * @return string
 	 */
 	public function override_woocommerce_gallery( $html, $attachment_id ) {
-		$public_id = $this->media->get_public_id( $attachment_id, true );
+		$this->is_woo_page = true;
+		$public_id         = $this->media->get_public_id( $attachment_id, true );
 		return '<script>galleryOptions.mediaAssets.push("' . esc_js( $public_id ) . '");</script>';
 	}
 
 	public function add_config_to_head() {
+		if ( ! $this->is_woo_page ) {
+			return;
+		}
+
 		// phpcs:disable
 		?>
 		<script>
@@ -209,7 +225,25 @@ class Gallery implements \JsonSerializable {
 
 	public function prepare_gallery_assets( $html, $handle ) {
 		if ( 'cld-gallery' === $handle ) {
-			$html .= '<script>cloudinary.galleryWidget(galleryOptions).render();</script>';
+			$is_woo = $this->is_woo_page ? 'true' : 'false';
+			$html  .= <<<SCRIPT_TAG
+<script>
+	var configElements = document.querySelectorAll('[data-cloudinary-gallery-config]') || [];
+	
+	if (configElements.length) {
+		configElements.forEach(function (el) {
+			var configJson = decodeURIComponent(el.getAttribute('data-cloudinary-gallery-config'));
+			var options = JSON.parse(configJson);
+			options.container = '.' + options.container;
+			cloudinary.galleryWidget(options).render();
+
+		});
+	} else if ({$is_woo}) {
+		cloudinary.galleryWidget(galleryOptions).render();
+	}
+
+</script>
+SCRIPT_TAG;
 		}
 
 		return $html;

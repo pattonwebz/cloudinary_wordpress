@@ -20,22 +20,22 @@ import {
 
 export const LAYOUT_OPTIONS = [
 	{
-		name: 'expanded-1',
+		value: { type: 'expanded', columns: 1 },
 		icon: <LayoutGridOneColumn />,
 		label: __( 'Expanded - 1 Column', 'cloudinary' ),
 	},
 	{
-		name: 'expanded-2',
+		value: { type: 'expanded', columns: 2 },
 		icon: <LayoutGridTwoColumn />,
 		label: __( 'Expanded - 2 Column', 'cloudinary' ),
 	},
 	{
-		name: 'expanded-3',
+		value: { type: 'expanded', columns: 3 },
 		icon: <LayoutGridThreeColumn />,
 		label: __( 'Expanded - 3 Column', 'cloudinary' ),
 	},
 	{
-		name: 'classic',
+		value: { type: 'classic', columns: 1 },
 		icon: <LayoutClassic />,
 		label: __( 'Classic', 'cloudinary' ),
 	},
@@ -44,9 +44,9 @@ export const LAYOUT_OPTIONS = [
 export const ALLOWED_MEDIA_TYPES = [ 'image' ];
 
 export const COLORS = [
-	{ name: 'red', color: '#f00' },
-	{ name: 'white', color: '#fff' },
-	{ name: 'blue', color: '#00f' },
+	{ value: 'red', color: '#f00' },
+	{ value: 'white', color: '#fff' },
+	{ value: 'blue', color: '#00f' },
 ];
 
 export const ASPECT_RATIOS = [
@@ -81,6 +81,13 @@ export const ZOOM_TYPE = [
 	{ label: __( 'Popup', 'cloudinary' ), value: 'popup' },
 ];
 
+export const ZOOM_VIEWER_POSITION = [
+	{ label: __( 'Top', 'cloudinary' ), value: 'top' },
+	{ label: __( 'Bottom', 'cloudinary' ), value: 'bottom' },
+	{ label: __( 'Left', 'cloudinary' ), value: 'left' },
+	{ label: __( 'Right', 'cloudinary' ), value: 'right' },
+];
+
 export const ZOOM_TRIGGER = [
 	{ label: __( 'Click', 'cloudinary' ), value: 'click' },
 	{ label: __( 'Hover', 'cloudinary' ), value: 'hover' },
@@ -100,27 +107,27 @@ export const CAROUSEL_STYLE = [
 
 export const NAVIGATION_BUTTON_SHAPE = [
 	{
-		name: 'round',
+		value: 'round',
 		icon: <ShapeRound />,
 		label: __( 'Round', 'cloudinary' ),
 	},
 	{
-		name: 'radius',
+		value: 'radius',
 		icon: <ShapeRadius />,
 		label: __( 'Radius', 'cloudinary' ),
 	},
 	{
-		name: 'none',
+		value: 'none',
 		icon: <ShapeNone />,
 		label: __( 'None', 'cloudinary' ),
 	},
 	{
-		name: 'square',
+		value: 'square',
 		icon: <ShapeSquare />,
 		label: __( 'Square', 'cloudinary' ),
 	},
 	{
-		name: 'rectangle',
+		value: 'rectangle',
 		icon: <ShapeRectangle />,
 		label: __( 'Rectangle', 'cloudinary' ),
 	},
@@ -144,22 +151,22 @@ export const SELECTED_BORDER_POSITION = [
 
 export const MEDIA_ICON_SHAPE = [
 	{
-		name: 'round',
+		value: 'round',
 		icon: <ShapeRound />,
 		label: __( 'Round', 'cloudinary' ),
 	},
 	{
-		name: 'radius',
+		value: 'radius',
 		icon: <ShapeRadius />,
 		label: __( 'Radius', 'cloudinary' ),
 	},
 	{
-		name: 'none',
+		value: 'none',
 		icon: <ShapeNone />,
 		label: __( 'None', 'cloudinary' ),
 	},
 	{
-		name: 'square',
+		value: 'square',
 		icon: <ShapeSquare />,
 		label: __( 'Square', 'cloudinary' ),
 	},

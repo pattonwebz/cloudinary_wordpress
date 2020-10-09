@@ -24,8 +24,8 @@ $struct = array(
 			'default' => 'off',
 		),
 		'color_header'                      => array(
-			'type'  => 'heading',
-			'label' => __( 'Colors', 'cloudinary' ),
+			'type'        => 'heading',
+			'label'       => __( 'Colors', 'cloudinary' ),
 			'description' => __( 'Set the type of transition that occurs when switching the images in the gallery.', 'cloudinary' ),
 		),
 		'primary_color'                     => array(
@@ -48,7 +48,7 @@ $struct = array(
 			'type'  => 'heading',
 			'label' => __( 'Main Settings', 'cloudinary' ),
 		),
-		'image_format'                      => array(
+		'transition'                        => array(
 			'label'       => __( 'Transition Style', 'cloudinary' ),
 			'description' => __( 'Set the type of transition that occurs when switching the images in the gallery.', 'cloudinary' ),
 			'type'        => 'select',
@@ -89,7 +89,7 @@ $struct = array(
 			),
 			'default'     => 'none',
 		),
-		'zoom'                              => array(
+		'zoom_trigger'                      => array(
 			'label'       => __( 'Zoom', 'cloudinary' ),
 			'description' => __( 'Choose the trigger for zooming or disable it entirely.', 'cloudinary' ),
 			'type'        => 'radio',
@@ -110,7 +110,7 @@ $struct = array(
 			),
 			'default'   => 'none',
 			'condition' => array(
-				'zoom' => array( 'none', 'neq' ),
+				'zoom_trigger' => array( 'none', 'neq' ),
 			),
 		),
 		'zoom_viewer_position'              => array(
@@ -124,7 +124,7 @@ $struct = array(
 			),
 			'default'   => 'none',
 			'condition' => array(
-				'zoom' => array( 'none', 'neq' ),
+				'zoom_trigger' => array( 'none', 'neq' ),
 			),
 		),
 		'carousel_header'                   => array(

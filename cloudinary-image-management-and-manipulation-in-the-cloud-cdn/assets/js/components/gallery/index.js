@@ -1,3 +1,5 @@
+/* global defaultGalleryConfig */
+
 /**
  * WordPress dependencies
  */
@@ -10,30 +12,54 @@ import { registerBlockType } from '@wordpress/blocks';
 import edit from './edit';
 import save from './save';
 
+const {
+	aspectRatio,
+	carouselLocation,
+	carouselOffset,
+	carouselThumbnailHeight,
+	carouselThumbnailSelectedStyle,
+	carouselThumbnailWidth,
+	carouselButtonShape,
+	zoomTrigger,
+	zoomType,
+	zoomViewerPosition,
+	activeColor,
+	onPrimaryColor,
+	primaryColor,
+	transition,
+	carouselStyle,
+} = defaultGalleryConfig;
+
 registerBlockType( 'cloudinary/gallery', {
 	title: __( 'Cloudinary Gallery', 'cloudinary' ),
 	description: __( 'Add a gallery powered by the Cloudinary Gallery Widget to your post.', 'cloudinary' ),
 	category: 'widgets',
 	icon: 'format-gallery',
 	attributes: {
-		layout: { type: 'string', default: 'expanded-1' },
-		primaryColor: { type: 'string', default: '#FFF' },
-		onPrimaryColor: { type: 'string', default: '#FFF' },
-		activeColor: { type: 'string', default: '#FFF' },
-		aspectRatio: { type: 'string', default: '1:1' },
+		displayProps_mode: { type: 'string', default: 'classic' },
+		displayProps_columns: { type: 'number', default: 1 },
+		themeProps_primary: { type: 'string', default: primaryColor || '#FFF' },
+		themeProps_onPrimary: { type: 'string', default: onPrimaryColor || '#FFF' },
+		themeProps_active: { type: 'string', default: activeColor || '#FFF' },
+		transition: { type: 'string', default: transition || 'fade' },
+		aspectRatio: { type: 'string', default: aspectRatio || '1:1' },
 		navigation: { type: 'string', default: 'always' },
-		showZoom: { type: 'boolean', default: true },
-		zoomType: { type: 'string', default: 'inline' },
-		carouselLocation: { type: 'string', default: 'left' },
-		carouselOffset: { type: 'number', default: 0 },
-		carouselStyle: { type: 'string', default: 'thumbnails' },
-		width: { type: 'number', default: 0 },
-		height: { type: 'number', default: 0 },
-		navigationButtonShape: { type: 'string', default: 'round' },
-		selectedStyle: { type: 'string', default: 'all' },
-		selectedBorderPosition: { type: 'string', default: 'all' },
-		selectedBorderWidth: { type: 'number', default: 4 },
-		mediaIconShape: { type: 'string', default: 'round' },
+		zoom: { type: 'boolean', default: zoomTrigger && zoomTrigger !== 'none' },
+		zoomProps_type: { type: 'string', default: zoomType || 'inline' },
+		zoomProps_viewerPosition: { type: 'string', default: zoomViewerPosition || 'top' },
+		zoomProps_trigger: { type: 'string', default: zoomTrigger !== 'none' ? zoomTrigger : 'click' },
+		carouselLocation: { type: 'string', default: carouselLocation || 'left' },
+		carouselOffset: { type: 'number', default: carouselOffset || 0 },
+		carouselStyle: { type: 'string', default: carouselStyle || 'thumbnails' },
+		thumbnailProps_width: { type: 'number', default: carouselThumbnailWidth || 1 },
+		thumbnailProps_height: { type: 'number', default: carouselThumbnailHeight || 1 },
+		thumbnailProps_navigationShape: { type: 'string', default: carouselButtonShape || 'round' },
+		thumbnailProps_selectedStyle: { type: 'string', default: carouselThumbnailSelectedStyle || 'all' },
+		thumbnailProps_selectedBorderPosition: { type: 'string', default: 'all' },
+		thumbnailProps_selectedBorderWidth: { type: 'number', default: 4 },
+		thumbnailProps_mediaSymbolShape: { type: 'string', default: 'round' },
+		selectedImages: { type: 'array', default: [] },
+		container: { type: 'string' },
 	},
 	edit,
 	save,

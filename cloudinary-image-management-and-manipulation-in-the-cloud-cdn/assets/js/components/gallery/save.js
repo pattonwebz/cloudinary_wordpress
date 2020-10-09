@@ -1,5 +1,40 @@
-const Save = () => {
-	return <div>Hello World, step 1 (from the frontend).</div>;
+/**
+ * External dependencies
+ */
+import Dot from 'dot-object';
+import cloneDeep from 'lodash/cloneDeep';
+
+/**
+ * Internal dependencies
+ */
+import defaults from './defaults.json';
+
+const dot = new Dot( '_' );
+
+const Save = ( { attributes } ) => {
+	let configString = '';
+
+	if ( attributes.selectedImages.length ) {
+		const attributesClone = cloneDeep( attributes );
+		const { selectedImages, ...config } = dot.object( attributesClone, {} );
+
+		if ( config?.displayProps?.mode !== 'classic' ) {
+			delete config.transition;
+		} else {
+			delete config.displayProps.columns;
+		}
+
+		configString = JSON.stringify( {
+			cloudName: CLDN.mloptions.cloud_name,
+			mediaAssets: selectedImages,
+			...defaults,
+			...config,
+		} );
+	}
+
+	return (
+		<div className={ attributes.container } data-cloudinary-gallery-config={ configString }></div>
+	);
 };
 
 export default Save;

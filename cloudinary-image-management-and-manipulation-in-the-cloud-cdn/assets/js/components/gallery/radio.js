@@ -3,9 +3,11 @@
  */
 import classNames from 'classnames';
 
-export default ( { name, children, icon, onChange, current } ) => {
+export default ( { value, children, icon, onChange, current } ) => {
+	const isActive = typeof value === 'object' ? JSON.stringify( value ) === JSON.stringify( current ) : current === value;
+
 	return (
-		<button onClick={ () => onChange( name ) } className={ classNames( 'radio-select', { 'radio-select--active': current === name } ) }>
+		<button onClick={ () => onChange( value ) } className={ classNames( 'radio-select', { 'radio-select--active': isActive } ) }>
 			{ icon }
 			<div className="radio-select__label">{ children }</div>
 		</button>
