@@ -11,10 +11,9 @@ const Media_Library = {
 					// @todo: Determin what to do here.
 					alert( 'Import is not yet implemented.' );
 				},
-			}
-			);
+			} );
 
-			window.addEventListener( 'resize', function() {
+			window.addEventListener( 'resize', function () {
 				self._resize();
 			} );
 
@@ -23,7 +22,10 @@ const Media_Library = {
 	},
 	_resize() {
 		const style = getComputedStyle( this.wpContent );
-		this.libraryWrap.style.height = ( this.wpWrap.offsetHeight - parseInt( style.getPropertyValue( 'padding-bottom' ) ) ) + 'px';
+		this.libraryWrap.style.height =
+			this.wpWrap.offsetHeight -
+			parseInt( style.getPropertyValue( 'padding-bottom' ) ) +
+			'px';
 	},
 };
 

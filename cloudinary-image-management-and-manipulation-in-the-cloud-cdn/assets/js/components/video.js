@@ -1,11 +1,11 @@
-/* global CLD_VIDEO_PLAYER wp */
+/* global CLD_VIDEO_PLAYER */
 
 /**
  * WordPress dependencies
  */
 import { __ } from '@wordpress/i18n';
 import { withSelect } from '@wordpress/data';
-import { ToggleControl, PanelBody } from '@wordpress/components';
+import { PanelBody, ToggleControl } from '@wordpress/components';
 
 const Video = {
 	_init() {
@@ -17,7 +17,7 @@ const Video = {
 		wp.hooks.addFilter(
 			'blocks.registerBlockType',
 			'Cloudinary/Media/Video',
-			function( settings, name ) {
+			function ( settings, name ) {
 				if ( name === 'core/video' ) {
 					if ( 'off' !== CLD_VIDEO_PLAYER.video_autoplay_mode ) {
 						settings.attributes.autoplay.default = true;
@@ -42,7 +42,7 @@ export default Video;
 // Init.
 Video._init();
 
-const cldAddToggle = function( settings, name ) {
+const cldAddToggle = function ( settings, name ) {
 	if ( 'core/image' === name || 'core/video' === name ) {
 		if ( ! settings.attributes ) {
 			settings.attributes = {};
@@ -60,7 +60,11 @@ const cldAddToggle = function( settings, name ) {
 	return settings;
 };
 
-wp.hooks.addFilter( 'blocks.registerBlockType', 'cloudinary/addAttributes', cldAddToggle );
+wp.hooks.addFilter(
+	'blocks.registerBlockType',
+	'cloudinary/addAttributes',
+	cldAddToggle
+);
 
 /**
  * Get AMP Lightbox toggle control.
@@ -70,7 +74,10 @@ wp.hooks.addFilter( 'blocks.registerBlockType', 'cloudinary/addAttributes', cldA
  * @return {Component} Element.
  */
 const TransformationsToggle = ( props ) => {
-	const { attributes: { overwrite_transformations }, setAttributes } = props;
+	const {
+		attributes: { overwrite_transformations },
+		setAttributes,
+	} = props;
 
 	return (
 		<PanelBody title={ __( 'Transformations', 'cloudinary' ) }>
@@ -102,21 +109,31 @@ let ImageInspectorControls = ( props ) => {
 
 ImageInspectorControls = withSelect( ( select, ownProps ) => ( {
 	...ownProps,
-	media: ownProps.attributes.id ? select( 'core' )?.getMedia( ownProps.attributes.id ) : null,
+	media: ownProps.attributes.id
+		? select( 'core' )?.getMedia( ownProps.attributes.id )
+		: null,
 } ) )( ImageInspectorControls );
 
 const cldFilterBlocksEdit = ( BlockEdit ) => {
 	return ( props ) => {
 		const { name } = props;
-		const shouldDisplayInspector = 'core/image' === name || 'core/video' === name;
+		const shouldDisplayInspector =
+			'core/image' === name || 'core/video' === name;
 
 		return (
 			<>
-				{ shouldDisplayInspector ? <ImageInspectorControls { ...props } /> : null }
+				{ shouldDisplayInspector ? (
+					<ImageInspectorControls { ...props } />
+				) : null }
 				<BlockEdit { ...props } />
 			</>
 		);
 	};
 };
 
-wp.hooks.addFilter( 'editor.BlockEdit', 'cloudinary/filterEdit', cldFilterBlocksEdit, 20 );
+wp.hooks.addFilter(
+	'editor.BlockEdit',
+	'cloudinary/filterEdit',
+	cldFilterBlocksEdit,
+	20
+);

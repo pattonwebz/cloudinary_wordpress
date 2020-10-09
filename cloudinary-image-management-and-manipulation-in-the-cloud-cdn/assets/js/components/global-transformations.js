@@ -27,8 +27,14 @@ const Global_Transformations = {
 			item.style.display = 'block';
 			item.style.visibility = 'visible';
 			item.style.position = 'absolute';
-			item.style.top = ( item.parentElement.clientHeight / 2 ) - ( item.clientHeight / 2 ) + 'px';
-			item.style.left = ( item.parentElement.clientWidth / 2 ) - ( item.clientWidth / 2 ) + 'px';
+			item.style.top =
+				item.parentElement.clientHeight / 2 -
+				item.clientHeight / 2 +
+				'px';
+			item.style.left =
+				item.parentElement.clientWidth / 2 -
+				item.clientWidth / 2 +
+				'px';
 		}
 	},
 	_setLoading( type ) {
@@ -62,10 +68,16 @@ const Global_Transformations = {
 		}
 		let transformations = '';
 		if ( this.elements[ type ].length ) {
-			transformations = '/' + this.elements[ type ].join( ',' ).replace( / /g, '%20' );
+			transformations =
+				'/' + this.elements[ type ].join( ',' ).replace( / /g, '%20' );
 		}
 		this.sample[ type ].textContent = transformations;
-		this.sample[ type ].parentElement.href = 'https://res.cloudinary.com/demo/' + this.sample[ type ].parentElement.innerText.trim().replace( '../', '' ).replace( / /g, '%20' );
+		this.sample[ type ].parentElement.href =
+			'https://res.cloudinary.com/demo/' +
+			this.sample[ type ].parentElement.innerText
+				.trim()
+				.replace( '../', '' )
+				.replace( / /g, '%20' );
 	},
 	_clearLoading( type ) {
 		this.spinner[ type ].style.visibility = 'hidden';
@@ -77,24 +89,33 @@ const Global_Transformations = {
 			e.preventDefault();
 		}
 		const self = this;
-		const new_src = CLD_GLOBAL_TRANSFORMATIONS[ type ].preview_url + self.elements[ type ].join( ',' ) + CLD_GLOBAL_TRANSFORMATIONS[ type ].file;
+		const new_src =
+			CLD_GLOBAL_TRANSFORMATIONS[ type ].preview_url +
+			self.elements[ type ].join( ',' ) +
+			CLD_GLOBAL_TRANSFORMATIONS[ type ].file;
 		this.button[ type ].style.display = 'none';
 		this._placeItem( this.spinner[ type ] );
 		if ( type === 'image' ) {
 			const newImg = new Image();
-			newImg.onload = function() {
+			newImg.onload = function () {
 				self.preview[ type ].src = this.src;
 				self._clearLoading( type );
 				newImg.remove();
 			};
-			newImg.onerror = function() {
+			newImg.onerror = function () {
 				alert( CLD_GLOBAL_TRANSFORMATIONS[ type ].error );
 				self._clearLoading( type );
 			};
 			newImg.src = new_src;
 		} else {
-			const transformations = self._transformations( self.elements[ type ].join( ',' ), type );
-			samplePlayer.source( { publicId: 'dog', transformation: transformations } );
+			const transformations = self._transformations(
+				self.elements[ type ].join( ',' ),
+				type
+			);
+			samplePlayer.source( {
+				publicId: 'dog',
+				transformation: transformations,
+			} );
 			self._clearLoading( type );
 		}
 	},
@@ -113,7 +134,10 @@ const Global_Transformations = {
 			}
 			for ( let p = 0; p < parts.length; p++ ) {
 				const key_val = parts[ p ].trim().split( '_' );
-				if ( key_val.length <= 1 || typeof set[ key_val[ 0 ] ] === 'undefined' ) {
+				if (
+					key_val.length <= 1 ||
+					typeof set[ key_val[ 0 ] ] === 'undefined'
+				) {
 					continue;
 				}
 				const option = key_val.shift();
@@ -121,7 +145,10 @@ const Global_Transformations = {
 				if ( true === string ) {
 					if ( 'f' === option || 'q' === option ) {
 						for ( const t in this.elements[ type ] ) {
-							if ( option + '_' === this.elements[ type ][ t ].substr( 0, 2 ) ) {
+							if (
+								option + '_' ===
+								this.elements[ type ][ t ].substr( 0, 2 )
+							) {
 								this.elements[ type ].splice( t, 1 );
 							}
 						}
@@ -165,7 +192,10 @@ const Global_Transformations = {
 		}
 	},
 	_input( input ) {
-		if ( typeof input.dataset.context !== 'undefined' && input.dataset.context.length ) {
+		if (
+			typeof input.dataset.context !== 'undefined' &&
+			input.dataset.context.length
+		) {
 			const type = input.dataset.context;
 			this._setLoading( type );
 			this._build( type );
@@ -175,19 +205,22 @@ const Global_Transformations = {
 		if ( typeof CLD_GLOBAL_TRANSFORMATIONS !== 'undefined' ) {
 			const self = this;
 
-			document.addEventListener( 'DOMContentLoaded', function() {
+			document.addEventListener( 'DOMContentLoaded', function () {
 				for ( const type in self.button ) {
 					if ( self.button[ type ] ) {
-						self.button[ type ].addEventListener( 'click', function( e ) {
-							self._refresh( e, type );
-						} );
+						self.button[ type ].addEventListener(
+							'click',
+							function ( e ) {
+								self._refresh( e, type );
+							}
+						);
 					}
 				}
 				for ( const item of self.fields ) {
-					item.addEventListener( 'input', function() {
+					item.addEventListener( 'input', function () {
 						self._input( this );
 					} );
-					item.addEventListener( 'change', function() {
+					item.addEventListener( 'change', function () {
 						self._input( this );
 					} );
 				}
@@ -198,7 +231,7 @@ const Global_Transformations = {
 				}
 			} );
 			// listen to AJAX add-tag complete
-			jQuery( document ).ajaxComplete( function( event, xhr, settings ) {
+			jQuery( document ).ajaxComplete( function ( event, xhr, settings ) {
 				// bail early if is other ajax call
 				if ( settings.data.indexOf( 'action=add-tag' ) === -1 ) {
 					return;

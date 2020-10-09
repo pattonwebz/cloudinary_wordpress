@@ -1,9 +1,11 @@
-/* global window wp wpAjax */
+/* global wpAjax */
 
-const Terms_Order = {
+const TermsOrder = {
 	template: '',
 	tags: jQuery( '#cld-tax-items' ),
-	tagDelimiter: ( window.tagsSuggestL10n && window.tagsSuggestL10n.tagDelimiter ) || ',',
+	tagDelimiter:
+		( window.tagsSuggestL10n && window.tagsSuggestL10n.tagDelimiter ) ||
+		',',
 	startId: null,
 	_init() {
 		// Check that we found the tax-items.
@@ -17,10 +19,24 @@ const Terms_Order = {
 		// Setup ajax overrides.
 		if ( typeof wpAjax !== 'undefined' ) {
 			wpAjax.procesParseAjaxResponse = wpAjax.parseAjaxResponse;
-			wpAjax.parseAjaxResponse = function( response, settingsResponse, element ) {
-				const newResponse = wpAjax.procesParseAjaxResponse( response, settingsResponse, element );
+			wpAjax.parseAjaxResponse = function (
+				response,
+				settingsResponse,
+				element
+			) {
+				const newResponse = wpAjax.procesParseAjaxResponse(
+					response,
+					settingsResponse,
+					element
+				);
 				if ( ! newResponse.errors && newResponse.responses[ 0 ] ) {
-					if ( jQuery( '[data-taxonomy="' + newResponse.responses[ 0 ].what + '"]' ).length ) {
+					if (
+						jQuery(
+							'[data-taxonomy="' +
+								newResponse.responses[ 0 ].what +
+								'"]'
+						).length
+					) {
 						const data = jQuery( newResponse.responses[ 0 ].data );
 						const text = data.find( 'label' ).last().text().trim();
 						self._pushItem( newResponse.responses[ 0 ].what, text );
@@ -33,7 +49,7 @@ const Terms_Order = {
 
 		if ( typeof window.tagBox !== 'undefined' ) {
 			window.tagBox.processflushTags = window.tagBox.flushTags;
-			window.tagBox.flushTags = function( el, a, f ) {
+			window.tagBox.flushTags = function ( el, a, f ) {
 				if ( typeof f === 'undefined' ) {
 					const taxonomy = el.prop( 'id' );
 					const newTag = jQuery( 'input.newtag', el );
@@ -41,7 +57,9 @@ const Terms_Order = {
 					a = a || false;
 
 					const text = a ? jQuery( a ).text() : newTag.val();
-					const list = window.tagBox.clean( text ).split( self.tagDelimiter );
+					const list = window.tagBox
+						.clean( text )
+						.split( self.tagDelimiter );
 
 					for ( const i in list ) {
 						const tag = taxonomy + ':' + list[ i ];
@@ -56,23 +74,35 @@ const Terms_Order = {
 
 			window.tagBox.processTags = window.tagBox.parseTags;
 
-			window.tagBox.parseTags = function( el ) {
+			window.tagBox.parseTags = function ( el ) {
 				const id = el.id;
 				const num = id.split( '-check-num-' )[ 1 ];
 				const taxonomy = id.split( '-check-num-' )[ 0 ];
 				const taxBox = jQuery( el ).closest( '.tagsdiv' );
 				const tagsTextarea = taxBox.find( '.the-tags' );
-				const tagToRemove = window.tagBox.clean( tagsTextarea.val() ).split( self.tagDelimiter )[ num ];
+				const tagToRemove = window.tagBox
+					.clean( tagsTextarea.val() )
+					.split( self.tagDelimiter )[ num ];
 
 				new wp.api.collections.Tags()
 					.fetch( { data: { slug: tagToRemove } } )
 					.done( ( tag ) => {
-						const tagFromDatabase = tag.length ? jQuery( '[data-item="' + taxonomy + ':' + tag[ 0 ].id + '"]' ) : false;
+						const tagFromDatabase = tag.length
+							? jQuery(
+									'[data-item="' +
+										taxonomy +
+										':' +
+										tag[ 0 ].id +
+										'"]'
+							  )
+							: false;
 
 						if ( tagFromDatabase.length ) {
 							tagFromDatabase.remove();
 						} else {
-							jQuery( `.cld-tax-order-list-item:contains(${ tagToRemove })` ).remove();
+							jQuery(
+								`.cld-tax-order-list-item:contains(${ tagToRemove })`
+							).remove();
 							--self.startId;
 						}
 						this.processTags( el );
@@ -80,14 +110,16 @@ const Terms_Order = {
 			};
 		}
 
-		jQuery( 'body' ).on( 'change', '.selectit input', function() {
+		jQuery( 'body' ).on( 'change', '.selectit input', function () {
 			const clickedItem = jQuery( this );
 			const id = clickedItem.val();
 			const checked = clickedItem.is( ':checked' );
 			const text = clickedItem.parent().text().trim();
 
 			if ( true === checked ) {
-				if ( ! self.tags.find( `[data-item="category:${ id }"]` ).length ) {
+				if (
+					! self.tags.find( `[data-item="category:${ id }"]` ).length
+				) {
 					self._pushItem( `category:${ id }`, text );
 				}
 			} else {
@@ -101,8 +133,14 @@ const Terms_Order = {
 		const input = jQuery( '<input/>' );
 
 		li.addClass( 'cld-tax-order-list-item' ).attr( 'data-item', id );
-		input.addClass( 'cld-tax-order-list-item-input' ).attr( 'type', 'hidden' ).attr( 'name', 'cld_tax_order[]' ).val( id );
-		icon.addClass( 'dashicons dashicons-menu cld-tax-order-list-item-handle' );
+		input
+			.addClass( 'cld-tax-order-list-item-input' )
+			.attr( 'type', 'hidden' )
+			.attr( 'name', 'cld_tax_order[]' )
+			.val( id );
+		icon.addClass(
+			'dashicons dashicons-menu cld-tax-order-list-item-handle'
+		);
 
 		li.append( icon ).append( name ).append( input ); // phpcs:ignore
 		// WordPressVIPMinimum.JS.HTMLExecutingFunctions.append
@@ -129,22 +167,26 @@ const Terms_Order = {
 };
 
 if ( typeof window.CLDN !== 'undefined' ) {
-	Terms_Order._init();
+	TermsOrder._init();
 	// Init checked categories.
-	jQuery( '[data-wp-lists] .selectit input[checked]' ).each( ( ord, check ) => {
-		jQuery( check ).trigger( 'change' );
-	} );
+	jQuery( '[data-wp-lists] .selectit input[checked]' ).each(
+		( ord, check ) => {
+			jQuery( check ).trigger( 'change' );
+		}
+	);
 }
 
 // Gutenberg.
 if ( wp.data && wp.data.select( 'core/editor' ) ) {
 	const orderSet = {};
-	wp.data.subscribe( function() {
+	wp.data.subscribe( function () {
 		const taxonomies = wp.data.select( 'core' ).getTaxonomies();
 
 		if ( taxonomies ) {
 			for ( const t in taxonomies ) {
-				const set = wp.data.select( 'core/editor' ).getEditedPostAttribute( taxonomies[ t ].rest_base );
+				const set = wp.data
+					.select( 'core/editor' )
+					.getEditedPostAttribute( taxonomies[ t ].rest_base );
 				orderSet[ taxonomies[ t ].slug ] = set;
 			}
 		}
@@ -157,7 +199,8 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 				super( props );
 
 				this.currentItems = jQuery( '.cld-tax-order-list-item' )
-					.map( ( _, taxonomy ) => jQuery( taxonomy ).data( 'item' ) ).get();
+					.map( ( _, taxonomy ) => jQuery( taxonomy ).data( 'item' ) )
+					.get();
 			}
 
 			makeItem( item ) {
@@ -173,14 +216,18 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 			}
 
 			removeItem( item ) {
-				const elementWithId = jQuery( `[data-item="${ this.getId( item ) }"]` );
+				const elementWithId = jQuery(
+					`[data-item="${ this.getId( item ) }"]`
+				);
 
 				if ( elementWithId.length ) {
 					elementWithId.remove();
 
-					this.currentItems = this.currentItems.filter( ( taxIdentifier ) => {
-						return taxIdentifier !== this.getId( item );
-					} );
+					this.currentItems = this.currentItems.filter(
+						( taxIdentifier ) => {
+							return taxIdentifier !== this.getId( item );
+						}
+					);
 				}
 			}
 
@@ -208,7 +255,10 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 				if ( typeof event === 'object' ) {
 					if ( event.target ) {
 						for ( const p in this.state.availableTerms ) {
-							if ( this.state.availableTerms[ p ].id === parseInt( event.target.value ) ) {
+							if (
+								this.state.availableTerms[ p ].id ===
+								parseInt( event.target.value )
+							) {
 								return this.state.availableTerms[ p ];
 							}
 						}
@@ -218,16 +268,25 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 					} else if ( Array.isArray( event ) ) {
 						// Figure out the diff between the current state and
 						// the event and determine which tag is getting removed
-						let enteredTag = this.state.selectedTerms.filter( ( flatItem ) => ! event.includes( flatItem ) )[ 0 ];
+						let enteredTag = this.state.selectedTerms.filter(
+							( flatItem ) => ! event.includes( flatItem )
+						)[ 0 ];
 
 						if ( typeof enteredTag === 'undefined' ) {
 							// If the above returns undefined, then we presume
 							// the user is adding, so reverse the logic to
 							// figure out the new item
-							enteredTag = event.filter( ( flatItem ) => ! this.state.selectedTerms.includes( flatItem ) )[ 0 ];
+							enteredTag = event.filter(
+								( flatItem ) =>
+									! this.state.selectedTerms.includes(
+										flatItem
+									)
+							)[ 0 ];
 						}
 
-						return this.state.availableTerms.find( ( item ) => item.name === enteredTag );
+						return this.state.availableTerms.find(
+							( item ) => item.name === enteredTag
+						);
 					}
 				} else if ( typeof event === 'number' ) {
 					for ( const p in this.state.availableTerms ) {
@@ -242,14 +301,22 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 					if ( event.length > this.state.selectedTerms.length ) {
 						// Added.
 						for ( const o in event ) {
-							if ( this.state.selectedTerms.indexOf( event[ o ] ) === -1 ) {
+							if (
+								this.state.selectedTerms.indexOf(
+									event[ o ]
+								) === -1
+							) {
 								text = event[ o ];
 							}
 						}
 					} else {
 						// removed.
 						for ( const o in this.state.selectedTerms ) {
-							if ( event.indexOf( this.state.selectedTerms[ o ] ) === -1 ) {
+							if (
+								event.indexOf(
+									this.state.selectedTerms[ o ]
+								) === -1
+							) {
 								text = this.state.selectedTerms[ o ];
 							}
 						}
@@ -272,16 +339,20 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 				const icon = jQuery( '<span/>' );
 				const input = jQuery( '<input/>' );
 
-				li
-					.addClass( 'cld-tax-order-list-item' )
-					.attr( 'data-item', this.getId( item ) );
+				li.addClass( 'cld-tax-order-list-item' ).attr(
+					'data-item',
+					this.getId( item )
+				);
 
 				input
 					.addClass( 'cld-tax-order-list-item-input' )
 					.attr( 'type', 'hidden' )
-					.attr( 'name', 'cld_tax_order[]' ).val( this.getId( item ) );
+					.attr( 'name', 'cld_tax_order[]' )
+					.val( this.getId( item ) );
 
-				icon.addClass( 'dashicons dashicons-menu cld-tax-order-list-item-handle' );
+				icon.addClass(
+					'dashicons dashicons-menu cld-tax-order-list-item-handle'
+				);
 
 				li.append( icon ).append( item.name ).append( input ); // phpcs:ignore
 				// WordPressVIPMinimum.JS.HTMLExecutingFunctions.append
@@ -300,4 +371,4 @@ if ( wp.data && wp.data.select( 'core/editor' ) ) {
 	);
 }
 
-export default Terms_Order;
+export default TermsOrder;

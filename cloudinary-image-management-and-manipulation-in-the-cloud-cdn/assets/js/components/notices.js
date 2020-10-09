@@ -1,4 +1,4 @@
-/* global CLDIS wp */
+/* global CLDIS */
 const Notices = {
 	_init() {
 		const self = this;
