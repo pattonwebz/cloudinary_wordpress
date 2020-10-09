@@ -33,7 +33,10 @@ const Save = ( { attributes } ) => {
 	}
 
 	return (
-		<div className={ attributes.container } data-cloudinary-gallery-config={ configString }></div>
+		<div
+			className={ attributes.container }
+			data-cloudinary-gallery-config={ configString }
+		></div>
 	);
 };
 

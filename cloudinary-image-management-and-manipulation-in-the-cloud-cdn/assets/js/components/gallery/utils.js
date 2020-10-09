@@ -8,9 +8,7 @@ export const publicIdFromUrl = ( url ) => {
 };
 
 const dec2hex = ( dec ) => {
-	return dec < 10 ?
-		'0' + String( dec ) :
-		dec.toString( 16 );
+	return dec < 10 ? '0' + String( dec ) : dec.toString( 16 );
 };
 
 export const generateId = ( len ) => {

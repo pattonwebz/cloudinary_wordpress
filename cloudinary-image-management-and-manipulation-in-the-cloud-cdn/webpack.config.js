@@ -35,6 +35,8 @@ Encore.setOutputPath( 'assets/dist/' )
 	.addExternals( { '@wordpress/blocks': 'wp.blocks' } )
 	.addExternals( { '@wordpress/block-editor': 'wp.editor' } )
 	.addExternals( { '@wordpress/element': 'wp.element' } )
+	.addExternals( { react: 'React' } )
+	.addExternals( { 'react-dom': 'ReactDOM' } )
 	.configureBabelPresetEnv( ( config ) => {
 		config.useBuiltIns = 'usage';
 		config.corejs = 3;
