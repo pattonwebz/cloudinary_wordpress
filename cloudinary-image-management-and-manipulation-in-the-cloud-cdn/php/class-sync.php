@@ -264,7 +264,7 @@ class Sync implements Setup, Assets {
 		if ( ! empty( $signatures[ $attachment_id ] ) && true === $cached ) {
 			$return = $signatures[ $attachment_id ];
 		} else {
-			$signature = $this->managers['media']->get_post_meta( $attachment_id, self::META_KEYS['signature'], true );
+			$signature = (array) $this->managers['media']->get_post_meta( $attachment_id, self::META_KEYS['signature'], true );
 			if ( empty( $signature ) ) {
 				$signature = array();
 			}
@@ -779,6 +779,10 @@ class Sync implements Setup, Assets {
 		if ( is_null( $value ) ) {
 			// Generate a new value based on generator.
 			$value = $this->generate_type_signature( $type, $attachment_id );
+		}
+		// Ensure we have an array.
+		if ( empty( $meta[ Sync::META_KEYS['cloudinary'] ][ Sync::META_KEYS['signature'] ] ) || ! is_array( $meta[ Sync::META_KEYS['cloudinary'] ][ Sync::META_KEYS['signature'] ] ) ) {
+			$meta[ Sync::META_KEYS['cloudinary'] ][ Sync::META_KEYS['signature'] ] = array();
 		}
 		$meta[ Sync::META_KEYS['cloudinary'] ][ Sync::META_KEYS['signature'] ][ $type ] = $value;
 		wp_update_attachment_metadata( $attachment_id, $meta );
