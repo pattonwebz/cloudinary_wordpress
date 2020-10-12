@@ -284,7 +284,7 @@ class Push_Sync {
 			// Flag attachment as being processed.
 			update_post_meta( $attachment_id, Sync::META_KEYS['syncing'], time() );
 			while ( $type = $this->sync->get_sync_type( $attachment_id, false ) ) {
-				if ( isset( $stat[ $attachment_id ][ $type ] ) ) {
+				if ( isset( $stat[ $attachment_id ] ) && isset( $stat[ $attachment_id ][ $type ] ) ) {
 					// Loop prevention.
 					break;
 				}
