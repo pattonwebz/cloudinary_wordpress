@@ -428,7 +428,8 @@ class Sync implements Setup, Assets {
 				'validate' => function ( $attachment_id ) {
 					$pending = false;
 					if ( wp_attachment_is( 'video', $attachment_id ) ) {
-						$pending = $this->managers['media']->get_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], true );
+						$pending = (array) $this->managers['media']->get_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], true );
+						$pending = array_filter( $pending );
 					}
 
 					return ! empty( $pending );

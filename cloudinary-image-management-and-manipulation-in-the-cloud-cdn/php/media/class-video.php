@@ -326,21 +326,22 @@ class Video {
 					$transformations[]['fetch_format'] = $video['fileformat'];
 				}
 				// Check if this video URL is eagered.
-				$eagers          = (array) $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['video_eagers'], true );
-				$eagers          = array_filter( $eagers );
-				$eager_signature = md5( Api::generate_transformation_string( $transformations, 'video' ) );
-				if ( ! in_array( $eager_signature, $eagers, true ) ) {
-					$pending_eagers = (array) $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], true );
-					$pending_eagers = array_filter( $pending_eagers );
-					if ( ! isset( $pending_eagers[ $eager_signature ] ) ) {
-						$pending_eagers[ $eager_signature ] = $transformations;
-						$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], $pending_eagers );
-					}
-					// Queue up for syncing.
-					$this->media->sync->add_to_sync( $attachment_id );
-					continue; // skip this video, and deliver from local.
-				}
 				if ( ! empty( $transformations ) ) {
+					$eagers          = (array) $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['video_eagers'], true );
+					$eagers          = array_filter( $eagers );
+					$eager_signature = md5( Api::generate_transformation_string( $transformations, 'video' ) );
+					if ( ! in_array( $eager_signature, $eagers, true ) ) {
+						$pending_eagers = (array) $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], true );
+						$pending_eagers = array_filter( $pending_eagers );
+						if ( ! isset( $pending_eagers[ $eager_signature ] ) ) {
+							$pending_eagers[ $eager_signature ] = $transformations;
+							$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], $pending_eagers );
+						}
+						// Queue up for syncing.
+						$this->media->sync->add_to_sync( $attachment_id );
+						continue; // skip this video, and deliver from local.
+					}
+
 					$args['transformation'] = $transformations;
 				}
 				if ( $this->player_enabled() ) {

@@ -1802,7 +1802,8 @@ class Media implements Setup {
 		$eagers = (array) $this->get_post_meta( $attachment_id, Sync::META_KEYS['video_eagers'], true );
 		$eagers = array_filter( $eagers );
 		// Get pending.
-		$pending = $this->get_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], true );
+		$pending = (array) $this->get_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], true );
+		$pending = array_filter( $pending );
 		if ( ! empty( $pending ) ) {
 			$eagers = array_merge( $eagers, $pending );
 		}
