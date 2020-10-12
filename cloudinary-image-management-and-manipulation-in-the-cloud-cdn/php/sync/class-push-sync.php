@@ -173,37 +173,50 @@ class Push_Sync {
 		$body          = $request->get_body();
 		$data          = json_decode( $body, ARRAY_A );
 
-		// Remove from pending and add to video.
+		// Precess eagers if found.
 		if ( ! empty( $data['eager'] ) ) {
-			$updated        = false;
-			$eagers         = (array) $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['video_eagers'], true );
-			$pending_eagers = (array) $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], true );
-			foreach ( $data['eager'] as $eager ) {
-				if ( empty( $eager['status'] ) && ! empty( $eager['transformation'] ) ) {
-					$signature = md5( $eager['transformation'] );
-					if ( isset( $pending_eagers[ $signature ] ) ) {
-						unset( $pending_eagers[ $signature ] );
-						$updated = true;
-					}
-					if ( ! in_array( $signature, $eagers ) ) {
-						$eagers[] = $signature;
-						$updated  = true;
-					}
-				}
-			}
-			// Update what was done.
-			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['video_eagers'], $eagers );
-			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], $pending_eagers );
-			if ( true === $updated ) {
-				// Only update signature if something happened.
-				$this->sync->set_signature_item( $attachment_id, 'eager_video' );
-				// Remove processing flags.
-				delete_post_meta( $attachment_id, Sync::META_KEYS['pending'] );
-				delete_post_meta( $attachment_id, Sync::META_KEYS['syncing'] );
-			}
+			$this->process_eagers( $attachment_id, $data['eager'] );
 		}
 
 		return $attachment_id;
+	}
+
+	/**
+	 * Process captured eagers.
+	 *
+	 * @param int   $attachment_id The attachment.
+	 * @param array $data          Array of eagers/derivatives.
+	 */
+	public function process_eagers( $attachment_id, $data ) {
+		$updated        = false;
+		$eagers         = (array) $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['video_eagers'], true );
+		$pending_eagers = (array) $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], true );
+		foreach ( $data as $eager ) {
+			if ( empty( $eager['status'] ) && ! empty( $eager['transformation'] ) ) {
+				$signature = md5( $eager['transformation'] );
+				if ( isset( $pending_eagers[ $signature ] ) ) {
+					unset( $pending_eagers[ $signature ] );
+					$updated = true;
+				}
+				if ( ! in_array( $signature, $eagers ) ) {
+					$eagers[] = $signature;
+					$updated  = true;
+				}
+			}
+		}
+		// Update what was done.
+		$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['video_eagers'], $eagers );
+		$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], $pending_eagers );
+		if ( true === $updated ) {
+			// Only update signature if something happened.
+			$this->sync->set_signature_item( $attachment_id, 'eager_video' );
+			// Remove processing flags.
+			delete_post_meta( $attachment_id, Sync::META_KEYS['pending'] );
+			delete_post_meta( $attachment_id, Sync::META_KEYS['syncing'] );
+		}
+
+		// Return true if pending is empty, indicating completed.
+		return empty( $pending_eagers );
 	}
 
 	/**

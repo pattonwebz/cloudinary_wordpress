@@ -205,7 +205,7 @@ class Upload_Sync {
 
 		add_filter(
 			'cloudinary_is_folder_synced',
-			function( $is_synced, $post_id ) use ( $attachment_id ) {
+			function ( $is_synced, $post_id ) use ( $attachment_id ) {
 				if ( $post_id === $attachment_id ) {
 					return true;
 				}
@@ -310,6 +310,13 @@ class Upload_Sync {
 			$args = $this->media->get_breakpoint_options( $attachment_id );
 		} elseif ( wp_attachment_is( 'video', $attachment_id ) ) {
 			$args = $this->media->get_pending_eagers( $attachment_id );
+			// Admin check in case missed update.
+			$data = $this->connect->api->resources( 'video/upload/' . $args['public_id'] );
+			if ( ! empty( $data['derived'] ) ) {
+				if ( $this->pusher->process_eagers( $attachment_id, $data['derived'] ) ) {
+					return $data['derived'];
+				}
+			}
 		}
 
 		if ( ! empty( $args ) ) {
