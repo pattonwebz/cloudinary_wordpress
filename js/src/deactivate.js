@@ -47,7 +47,7 @@ const Deactivate = {
 		});
 
 		// Add event listener to update reason and more container.
-		[ ...context.options ].forEach( (option) => {
+		[ ...context.options ].forEach( ( option ) => {
 			option.addEventListener( 'change', function( ev ) {
 				context.submitButton.removeAttribute( 'disabled' );
 				context.reason = ev.target.value;
