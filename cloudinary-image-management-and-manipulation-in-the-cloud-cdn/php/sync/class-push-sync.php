@@ -173,8 +173,6 @@ class Push_Sync {
 		$body          = $request->get_body();
 		$data          = json_decode( $body, ARRAY_A );
 
-		update_option( 'test_ping', $body );
-
 		// Remove from pending and add to video.
 		if ( ! empty( $data['eager'] ) ) {
 			$updated        = false;
@@ -197,8 +195,11 @@ class Push_Sync {
 			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['video_eagers'], $eagers );
 			$this->media->update_post_meta( $attachment_id, Sync::META_KEYS['pending_eagers'], $pending_eagers );
 			if ( true === $updated ) {
-				// Only update signature if something happend.
+				// Only update signature if something happened.
 				$this->sync->set_signature_item( $attachment_id, 'eager_video' );
+				// Remove processing flags.
+				delete_post_meta( $attachment_id, Sync::META_KEYS['pending'] );
+				delete_post_meta( $attachment_id, Sync::META_KEYS['syncing'] );
 			}
 		}
 
