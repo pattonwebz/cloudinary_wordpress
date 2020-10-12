@@ -1229,6 +1229,12 @@ class Media implements Setup {
 		// record a base to ensure primary isn't deleted.
 		update_post_meta( $attachment_id, '_' . md5( 'base_' . $public_id ), true );
 
+		// Capture the ALT Text.
+		if ( ! empty( $asset['meta']['alt'] ) ) {
+			$alt_text = wp_strip_all_tags( $asset['meta']['alt'] );
+			update_post_meta( $attachment_id, '_wp_attachment_image_alt', $alt_text );
+		}
+
 		return $attachment_id;
 	}
 
