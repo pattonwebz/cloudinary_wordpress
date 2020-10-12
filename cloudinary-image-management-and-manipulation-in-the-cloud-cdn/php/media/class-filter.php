@@ -361,10 +361,7 @@ class Filter {
 						$new_tag            = str_replace( $poster, $cloudinary_url, $new_tag );
 					}
 				}
-				$image_meta                              = wp_get_attachment_metadata( $attachment_id );
-				$image_meta['file']                      = pathinfo( $cloudinary_id, PATHINFO_FILENAME ) . '/' . pathinfo( $cloudinary_id, PATHINFO_BASENAME );
-				$image_meta['overwrite_transformations'] = $overwrite_transformations;
-				$new_tag                                 = wp_image_add_srcset_and_sizes( $new_tag, $image_meta, $attachment_id );
+				$new_tag = $this->media->apply_srcset( $new_tag, $attachment_id, $overwrite_transformations );
 			}
 			$content = str_replace( $asset, $new_tag, $content );
 			// Additional URL change for backgrounds etc..
@@ -515,7 +512,7 @@ class Filter {
 			}
 			if ( ! empty( $attachment['transformations'] ) ) {
 				$transformation_string = Api::generate_transformation_string( $attachment['transformations'] );
-				$new_atts             .= ' transformations="' . esc_attr( $transformation_string ) . '"';
+				$new_atts              .= ' transformations="' . esc_attr( $transformation_string ) . '"';
 			}
 			$html = str_replace( $shortcode['args'], $new_atts, $html );
 		}
