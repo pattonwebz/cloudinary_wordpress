@@ -1640,12 +1640,14 @@ class Media implements Setup {
 			if ( ! empty( $transformations ) ) {
 				$breakpoints['transformation'] = Api::generate_transformation_string( $transformations );
 			}
-			$breakpoints = array(
+			$breakpoints              = array(
 				'public_id'              => $this->get_public_id( $attachment_id ),
 				'type'                   => 'upload',
 				'responsive_breakpoints' => $breakpoint_options,
 				'context'                => $this->get_context_options( $attachment_id ),
 			);
+			// Check for suffix.
+			$breakpoints['public_id'] .= $this->get_post_meta( $attachment_id, Sync::META_KEYS['suffix'], true );
 
 		}
 
@@ -1683,8 +1685,13 @@ class Media implements Setup {
 		 * @return array
 		 */
 		$context_options = apply_filters( 'cloudinary_context_options', $context_options, get_post( $attachment_id ), $this );
+		foreach ( $context_options as $option => &$value ) {
+			$value = str_replace( '=', '\=', $value );
+			$value = str_replace( '|', '\|', $value );
+			$value = $option . '=' . $value;
+		}
 
-		return http_build_query( $context_options, null, '|' );
+		return implode( '|', $context_options );
 	}
 
 	/**
