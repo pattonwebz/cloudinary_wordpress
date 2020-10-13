@@ -8,6 +8,8 @@
 namespace Cloudinary\Media;
 
 use Cloudinary\Media;
+use Cloudinary\REST_API;
+use Cloudinary\Utils;
 
 /**
  * Class Filter.
@@ -83,8 +85,8 @@ class Gallery implements \JsonSerializable {
 		unset( $config['enable_gallery'], $config['custom_settings'] );
 
 		$config = $this->prepare_config( $config );
-		$config = $this->expand_dot_notation( $config );
-		$config = $this->array_filter_recursive(
+		$config = Utils::expand_dot_notation( $config );
+		$config = Utils::array_filter_recursive(
 			$config,
 			function ( $item ) {
 				return ! empty( $item );
@@ -106,52 +108,10 @@ class Gallery implements \JsonSerializable {
 	}
 
 	/**
-	 * Detects array keys with dot notation and expands them to form a new multi-dimensional array.
+	 * Convert an array's keys to camelCase and transform booleans.
+	 * This is used for Cloudinary's gallery widget lib.
 	 *
-	 * @param  array $input The array that will be processed.
-	 *
-	 * @return array
-	 */
-	protected function expand_dot_notation( array $input ) {
-		$result = array();
-		foreach ( $input as $key => $value ) {
-			if ( is_array( $value ) ) {
-				$value = $this->expand_dot_notation( $value );
-			}
-
-			foreach ( array_reverse( explode( '.', $key ) ) as $inner_key ) {
-				$value = array( $inner_key => $value );
-			}
-
-			/** @noinspection SlowArrayOperationsInLoopInspection */
-			$result = array_merge_recursive( $result, $value );
-		}
-
-		return $result;
-	}
-
-	/**
-	 * Filter an array recursively
-	 *
-	 * @param array          $input    The array to filter.
-	 * @param callable|null  $callback The callback to run for filtering.
-	 *
-	 * @return array
-	 */
-	protected function array_filter_recursive( array $input, $callback = null ) {
-		foreach ( $input as &$value ) {
-			if ( is_array( $value ) ) {
-				$value = $this->array_filter_recursive( $value, $callback );
-			}
-		}
-
-		return array_filter( $input, $callback );
-	}
-
-	/**
-	 * Convert an array's keys to camelCase.
-	 *
-	 * @param array $input The array input that will have its keys camelcased.
+	 * @param array $input The array input that will have its keys camelcase-d.
 	 *
 	 * @return array
 	 */
@@ -218,6 +178,12 @@ class Gallery implements \JsonSerializable {
 			'defaultGalleryConfig',
 			$this->get_config()
 		);
+
+		wp_localize_script(
+			'cloudinary-gallery-block-js',
+			'cloudinaryGalleryApi',
+			array( 'dataEndpoint' => rest_url( REST_API::BASE . '/image_data' ) )
+		);
 	}
 
 	/**
@@ -229,9 +195,18 @@ class Gallery implements \JsonSerializable {
 	 */
 	public function override_woocommerce_gallery( $html ) {
 		$this->is_woo_page = true;
-		$cloudinary_url    = $this->media->filter->get_url_from_tag( $html );
-		$public_id         = $this->media->get_public_id_from_url( $cloudinary_url );
-		return '<script>galleryOptions.mediaAssets.push("' . esc_js( $public_id ) . '");</script>';
+
+		$cloudinary_url  = $this->media->filter->get_url_from_tag( $html );
+		$public_id       = $this->media->get_public_id_from_url( $cloudinary_url );
+		$transformations = $this->media->get_transformations_from_string( $cloudinary_url );
+
+		$json = array(
+			'publicId'       => $public_id,
+			'transformation' => array( 'transformation' => $transformations ),
+		);
+		$json = wp_json_encode( $json );
+
+		return "<script>galleryOptions.mediaAssets.push( JSON.parse( '{$json}' ) )</script>\n\t\t";
 	}
 
 	/**
@@ -240,9 +215,7 @@ class Gallery implements \JsonSerializable {
 	public function add_config_to_head() {
 		// phpcs:disable
 		?>
-		<script>
-			var galleryOptions = JSON.parse( '<?php echo $this->jsonSerialize(); ?>' )
-		</script>
+		<script>var galleryOptions = JSON.parse( '<?php echo $this->jsonSerialize(); ?>' )</script>
 		<?php
 		// phpcs:enable
 	}
@@ -286,16 +259,16 @@ SCRIPT_TAG;
 	 * @return bool
 	 */
 	protected function woocommerce_active() {
-		return in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) );
+		return in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ), true );
 	}
 
 	/**
-     * Checks if the Cloudinary Gallery Widget is enabled.
-     *
+	 * Checks if the Cloudinary Gallery Widget is enabled.
+	 *
 	 * @return bool
 	 */
 	public function gallery_enabled() {
-	    return isset( $this->original_config['enable_gallery'] ) && 'on' === $this->original_config['enable_gallery'];
+		return isset( $this->original_config['enable_gallery'] ) && 'on' === $this->original_config['enable_gallery'];
 	}
 
 	/**

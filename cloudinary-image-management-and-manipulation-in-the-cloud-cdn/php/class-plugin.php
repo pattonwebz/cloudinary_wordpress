@@ -125,8 +125,8 @@ class Plugin {
 
 		if ( $this->components['connect'] && $this->components['connect']->is_connected() ) {
 			$this->components['sync']    = new Sync( $this );
-			$this->components['api']     = new REST_API( $this );
 			$this->components['media']   = new Media( $this );
+			$this->components['api']     = new REST_API( $this );
 			$this->components['storage'] = new Storage( $this );
 		}
 	}
@@ -188,6 +188,12 @@ class Plugin {
 		$endpoints['dismiss_notice'] = array(
 			'method'   => WP_REST_Server::CREATABLE,
 			'callback' => array( $this, 'rest_dismiss_notice' ),
+			'args'     => array(),
+		);
+
+		$endpoints['image_data'] = array(
+			'method'   => \WP_REST_Server::CREATABLE,
+			'callback' => array( $this->components['media'], 'rest_cloudinary_image_data' ),
 			'args'     => array(),
 		);
 

@@ -325,6 +325,32 @@ class Media implements Setup {
 	}
 
 	/**
+	 * @param \WP_REST_Request $request The request.
+	 *
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function rest_cloudinary_image_data( \WP_REST_Request $request ) {
+		$request_body = json_decode( $request->get_body(), true );
+
+		if ( empty( $request_body ) || empty( $request_body['cloudinary_urls'] ) ) {
+			return new \WP_Error( 400, 'The "cloudinary_url" query param must be provided with a valid Cloudinary URL.' );
+		}
+
+		$image_data = array();
+
+		foreach ( $request_body['cloudinary_urls'] as $index => $url ) {
+		    $transformations = $this->get_transformations_from_string( $url );
+			$image_data[ $index ] = array( 'publicId' => $this->get_public_id_from_url( $url ) );
+
+			if ( $transformations ) {
+			    $image_data[ $index ]['transformation'] = array( 'transformation' => $transformations );
+            }
+		}
+
+		return new \WP_REST_Response( $image_data );
+	}
+
+	/**
 	 * Fetch a public id from a cloudinary url.
 	 *
 	 * @param string $url         The url to fetch the public id from.
@@ -349,13 +375,13 @@ class Media implements Setup {
 		}
 
 		// The remaining items should be the file.
-		$file            = implode( '/', $parts );
-		$path_info       = pathinfo( $file );
-		$public_id       = trim( $path_info['dirname'] . '/' . $path_info['filename'], './' );
-		$transformations = $this->get_transformations_from_string( $url );
+		$file      = implode( '/', $parts );
+		$path_info = pathinfo( $file );
+		$public_id = trim( $path_info['dirname'], './' );
 
-		if ( $as_sync_key && ! empty( $transformations ) ) {
-			$public_id .= wp_json_encode( $transformations );
+		if ( $as_sync_key ) {
+			$transformations = $this->get_transformations_from_string( $url );
+			$public_id      .= ! empty( $transformations ) ? wp_json_encode( $transformations ) : '';
 		}
 
 		return $public_id;
@@ -1666,7 +1692,7 @@ class Media implements Setup {
 			if ( ! empty( $transformations ) ) {
 				$breakpoints['transformation'] = Api::generate_transformation_string( $transformations );
 			}
-			$breakpoints              = array(
+			$breakpoints = array(
 				'public_id'              => $this->get_public_id( $attachment_id ),
 				'type'                   => 'upload',
 				'responsive_breakpoints' => $breakpoint_options,
@@ -1879,13 +1905,11 @@ class Media implements Setup {
 			$this->sync              = $this->plugin->components['sync'];
 
 			// Internal components.
+			$this->global_transformations = new Global_Transformations( $this );
 			$this->gallery                = new Gallery( $this );
 			$this->filter                 = new Filter( $this );
 			$this->upgrade                = new Upgrade( $this );
-			$this->global_transformations = new Global_Transformations( $this );
 			$this->video                  = new Video( $this );
-
-			//          echo($this->gallery->get_json()); exit;
 
 			// Set the max image size registered in WordPress.
 			$this->get_max_width();

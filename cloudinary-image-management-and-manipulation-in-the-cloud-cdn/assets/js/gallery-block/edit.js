@@ -1,3 +1,5 @@
+/* global cloudinaryGalleryApi */
+
 /**
  * External dependencies
  */
@@ -43,17 +45,20 @@ import {
 	ZOOM_TYPE,
 	ZOOM_VIEWER_POSITION,
 } from './options';
-import { generateId, publicIdFromUrl } from './utils';
+import { generateId } from './utils';
 
 const dot = new Dot( '_' );
 
 const Edit = ( { setAttributes, attributes, className } ) => {
 	const onSelect = ( images ) => {
-		setAttributes( {
-			selectedImages: images.map( ( image ) =>
-				publicIdFromUrl( image.url )
-			),
-		} );
+		fetch( cloudinaryGalleryApi.dataEndpoint, {
+			method: 'POST',
+			body: JSON.stringify( {
+				cloudinary_urls: images.map( ( image ) => image.url ),
+			} ),
+		} )
+			.then( ( res ) => res.json() )
+			.then( ( selectedImages ) => setAttributes( { selectedImages } ) );
 	};
 
 	useEffect( () => {
@@ -103,7 +108,6 @@ const Edit = ( { setAttributes, attributes, className } ) => {
 					icon="format-gallery"
 					allowedTypes={ ALLOWED_MEDIA_TYPES }
 					multiple
-					addToGallery={ hasImages }
 					isAppender={ hasImages }
 					onSelect={ onSelect }
 				/>
