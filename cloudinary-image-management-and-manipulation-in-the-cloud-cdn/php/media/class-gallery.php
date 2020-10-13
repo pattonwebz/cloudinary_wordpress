@@ -15,6 +15,17 @@ use Cloudinary\Media;
  * Handles filtering of HTML content.
  */
 class Gallery implements \JsonSerializable {
+
+	/**
+	 * @var string
+	 */
+	const GALLERY_LIBRARY_HANDLE = 'cld-gallery';
+
+	/**
+	 * @var string
+	 */
+	const GALLERY_LIBRARY_URL = 'https://product-gallery.cloudinary.com/all.js';
+
 	/**
 	 * Flag on whether this page is a WooCommerce product page with a gallery.
 	 *
@@ -35,13 +46,24 @@ class Gallery implements \JsonSerializable {
 	protected $config = array();
 
 	/**
+	 * Holds the original, unparsed config.
+	 *
+	 * @var array
+	 */
+	protected $original_config = array();
+
+	/**
 	 * Init gallery.
 	 *
 	 * @param Media $media
 	 */
 	public function __construct( Media $media ) {
-		$this->media = $media;
-		$this->setup_hooks();
+		$this->media           = $media;
+		$this->original_config = $media->plugin->config['settings']['gallery'];
+
+		if ( $this->gallery_enabled() ) {
+			$this->setup_hooks();
+		}
 	}
 
 	/**
@@ -90,7 +112,7 @@ class Gallery implements \JsonSerializable {
 	 *
 	 * @return array
 	 */
-	public function expand_dot_notation( array $input ) {
+	protected function expand_dot_notation( array $input ) {
 		$result = array();
 		foreach ( $input as $key => $value ) {
 			if ( is_array( $value ) ) {
@@ -116,7 +138,7 @@ class Gallery implements \JsonSerializable {
 	 *
 	 * @return array
 	 */
-	public function array_filter_recursive( array $input, $callback = null ) {
+	protected function array_filter_recursive( array $input, $callback = null ) {
 		foreach ( $input as &$value ) {
 			if ( is_array( $value ) ) {
 				$value = $this->array_filter_recursive( $value, $callback );
@@ -162,10 +184,10 @@ class Gallery implements \JsonSerializable {
 	/**
 	 * Register frontend assets for the gallery.
 	 */
-	public function frontend_scripts_styles() {
+	public function enqueue_gallery_library() {
 		wp_enqueue_script(
-			'cld-gallery',
-			'https://product-gallery.cloudinary.com/all.js',
+			self::GALLERY_LIBRARY_HANDLE,
+			self::GALLERY_LIBRARY_URL,
 			array(),
 			$this->media->plugin->version,
 			true
@@ -202,20 +224,20 @@ class Gallery implements \JsonSerializable {
 	 * This is a woocommerce gallery hook which is run for each gallery item.
 	 *
 	 * @param string $html
-	 * @param int    $attachment_id
+	 *
 	 * @return string
 	 */
-	public function override_woocommerce_gallery( $html, $attachment_id ) {
+	public function override_woocommerce_gallery( $html ) {
 		$this->is_woo_page = true;
-		$public_id         = $this->media->get_public_id( $attachment_id, true );
+		$cloudinary_url    = $this->media->filter->get_url_from_tag( $html );
+		$public_id         = $this->media->get_public_id_from_url( $cloudinary_url );
 		return '<script>galleryOptions.mediaAssets.push("' . esc_js( $public_id ) . '");</script>';
 	}
 
+	/**
+	 * Sets galleryOptions JS variable which will be used to init the gallery.
+	 */
 	public function add_config_to_head() {
-		if ( ! $this->is_woo_page ) {
-			return;
-		}
-
 		// phpcs:disable
 		?>
 		<script>
@@ -234,7 +256,7 @@ class Gallery implements \JsonSerializable {
 	 * @return string
 	 */
 	public function prepare_gallery_assets( $html, $handle ) {
-		if ( 'cld-gallery' === $handle ) {
+		if ( self::GALLERY_LIBRARY_HANDLE === $handle ) {
 			$is_woo = $this->is_woo_page ? 'true' : 'false';
 			$html  .= <<<SCRIPT_TAG
 <script>
@@ -246,7 +268,6 @@ class Gallery implements \JsonSerializable {
 			var options = JSON.parse( configJson );
 			options.container = '.' + options.container;
 			cloudinary.galleryWidget( options ).render();
-
 		});
 	} else if ( {$is_woo} ) {
 		cloudinary.galleryWidget( galleryOptions ).render();
@@ -260,17 +281,35 @@ SCRIPT_TAG;
 	}
 
 	/**
+	 * Check if WooCommerce is active.
+	 *
+	 * @return bool
+	 */
+	protected function woocommerce_active() {
+		return in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) );
+	}
+
+	/**
+     * Checks if the Cloudinary Gallery Widget is enabled.
+     *
+	 * @return bool
+	 */
+	public function gallery_enabled() {
+	    return isset( $this->original_config['enable_gallery'] ) && 'on' === $this->original_config['enable_gallery'];
+	}
+
+	/**
 	 * Setup hooks for the gallery.
 	 */
 	public function setup_hooks() {
-		if ( ! is_admin() ) {
-			add_filter( 'woocommerce_single_product_image_thumbnail_html', array( $this, 'override_woocommerce_gallery' ), 10, 2 );
+		$this->enqueue_gallery_library();
+
+		if ( $this->woocommerce_active() && ! is_admin() ) {
+			add_filter( 'woocommerce_single_product_image_thumbnail_html', array( $this, 'override_woocommerce_gallery' ) );
 			add_filter( 'wp_head', array( $this, 'add_config_to_head' ) );
 			add_filter( 'script_loader_tag', array( $this, 'prepare_gallery_assets' ), 10, 2 );
 		} else {
 			add_action( 'enqueue_block_editor_assets', array( $this, 'block_editor_scripts_styles' ) );
 		}
-
-		$this->frontend_scripts_styles();
 	}
 }

@@ -166,7 +166,6 @@ class Media implements Setup {
 	 */
 	public function get_convertible_extensions() {
 
-
 		// Add preferred formats in future.
 		$base_types = array(
 			'psd'  => 'jpg',
@@ -326,45 +325,54 @@ class Media implements Setup {
 	}
 
 	/**
+	 * Fetch a public id from a cloudinary url.
+	 *
+	 * @param string $url         The url to fetch the public id from.
+	 * @param bool   $as_sync_key Whether to return a plugin-based sync key, which is used to fetch an attachment id.
+	 *
+	 * @return string|null
+	 */
+	public function get_public_id_from_url( $url, $as_sync_key = false ) {
+		if ( ! $this->is_cloudinary_url( $url ) ) {
+			return null;
+		}
+
+		$path  = wp_parse_url( $url, PHP_URL_PATH );
+		$parts = explode( '/', ltrim( $path, '/' ) );
+
+		// Need to find the version part as anything after this is the public id.
+		foreach ( $parts as $part ) {
+			array_shift( $parts ); // Get rid of the first element.
+			if ( 'v' === substr( $part, 0, 1 ) && is_numeric( substr( $part, 1 ) ) ) {
+				break; // Stop removing elements.
+			}
+		}
+
+		// The remaining items should be the file.
+		$file            = implode( '/', $parts );
+		$path_info       = pathinfo( $file );
+		$public_id       = trim( $path_info['dirname'] . '/' . $path_info['filename'], './' );
+		$transformations = $this->get_transformations_from_string( $url );
+
+		if ( $as_sync_key && ! empty( $transformations ) ) {
+			$public_id .= wp_json_encode( $transformations );
+		}
+
+		return $public_id;
+	}
+
+	/**
 	 * Attempt to get an attachment_id from a url.
 	 *
 	 * @param string $url The url of the file.
 	 *
 	 * @return int The attachment id or 0 if not found.
 	 */
-	public function get_id_from_url( $url, $return_public_id = false ) {
+	public function get_id_from_url( $url ) {
 		if ( $this->is_cloudinary_url( $url ) ) {
-			$path  = wp_parse_url( $url, PHP_URL_PATH );
-			$parts = explode( '/', ltrim( $path, '/' ) );
-			// Need to find the version part as anything after this is the public id.
-			foreach ( $parts as $part ) {
-				array_shift( $parts ); // Get rid of the first element.
-				if ( 'v' === substr( $part, 0, 1 ) && is_numeric( substr( $part, 1 ) ) ) {
-					break; // Stop removing elements.
-				}
-			}
-
-			// The remaining items should be the file.
-			$file            = implode( '/', $parts );
-			$pathinfo        = pathinfo( $file );
-			$public_id       = trim( $pathinfo['dirname'] . '/' . $pathinfo['filename'], './' );
-			$sync_key        = $public_id;
-			$transformations = $this->get_transformations_from_string( $url );
-			if ( ! empty( $transformations ) ) {
-				$sync_key .= wp_json_encode( $transformations );
-			}
-
-			if ( $return_public_id ) {
-			    return array(
-                    'public_id'       => $public_id,
-                    'transformations' => $transformations,
-                );
-			}
-
+			$sync_key      = $this->get_public_id_from_url( $url, true );
 			$attachment_id = $this->get_id_from_sync_key( $sync_key );
-
 		} else {
-
 			// Clear out any params.
 			if ( wp_parse_url( $url, PHP_URL_QUERY ) ) {
 				$url = strstr( $url, '?', true );
@@ -1282,15 +1290,18 @@ class Media implements Setup {
 
 		// Move all context data into the meta key.
 		if ( ! empty( $data['asset']['context'] ) ) {
-			array_walk_recursive( $data['asset']['context'], function ( $value, $key ) use ( &$asset ) {
-				$asset['meta'][ $key ] = filter_var( $value, FILTER_SANITIZE_STRING );
-			} );
+			array_walk_recursive(
+				$data['asset']['context'],
+				function ( $value, $key ) use ( &$asset ) {
+					$asset['meta'][ $key ] = filter_var( $value, FILTER_SANITIZE_STRING );
+				}
+			);
 		}
 
 		// Check for transformations.
 		$transformations = $this->get_transformations_from_string( $asset['url'] );
 		if ( ! empty( $transformations ) ) {
-			$asset['sync_key']        .= wp_json_encode( $transformations );
+			$asset['sync_key']       .= wp_json_encode( $transformations );
 			$asset['transformations'] = $transformations;
 		}
 		// Attempt to find attachment ID.
@@ -1305,7 +1316,6 @@ class Media implements Setup {
 	public function down_sync_asset() {
 		$nonce = filter_input( INPUT_POST, 'nonce', FILTER_SANITIZE_STRING );
 		if ( wp_verify_nonce( $nonce, 'wp_rest' ) ) {
-
 
 			$asset = $this->get_asset_payload();
 			// Set a base array for pulling an asset if needed.
@@ -1757,9 +1767,12 @@ class Media implements Setup {
 	 */
 	public function set_doing_featured( $post_id, $attachment_id ) {
 		$this->doing_featured_image = $attachment_id;
-		add_action( 'end_fetch_post_thumbnail_html', function () {
-			$this->doing_featured_image = false;
-		} );
+		add_action(
+			'end_fetch_post_thumbnail_html',
+			function () {
+				$this->doing_featured_image = false;
+			}
+		);
 	}
 
 	/**
@@ -1793,7 +1806,7 @@ class Media implements Setup {
 			$this->global_transformations = new Global_Transformations( $this );
 			$this->video                  = new Video( $this );
 
-//			echo($this->gallery->get_json()); exit;
+			//          echo($this->gallery->get_json()); exit;
 
 			// Set the max image size registered in WordPress.
 			$this->get_max_width();

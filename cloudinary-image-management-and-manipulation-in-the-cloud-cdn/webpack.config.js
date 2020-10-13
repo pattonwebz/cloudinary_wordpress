@@ -14,7 +14,7 @@ Encore.setOutputPath( 'assets/dist/' )
 
 	.addEntry( 'cloudinary', './assets/js/main.js' )
 	.addEntry( 'block-editor', './assets/js/blocks.js' )
-	.addEntry( 'block-gallery', './assets/js/components/gallery/index.js' )
+	.addEntry( 'block-gallery', './assets/js/gallery-block/index.js' )
 	.addStyleEntry( 'video', './assets/css/video.scss' )
 	// Add more entries here if needed...
 

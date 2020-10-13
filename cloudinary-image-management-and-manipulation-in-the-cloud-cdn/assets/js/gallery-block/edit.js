@@ -48,6 +48,14 @@ import { generateId, publicIdFromUrl } from './utils';
 const dot = new Dot( '_' );
 
 const Edit = ( { setAttributes, attributes, className } ) => {
+	const onSelect = ( images ) => {
+		setAttributes( {
+			selectedImages: images.map( ( image ) =>
+				publicIdFromUrl( image.url )
+			),
+		} );
+	};
+
 	useEffect( () => {
 		if ( attributes.selectedImages.length ) {
 			const attributesClone = cloneDeep( attributes );
@@ -97,13 +105,7 @@ const Edit = ( { setAttributes, attributes, className } ) => {
 					multiple
 					addToGallery={ hasImages }
 					isAppender={ hasImages }
-					onSelect={ ( images ) => {
-						setAttributes( {
-							selectedImages: images.map( ( image ) =>
-								publicIdFromUrl( image.url )
-							),
-						} );
-					} }
+					onSelect={ onSelect }
 				/>
 			</>
 			<InspectorControls>

@@ -11,6 +11,7 @@
   "extends": [
     "plugin:@wordpress/eslint-plugin/recommended"
   ],
+  "plugins": ["jest"],
   "rules": {
     "camelcase": "warn",
     "no-alert": "off",
