@@ -266,13 +266,6 @@ class Filter {
 			if ( $this->media->is_cloudinary_url( $local_url ) ) {
 				continue;
 			}
-			$inherit_transformations = $this->media->get_transformation_from_meta( $attachment_id );
-			$transformations         = $this->media->get_transformations_from_string( $url );
-			$transformations         = array_filter( $transformations );
-			if ( ! empty( $transformations ) && $inherit_transformations !== $transformations ) {
-				$transformations = Api::generate_transformation_string( $transformations );
-				$local_url       = add_query_arg( 'cld_params', $transformations, $local_url );
-			}
 			// Replace old tag.
 			$content = str_replace( $url, $local_url, $content );
 
@@ -325,25 +318,20 @@ class Filter {
 				wp_parse_str( $query, $args );
 				$transformations = $this->media->get_transformations_from_string( $args['cld_params'] );
 			}
-
 			// Get the WP size from the class name.
-			$wp_size = $this->get_size_from_image_tag( $asset );
+			$wp_size = $this->media->get_crop( $url, $attachment_id );
 			if ( false === $wp_size ) {
 				// No class name, so get size from the width and height tags.
 				$wp_size = $this->get_crop_from_image_tag( $asset );
-				if ( empty( $wp_size ) ) {
-					$wp_size = 'full'; // Fallback to full if nothing is found at all.
-				}
 			}
 
 			// Get a cloudinary URL.
-			$clean                     = ! is_admin(); // Front facing images must not contain a wpsize url variable.
 			$classes                   = $this->get_classes( $asset ); // check if this is a transformation overwrite.
 			$overwrite_transformations = false;
 			if ( false !== strpos( $classes, 'cld-overwrite' ) ) {
 				$overwrite_transformations = true;
 			}
-			$cloudinary_url = $this->media->cloudinary_url( $attachment_id, $wp_size, $transformations, null, $overwrite_transformations, $clean );
+			$cloudinary_url = $this->media->cloudinary_url( $attachment_id, $wp_size, $transformations, null, $overwrite_transformations );
 
 			if ( $url === $cloudinary_url ) {
 				continue;
@@ -352,32 +340,32 @@ class Filter {
 			// Replace old tag.
 			$new_tag = str_replace( $url, $cloudinary_url, $asset );
 
-			// Check if there is a class set. ( for srcset images in case of a manual url added ).
-			if ( false === strpos( $new_tag, ' class=' ) && ! is_admin() ) {
-				// Add in the class name.
-				$new_tag = str_replace( '/>', ' class="wp-image-' . $attachment_id . '"/>', $new_tag );
-			}
-
-			// Apply lazy loading attribute
-			if (
-				apply_filters( 'wp_lazy_loading_enabled', true ) &&
-				false === strpos( $new_tag, 'loading="lazy"' ) &&
-				$clean
-			) {
-				$new_tag = str_replace( '/>', ' loading="lazy" />', $new_tag );
-			}
-
-			// If Cloudinary player is active, this is replaced there.
-			if ( ! $this->media->video->player_enabled() ) {
-				$poster = $this->get_poster_from_tag( $asset );
-				if ( false !== $poster ) {
-					$post_attachment_id = $this->media->get_id_from_url( $poster );
-					$cloudinary_url     = $this->media->cloudinary_url( $post_attachment_id );
-					$new_tag            = str_replace( $poster, $cloudinary_url, $new_tag );
+			// Add front end features.
+			if ( ! is_admin() ) {
+				// Check if there is a class set. ( for srcset images in case of a manual url added ).
+				if ( false === strpos( $new_tag, ' class=' ) ) {
+					// Add in the class name.
+					$new_tag = str_replace( '/>', ' class="wp-image-' . $attachment_id . '"/>', $new_tag );
 				}
-			}
+				// Apply lazy loading attribute
+				if ( apply_filters( 'wp_lazy_loading_enabled', true ) && false === strpos( $new_tag, 'loading="lazy"' ) ) {
+					$new_tag = str_replace( '/>', ' loading="lazy" />', $new_tag );
+				}
 
+				// If Cloudinary player is active, this is replaced there.
+				if ( ! $this->media->video->player_enabled() ) {
+					$poster = $this->get_poster_from_tag( $asset );
+					if ( false !== $poster ) {
+						$post_attachment_id = $this->media->get_id_from_url( $poster );
+						$cloudinary_url     = $this->media->cloudinary_url( $post_attachment_id );
+						$new_tag            = str_replace( $poster, $cloudinary_url, $new_tag );
+					}
+				}
+				$new_tag = $this->media->apply_srcset( $new_tag, $attachment_id, $overwrite_transformations );
+			}
 			$content = str_replace( $asset, $new_tag, $content );
+			// Additional URL change for backgrounds etc..
+			$content = str_replace( $url, $cloudinary_url, $content );
 		}
 
 		return $this->filter_video_shortcodes( $content );
@@ -558,7 +546,7 @@ class Filter {
 					$data['meta'][ Global_Transformations::META_FEATURED_IMAGE_KEY ] = $disable;
 				} else {
 					// If the param was found, its a save edit, to update the meta data.
-					update_post_meta( $post->ID, Global_Transformations::META_FEATURED_IMAGE_KEY, (bool) $data['meta'] );
+					update_post_meta( $post->ID, Global_Transformations::META_FEATURED_IMAGE_KEY, (bool) $data['meta'][ Global_Transformations::META_FEATURED_IMAGE_KEY ] );
 				}
 			}
 			$response->set_data( $data );
@@ -595,7 +583,7 @@ class Filter {
 		return '<# if( data.attachment.attributes.transformations ) { #>
 			<div class="setting cld-overwrite">
 				<label>
-					<span>' . esc_html__( 'Overwrite Transformations', 'cloudinary' ) . '</span>
+					<span>' . esc_html__( 'Overwrite Global Transformations', 'cloudinary' ) . '</span>
 					<input type="checkbox" data-setting="cldoverwrite" value="true"<# if ( data.model.cldoverwrite ) { #> checked="checked"<# } #> />
 				</label>
 			</div>
@@ -611,7 +599,7 @@ class Filter {
 		return '<# if( \'video\' === data.type && data.attachment.attributes.transformations ) { #>
 			<div class="setting cld-overwrite">
 				<label>
-					<span>' . esc_html__( 'Overwrite Transformations', 'cloudinary' ) . '</span>
+					<span>' . esc_html__( 'Overwrite Global Transformations', 'cloudinary' ) . '</span>
 					<input type="checkbox" data-setting="cldoverwrite" value="true"<# if ( data.model.cldoverwrite ) { #> checked="checked"<# } #> />
 				</label>
 			</div>
@@ -629,7 +617,7 @@ class Filter {
 				<label>
 					<span>&nbsp;</span>
 					<input type="checkbox" data-setting="cldoverwrite" value="true" <# if ( data.model.cldoverwrite ) { #>checked="checked"<# } #> />
-					' . esc_html__( 'Overwrite Transformations', 'cloudinary' ) . '
+					' . esc_html__( 'Overwrite Global Transformations', 'cloudinary' ) . '
 				</label>
 			</div>
 		<# } #>';
@@ -645,7 +633,7 @@ class Filter {
 			<div class="setting cld-overwrite">
 				<label>
 					<input type="checkbox" data-setting="cldoverwrite" value="true" <# if ( data.model.cldoverwrite ) { #>checked="checked"<# } #> />
-					' . esc_html__( 'Overwrite Transformations', 'cloudinary' ) . '
+					' . esc_html__( 'Overwrite Global Transformations', 'cloudinary' ) . '
 				</label>
 			</div>
 		<# } #>';
@@ -705,6 +693,24 @@ class Filter {
 		return $block;
 	}
 
+
+	/**
+	 * Add filters for Rest API handling.
+	 */
+	public function init_rest_filters() {
+		// Gutenberg compatibility.
+		add_filter( 'rest_prepare_attachment', array( $this, 'filter_attachment_for_rest' ) );
+		$types = get_post_types_by_support( 'editor' );
+		foreach ( $types as $type ) {
+			$post_type = get_post_type_object( $type );
+			// Check if this is a rest supported type.
+			if ( true === $post_type->show_in_rest ) {
+				// Add filter only to rest supported types.
+				add_filter( 'rest_prepare_' . $type, array( $this, 'pre_filter_rest_content' ), 10, 3 );
+			}
+		}
+	}
+
 	/**
 	 * Setup hooks for the filters.
 	 */
@@ -712,7 +718,7 @@ class Filter {
 		// Filter URLS within content.
 		add_action( 'wp_insert_post_data', array( $this, 'filter_out_cloudinary' ) );
 		add_filter( 'the_editor_content', array( $this, 'filter_out_local' ) );
-		add_filter( 'the_content', array( $this, 'filter_out_local' ), 9 ); // Early to hook before responsive srcsets.
+		add_filter( 'the_content', array( $this, 'filter_out_local' ), 100 );
 		add_filter( 'wp_prepare_attachment_for_js', array( $this, 'filter_attachment_for_js' ), 11 );
 
 		// Add support for custom header.
@@ -720,24 +726,12 @@ class Filter {
 
 		// Add transformations.
 		add_filter( 'media_send_to_editor', array( $this, 'transform_to_editor' ), 10, 3 );
+
 		// Filter video codes.
 		add_filter( 'media_send_to_editor', array( $this, 'filter_video_embeds' ), 10, 3 );
 
-		// Gutenberg compatibility.
-		add_filter( 'rest_prepare_attachment', array( $this, 'filter_attachment_for_rest' ) );
-		$types  = get_post_types_by_support( 'editor' );
-		$filter = $this;
-		array_map(
-			function ( $type ) use ( $filter ) {
-				$post_type = get_post_type_object( $type );
-				// Check if this is a rest supported type.
-				if ( true === $post_type->show_in_rest ) {
-					// Add filter only to rest supported types.
-					add_filter( 'rest_prepare_' . $type, array( $filter, 'pre_filter_rest_content' ), 10, 3 );
-				}
-			},
-			$types
-		);
+		// Enable Rest filters.
+		add_action( 'rest_api_init', array( $this, 'init_rest_filters' ) );
 
 		// Remove editors to prevent users from manually editing images in WP.
 		add_filter( 'wp_image_editors', array( $this, 'disable_editors_maybe' ) );
@@ -747,5 +741,15 @@ class Filter {
 
 		// Filter for block rendering.
 		add_filter( 'render_block_data', array( $this, 'filter_image_block_pre_render' ), 10, 2 );
+
+		// Cancel out breakpoints till later.
+		add_filter(
+			'wp_img_tag_add_srcset_and_sizes_attr',
+			function ( $add, $image, $context, $attachment_id ) {
+				return ! $this->media->has_public_id( $attachment_id );
+			},
+			10,
+			4
+		);
 	}
 }

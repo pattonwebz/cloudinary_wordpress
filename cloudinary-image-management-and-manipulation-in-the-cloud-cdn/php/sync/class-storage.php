@@ -103,7 +103,10 @@ class Storage implements Notice {
 				$field['description'] = sprintf(
 					// translators: Placeholders are <a> tags.
 					__( 'You can’t currently change your environment variable as your storage setting is set to "Cloudinary only". Update your %1$s storage settings %2$s and sync your assets to WordPress storage to enable this setting.', 'cloudinary' ),
-					'<a href="https://support.cloudinary.com/hc/en-us/requests/new" target="_blank">',
+					sprintf(
+						'<a href="%s">',
+						add_query_arg( 'page', 'cld_sync_media', admin_url( 'admin.php' ) )
+					),
 					'</a>'
 				);
 				$field['disabled']    = true;
@@ -157,7 +160,15 @@ class Storage implements Notice {
 	 * @return string
 	 */
 	public function generate_signature( $attachment_id ) {
-		return $this->settings['offload'] . $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true );
+		$file_exists = true;
+		if ( $this->settings['offload'] !== 'cld' ) {
+			$attachment_file = get_attached_file( $attachment_id );
+			if ( ! file_exists( $attachment_file ) ) {
+				$file_exists = $attachment_file;
+			}
+		}
+
+		return $this->settings['offload'] . $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['public_id'], true ) . $file_exists;
 	}
 
 	/**
@@ -181,13 +192,14 @@ class Storage implements Notice {
 					// Add low quality transformations.
 					$transformations[] = array( 'quality' => 'auto:low' );
 				}
-				$url = $this->media->cloudinary_url( $attachment_id, '', $transformations, null, false, true );
+				$url = $this->media->cloudinary_url( $attachment_id, '', $transformations, null, false );
 				break;
 			case 'dual_full':
-				if ( ! empty( $previous_state ) && 'dual_full' !== $previous_state ) {
+				$exists = get_attached_file( $attachment_id );
+				if ( ! empty( $previous_state ) && ! file_exists( $exists ) ) {
 					// Only do this is it's changing a state.
 					$transformations = $this->media->get_transformation_from_meta( $attachment_id );
-					$url             = $this->media->cloudinary_url( $attachment_id, '', $transformations, null, false, false );
+					$url             = $this->media->cloudinary_url( $attachment_id, '', $transformations, null, false );
 				}
 				break;
 		}
@@ -198,7 +210,8 @@ class Storage implements Notice {
 			if ( 'cld' !== $previous_state ) {
 				$this->remove_local_assets( $attachment_id );
 			}
-			$this->download->download_asset( $attachment_id, $url );
+			$date = get_post_datetime( $attachment_id );
+			$this->download->download_asset( $attachment_id, $url, $date->format( 'Y/m' ) );
 		}
 
 		$this->sync->set_signature_item( $attachment_id, 'storage' );
