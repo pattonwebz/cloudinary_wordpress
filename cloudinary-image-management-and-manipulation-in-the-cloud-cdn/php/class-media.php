@@ -1772,6 +1772,9 @@ class Media implements Setup {
 	 * @param int $attachment_id The thumbnail ID.
 	 */
 	public function set_doing_featured( $post_id, $attachment_id ) {
+		if ( ! $this->sync->is_synced( $attachment_id ) ) {
+			return; // Bail if not synced.
+		}
 		$this->doing_featured_image = (int) $attachment_id;
 		add_action(
 			'end_fetch_post_thumbnail_html',
