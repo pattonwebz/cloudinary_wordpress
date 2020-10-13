@@ -1785,10 +1785,47 @@ class Media implements Setup {
 	 * @param int $attachment_id The thumbnail ID.
 	 */
 	public function set_doing_featured( $post_id, $attachment_id ) {
-		$this->doing_featured_image = (int) $attachment_id;
-		add_action( 'end_fetch_post_thumbnail_html', function () {
-			$this->doing_featured_image = false;
-		} );
+		if ( $this->sync->is_synced( $attachment_id ) ) {
+			$this->doing_featured_image = (int) $attachment_id;
+		}
+	}
+
+	/**
+	 * Maybe add responsive images to a post thumbnail.
+	 *
+	 * @param string $content       The content to alter.
+	 * @param int    $post_id       The current post ID (unused).
+	 * @param int    $attachment_id The attachment ID.
+	 *
+	 * @return string
+	 */
+	public function maybe_srcset_post_thumbnail( $content, $post_id, $attachment_id ) {
+		// Check the attachment is synced and does not already have a srcset (some themes do this already).
+		if ( $this->doing_featured_image === $attachment_id ) {
+			$overwrite_transformations  = $this->maybe_overwrite_featured_image( $attachment_id );
+			$content                    = $this->apply_srcset( $content, $attachment_id, $overwrite_transformations );
+			$this->doing_featured_image = false; // Reset featured.
+		}
+
+		return $content;
+	}
+
+	/**
+	 * Apply srcset to an image tag.
+	 *
+	 * @param string $content                   The image tag.
+	 * @param int    $attachment_id             The attachment ID.
+	 * @param bool   $overwrite_transformations Flag to overwrite transformations.
+	 *
+	 * @return string
+	 */
+	public function apply_srcset( $content, $attachment_id, $overwrite_transformations = false ) {
+		$cloudinary_id                           = $this->get_cloudinary_id( $attachment_id );
+		$image_meta                              = wp_get_attachment_metadata( $attachment_id );
+		$image_meta['file']                      = pathinfo( $cloudinary_id, PATHINFO_FILENAME ) . '/' . pathinfo( $cloudinary_id, PATHINFO_BASENAME );
+		$image_meta['overwrite_transformations'] = $overwrite_transformations;
+
+		return wp_image_add_srcset_and_sizes( $content, $image_meta, $attachment_id );
 	}
 
 	/**
@@ -1843,6 +1880,7 @@ class Media implements Setup {
 
 			// Hook into Featured Image cycle.
 			add_action( 'begin_fetch_post_thumbnail_html', array( $this, 'set_doing_featured' ), 10, 2 );
+			add_filter( 'post_thumbnail_html', array( $this, 'maybe_srcset_post_thumbnail' ), 10, 3 );
 		}
 	}
 }
