@@ -1650,7 +1650,7 @@ class Media implements Setup {
 			if ( ! empty( $transformations ) ) {
 				$breakpoints['transformation'] = Api::generate_transformation_string( $transformations );
 			}
-			$breakpoints              = array(
+			$breakpoints = array(
 				'public_id'              => $this->get_public_id( $attachment_id ),
 				'type'                   => 'upload',
 				'responsive_breakpoints' => $breakpoint_options,
