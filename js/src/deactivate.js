@@ -61,7 +61,7 @@ const Deactivate = {
 				url: cloudinaryApi.endpoint,
 				data: {
 					reason: context.reason,
-					more: context.more.value,
+					more: context.more?.value,
 				},
 				beforeSend: function( request ) {
 					request.setRequestHeader( 'X-WP-Nonce', cloudinaryApi.nonce );
