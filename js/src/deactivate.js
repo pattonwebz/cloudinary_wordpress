@@ -21,7 +21,7 @@ const Deactivate = {
 	addEvents: function() {
 		const context = this;
 
-		// Add event listener to deativation links to add the pop up.
+		// Add event listener to deactivation links to add the pop up.
 		[ ...context.pluginListLinks ].forEach( ( link ) => {
 			link.addEventListener( 'click', function( ev ) {
 				ev.preventDefault();
@@ -55,8 +55,8 @@ const Deactivate = {
 			});
 		});
 
-		// Add event listener to submit the feedbacl.
-		context.submitButton.addEventListener( 'click', function( ev ) {
+		// Add event listener to submit the feedback.
+		context.submitButton.addEventListener( 'click', function() {
 			wp.ajax.send( {
 				url: cloudinaryApi.endpoint,
 				data: {
