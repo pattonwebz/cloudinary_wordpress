@@ -42,7 +42,7 @@ const Deactivate = {
 		});
 
 		// Add event listener to skip feedback.
-		context.skipButton.addEventListener( 'click', function( ev ) {
+		context.skipButton.addEventListener( 'click', function() {
 			window.location.href = context.deactivationUrl;
 		});
 
@@ -66,7 +66,7 @@ const Deactivate = {
 				beforeSend: function( request ) {
 					request.setRequestHeader( 'X-WP-Nonce', cloudinaryApi.nonce );
 				},
-			} ).done( function( data ) {
+			} ).always( function() {
 				window.location.href = context.deactivationUrl;
 			} );
 		})
