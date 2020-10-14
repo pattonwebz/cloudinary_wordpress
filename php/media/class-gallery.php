@@ -182,7 +182,10 @@ class Gallery implements \JsonSerializable {
 		wp_localize_script(
 			'cloudinary-gallery-block-js',
 			'cloudinaryGalleryApi',
-			array( 'dataEndpoint' => rest_url( REST_API::BASE . '/image_data' ) )
+			array(
+				'endpoint' => rest_url( REST_API::BASE . '/image_data' ),
+				'nonce'    => wp_create_nonce( 'wp_rest' ),
+			)
 		);
 	}
 
@@ -190,14 +193,15 @@ class Gallery implements \JsonSerializable {
 	 * This is a woocommerce gallery hook which is run for each gallery item.
 	 *
 	 * @param string $html
+	 * @param int    $attachment_id
 	 *
 	 * @return string
 	 */
-	public function override_woocommerce_gallery( $html ) {
+	public function override_woocommerce_gallery( $html, $attachment_id ) {
 		$this->is_woo_page = true;
 
 		$cloudinary_url  = $this->media->filter->get_url_from_tag( $html );
-		$public_id       = $this->media->get_public_id_from_url( $cloudinary_url );
+		$public_id       = $this->media->get_public_id( $attachment_id );
 		$transformations = $this->media->get_transformations_from_string( $cloudinary_url );
 
 		$json = array(
@@ -234,7 +238,7 @@ class Gallery implements \JsonSerializable {
 			$html  .= <<<SCRIPT_TAG
 <script>
 	var configElements = document.querySelectorAll( '[data-cloudinary-gallery-config]' );
-	
+
 	if ( configElements.length ) {
 		configElements.forEach( function ( el ) {
 			var configJson = decodeURIComponent( el.getAttribute( 'data-cloudinary-gallery-config' ) );
@@ -278,7 +282,7 @@ SCRIPT_TAG;
 		$this->enqueue_gallery_library();
 
 		if ( $this->woocommerce_active() && ! is_admin() ) {
-			add_filter( 'woocommerce_single_product_image_thumbnail_html', array( $this, 'override_woocommerce_gallery' ) );
+			add_filter( 'woocommerce_single_product_image_thumbnail_html', array( $this, 'override_woocommerce_gallery' ), 10, 2 );
 			add_filter( 'wp_head', array( $this, 'add_config_to_head' ) );
 			add_filter( 'script_loader_tag', array( $this, 'prepare_gallery_assets' ), 10, 2 );
 		} else {
