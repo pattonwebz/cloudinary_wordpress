@@ -7,7 +7,6 @@
 
 namespace Cloudinary\Media;
 
-use Cloudinary\Utils;
 use Cloudinary\Connect\Api;
 
 /**
@@ -329,11 +328,9 @@ class Filter {
 			// Get a cloudinary URL.
 			$classes                   = $this->get_classes( $asset ); // check if this is a transformation overwrite.
 			$overwrite_transformations = false;
-
 			if ( false !== strpos( $classes, 'cld-overwrite' ) ) {
 				$overwrite_transformations = true;
 			}
-
 			$cloudinary_url = $this->media->cloudinary_url( $attachment_id, $wp_size, $transformations, null, $overwrite_transformations );
 
 			if ( $url === $cloudinary_url ) {
@@ -350,12 +347,9 @@ class Filter {
 					// Add in the class name.
 					$new_tag = str_replace( '/>', ' class="wp-image-' . $attachment_id . '"/>', $new_tag );
 				}
-
-				$new_tag   = $this->add_lazy_loading_attribute( $new_tag );
-				$video_tag = $this->check_fmp4_presence( $cloudinary_url, $attachment_id );
-
-				if ( $video_tag ) {
-					$new_tag = $video_tag;
+				// Apply lazy loading attribute
+				if ( apply_filters( 'wp_lazy_loading_enabled', true ) && false === strpos( $new_tag, 'loading="lazy"' ) ) {
+					$new_tag = str_replace( '/>', ' loading="lazy" />', $new_tag );
 				}
 
 				// If Cloudinary player is active, this is replaced there.
@@ -375,52 +369,6 @@ class Filter {
 		}
 
 		return $this->filter_video_shortcodes( $content );
-	}
-
-	/**
-	 * Apply loading=lazy to <img> if necessaary.
-	 *
-	 * @param string $new_tag
-	 * @param bool   $is_admin
-	 *
-	 * @return string
-	 */
-	protected function add_lazy_loading_attribute( $new_tag, $is_admin = false ) {
-		if (
-			apply_filters( 'wp_lazy_loading_enabled', true ) &&
-			false === strpos( $new_tag, 'loading="lazy"' ) &&
-			$is_admin
-		) {
-			$new_tag = str_replace( '/>', ' loading="lazy" />', $new_tag );
-		}
-
-		return $new_tag;
-	}
-
-	/**
-	 * Checks whether $cloudinary_url has f_mp4 which converts gifs to mp4s.
-	 *
-	 * @param string $cloudinary_url
-	 * @param int    $attachment_id
-	 *
-	 * @return string|null
-	 */
-	protected function check_fmp4_presence( $cloudinary_url, $attachment_id ) {
-		$return = null;
-
-		if ( Utils::ends_with( $cloudinary_url, '.gif' ) ) {
-			$all_transformations = Utils::flatten( $this->media->get_transformations_from_string( $cloudinary_url ) );
-
-			if ( in_array( 'mp4', $all_transformations ) ) {
-				$return = sprintf(
-					'<video class="cld-fluid wp-video-%s" autoplay controls src="%s">',
-					$attachment_id,
-					$cloudinary_url
-				);
-			}
-		}
-
-		return $return;
 	}
 
 	/**
@@ -486,9 +434,7 @@ class Filter {
 			$attachment->data['source_url'] = $this->media->cloudinary_url( $attachment->data['id'], false );
 		}
 
-		$has_transformations = ! empty( $this->media->get_transformation_from_meta( $attachment->data['id'] ) );
-
-		if ( $has_transformations ) {
+		if ( $has_transformations = ! empty( $this->media->get_transformation_from_meta( $attachment->data['id'] ) ) ) {
 			$attachment->data['transformations'] = $has_transformations;
 		}
 
