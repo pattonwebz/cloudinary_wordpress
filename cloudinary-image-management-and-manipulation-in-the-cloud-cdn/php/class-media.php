@@ -1214,7 +1214,7 @@ class Media implements Setup {
 		// Create the attachment.
 		$attachment_id = wp_insert_attachment( $post_args, false );
 
-		$sync_key = $public_id;
+		$sync_key = $asset['sync_key'];
 		// Capture public_id. Use core update_post_meta since this attachment data doesnt exist yet.
 		update_post_meta( $attachment_id, Sync::META_KEYS['public_id'], $public_id );
 		// Capture version number.
@@ -1276,6 +1276,7 @@ class Media implements Setup {
 		$asset = array(
 			'version'         => (int) filter_var( $data['asset']['version'], FILTER_SANITIZE_NUMBER_INT ),
 			'public_id'       => filter_var( $data['asset']['public_id'], FILTER_SANITIZE_STRING ),
+			'format'          => filter_var( $data['asset']['format'], FILTER_SANITIZE_STRING ),
 			'src'             => filter_var( $data['asset']['secure_url'], FILTER_SANITIZE_URL ),
 			'url'             => filter_var( $data['asset']['secure_url'], FILTER_SANITIZE_URL ),
 			'transformations' => array(),
@@ -1305,6 +1306,14 @@ class Media implements Setup {
 			$asset['sync_key']        .= wp_json_encode( $transformations );
 			$asset['transformations'] = $transformations;
 		}
+
+		// Check Format.
+		$url_format = pathinfo( $asset['url'], PATHINFO_EXTENSION );
+		if ( strtolower( $url_format ) !== strtolower( $asset['format'] ) ) {
+			$asset['format']    = $url_format;
+			$asset['sync_key'] .= $url_format;
+		}
+
 		// Attempt to find attachment ID.
 		$asset['attachment_id'] = $this->get_id_from_sync_key( $asset['sync_key'] );
 
