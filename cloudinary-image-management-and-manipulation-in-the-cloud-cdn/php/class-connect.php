@@ -543,7 +543,11 @@ class Connect implements Config, Setup, Notice {
 
 				if ( 'limit' === $stat && isset( $this->usage[ $type ]['usage'] ) ) {
 					$value = $this->usage[ $type ]['usage'];
-				} elseif ( 'used_percent' === $stat && isset( $this->usage[ $type ]['credits_usage'] ) ) {
+				} elseif (
+					'used_percent' === $stat
+					&& isset( $this->usage[ $type ]['credits_usage'] )
+					&& ! empty( $this->usage['credits']['limit'] )
+				) {
 					// Calculate percentage based on credit limit and usage.
 					$value = round( $this->usage[ $type ]['credits_usage'] / $this->usage['credits']['limit'] * 100, 2 );
 				}
