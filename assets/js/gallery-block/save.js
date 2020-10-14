@@ -9,33 +9,33 @@ import cloneDeep from 'lodash/cloneDeep';
  */
 import defaults from './defaults.json';
 
-const dot = new Dot( '_' );
+const dot = new Dot('_');
 
-const Save = ( { attributes } ) => {
+const Save = ({ attributes }) => {
 	let configString = '';
 
-	if ( attributes.selectedImages.length ) {
-		const attributesClone = cloneDeep( attributes );
-		const { selectedImages, ...config } = dot.object( attributesClone, {} );
+	if (attributes.selectedImages.length) {
+		const attributesClone = cloneDeep(attributes);
+		const { selectedImages, ...config } = dot.object(attributesClone, {});
 
-		if ( config?.displayProps?.mode !== 'classic' ) {
+		if (config?.displayProps?.mode !== 'classic') {
 			delete config.transition;
 		} else {
 			delete config.displayProps.columns;
 		}
 
-		configString = JSON.stringify( {
+		configString = JSON.stringify({
 			cloudName: CLDN.mloptions.cloud_name,
 			mediaAssets: selectedImages,
 			...defaults,
 			...config,
-		} );
+		});
 	}
 
 	return (
 		<div
-			className={ attributes.container }
-			data-cloudinary-gallery-config={ configString }
+			className={attributes.container}
+			data-cloudinary-gallery-config={configString}
 		></div>
 	);
 };

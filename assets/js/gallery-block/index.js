@@ -30,8 +30,8 @@ const {
 	carouselStyle,
 } = defaultGalleryConfig;
 
-registerBlockType( 'cloudinary/gallery', {
-	title: __( 'Cloudinary Gallery', 'cloudinary' ),
+registerBlockType('cloudinary/gallery', {
+	title: __('Cloudinary Gallery', 'cloudinary'),
 	description: __(
 		'Add a gallery powered by the Cloudinary Gallery Widget to your post.',
 		'cloudinary'
@@ -69,7 +69,7 @@ registerBlockType( 'cloudinary/gallery', {
 		},
 		carouselOffset: {
 			type: 'number',
-			default: Number( carouselOffset ) || 0,
+			default: Number(carouselOffset) || 0,
 		},
 		carouselStyle: {
 			type: 'string',
@@ -77,11 +77,11 @@ registerBlockType( 'cloudinary/gallery', {
 		},
 		thumbnailProps_width: {
 			type: 'number',
-			default: Number( carouselThumbnailWidth ) || 1,
+			default: Number(carouselThumbnailWidth) || 1,
 		},
 		thumbnailProps_height: {
 			type: 'number',
-			default: Number( carouselThumbnailHeight ) || 1,
+			default: Number(carouselThumbnailHeight) || 1,
 		},
 		thumbnailProps_navigationShape: {
 			type: 'string',
@@ -102,4 +102,4 @@ registerBlockType( 'cloudinary/gallery', {
 	},
 	edit,
 	save,
-} );
+});
