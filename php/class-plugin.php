@@ -191,15 +191,6 @@ class Plugin {
 			'args'     => array(),
 		);
 
-		$endpoints['image_data'] = array(
-			'method'              => \WP_REST_Server::CREATABLE,
-			'callback'            => array( $this->components['media'], 'rest_cloudinary_image_data' ),
-			'args'                => array(),
-			'permission_callback' => function() {
-				return current_user_can( 'activate_plugins' );
-			},
-		);
-
 		return $endpoints;
 	}
 

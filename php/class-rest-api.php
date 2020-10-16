@@ -27,7 +27,6 @@ class REST_API {
 	 * @param Plugin $plugin Instance of the global Plugin.
 	 */
 	public function __construct( Plugin $plugin ) {
-		$this->endpoints = apply_filters( 'cloudinary_api_rest_endpoints', array() );
 		add_action( 'rest_api_init', array( $this, 'rest_api_init' ) );
 	}
 
@@ -35,6 +34,8 @@ class REST_API {
 	 * Init the REST API endpoints.
 	 */
 	public function rest_api_init() {
+		$this->endpoints = apply_filters( 'cloudinary_api_rest_endpoints', array() );
+
 		foreach ( $this->endpoints as $route => $endpoint ) {
 			$endpoint = wp_parse_args(
 				$endpoint,

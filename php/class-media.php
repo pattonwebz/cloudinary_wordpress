@@ -325,32 +325,6 @@ class Media implements Setup {
 	}
 
 	/**
-	 * @param \WP_REST_Request $request The request.
-	 *
-	 * @return \WP_REST_Response|\WP_Error
-	 */
-	public function rest_cloudinary_image_data( \WP_REST_Request $request ) {
-		$request_body = json_decode( $request->get_body(), true );
-
-		if ( empty( $request_body ) || empty( $request_body['cloudinary_urls'] ) ) {
-			return new \WP_Error( 400, 'The "cloudinary_url" query param must be provided with a valid Cloudinary URL.' );
-		}
-
-		$image_data = array();
-
-		foreach ( $request_body['cloudinary_urls'] as $index => $url ) {
-		    $transformations = $this->get_transformations_from_string( $url );
-			$image_data[ $index ] = array( 'publicId' => $this->get_public_id_from_url( $url ) );
-
-			if ( $transformations ) {
-			    $image_data[ $index ]['transformation'] = array( 'transformation' => $transformations );
-            }
-		}
-
-		return new \WP_REST_Response( $image_data );
-	}
-
-	/**
 	 * Fetch a public id from a cloudinary url.
 	 *
 	 * @param string $url         The url to fetch the public id from.

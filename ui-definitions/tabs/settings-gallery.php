@@ -109,9 +109,6 @@ $struct = array(
 				'popup'  => __( 'Popup', 'cloudinary' ),
 			),
 			'default'   => 'none',
-			'condition' => array(
-				'zoom_trigger' => array( 'none', 'neq' ),
-			),
 		),
 		'zoom_viewer_position'              => array(
 			'label'     => __( 'Zoom Viewer Position', 'cloudinary' ),
@@ -123,9 +120,6 @@ $struct = array(
 				'bottom' => __( 'Bottom', 'cloudinary' ),
 			),
 			'default'   => 'none',
-			'condition' => array(
-				'zoom_trigger' => array( 'none', 'neq' ),
-			),
 		),
 		'carousel_header'                   => array(
 			'type'  => 'heading',

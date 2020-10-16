@@ -1,4 +1,4 @@
-/* global defaultGalleryConfig */
+/* global cloudinaryGallery */
 
 /**
  * WordPress dependencies
@@ -12,23 +12,25 @@ import { registerBlockType } from '@wordpress/blocks';
 import edit from './edit';
 import save from './save';
 
+cloudinaryGallery = JSON.parse(cloudinaryGallery.config);
+
 const {
-	aspectRatio,
-	carouselLocation,
-	carouselOffset,
-	carouselThumbnailHeight,
-	carouselThumbnailSelectedStyle,
-	carouselThumbnailWidth,
-	carouselButtonShape,
+	aspectRatio = '1:1',
+	carouselLocation = 'left',
+	carouselOffset = 0,
+	carouselThumbnailHeight = 1,
+	carouselThumbnailSelectedStyle = 'all',
+	carouselThumbnailWidth = 1,
+	carouselButtonShape = 'round',
 	zoomTrigger,
-	zoomType,
-	zoomViewerPosition,
-	activeColor,
-	onPrimaryColor,
-	primaryColor,
-	transition,
-	carouselStyle,
-} = defaultGalleryConfig;
+	zoomType = 'inline',
+	zoomViewerPosition = 'top',
+	activeColor = '#FFF',
+	onPrimaryColor = '#FFF',
+	primaryColor = '#FFF',
+	transition = 'fade',
+	carouselStyle = 'thumbnails',
+} = cloudinaryGallery;
 
 registerBlockType('cloudinary/gallery', {
 	title: __('Cloudinary Gallery', 'cloudinary'),
@@ -41,23 +43,23 @@ registerBlockType('cloudinary/gallery', {
 	attributes: {
 		displayProps_mode: { type: 'string', default: 'classic' },
 		displayProps_columns: { type: 'number', default: 1 },
-		themeProps_primary: { type: 'string', default: primaryColor || '#FFF' },
+		themeProps_primary: { type: 'string', default: primaryColor },
 		themeProps_onPrimary: {
 			type: 'string',
-			default: onPrimaryColor || '#FFF',
+			default: onPrimaryColor,
 		},
-		themeProps_active: { type: 'string', default: activeColor || '#FFF' },
-		transition: { type: 'string', default: transition || 'fade' },
-		aspectRatio: { type: 'string', default: aspectRatio || '1:1' },
+		themeProps_active: { type: 'string', default: activeColor },
+		transition: { type: 'string', default: transition },
+		aspectRatio: { type: 'string', default: aspectRatio },
 		navigation: { type: 'string', default: 'always' },
 		zoom: {
 			type: 'boolean',
 			default: zoomTrigger && zoomTrigger !== 'none',
 		},
-		zoomProps_type: { type: 'string', default: zoomType || 'inline' },
+		zoomProps_type: { type: 'string', default: zoomType },
 		zoomProps_viewerPosition: {
 			type: 'string',
-			default: zoomViewerPosition || 'top',
+			default: zoomViewerPosition,
 		},
 		zoomProps_trigger: {
 			type: 'string',
@@ -65,31 +67,31 @@ registerBlockType('cloudinary/gallery', {
 		},
 		carouselLocation: {
 			type: 'string',
-			default: carouselLocation || 'left',
+			default: carouselLocation,
 		},
 		carouselOffset: {
 			type: 'number',
-			default: Number(carouselOffset) || 0,
+			default: carouselOffset,
 		},
 		carouselStyle: {
 			type: 'string',
-			default: carouselStyle || 'thumbnails',
+			default: carouselStyle,
 		},
 		thumbnailProps_width: {
 			type: 'number',
-			default: Number(carouselThumbnailWidth) || 1,
+			default: carouselThumbnailWidth,
 		},
 		thumbnailProps_height: {
 			type: 'number',
-			default: Number(carouselThumbnailHeight) || 1,
+			default: carouselThumbnailHeight,
 		},
 		thumbnailProps_navigationShape: {
 			type: 'string',
-			default: carouselButtonShape || 'round',
+			default: carouselButtonShape,
 		},
 		thumbnailProps_selectedStyle: {
 			type: 'string',
-			default: carouselThumbnailSelectedStyle || 'all',
+			default: carouselThumbnailSelectedStyle,
 		},
 		thumbnailProps_selectedBorderPosition: {
 			type: 'string',

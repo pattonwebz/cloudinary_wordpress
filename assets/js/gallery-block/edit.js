@@ -51,11 +51,10 @@ const dot = new Dot('_');
 
 const Edit = ({ setAttributes, attributes, className }) => {
 	const onSelect = (images) => {
+		console.log(images);
 		fetch(cloudinaryGalleryApi.endpoint, {
 			method: 'POST',
-			body: JSON.stringify({
-				cloudinary_urls: images.map((image) => image.url),
-			}),
+			body: JSON.stringify({ images }),
 			headers: {
 				'X-WP-Nonce': cloudinaryGalleryApi.nonce,
 			},

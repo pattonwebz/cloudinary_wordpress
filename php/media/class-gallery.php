@@ -16,14 +16,18 @@ use Cloudinary\Utils;
  *
  * Handles filtering of HTML content.
  */
-class Gallery implements \JsonSerializable {
+class Gallery {
 
 	/**
+	 * The enquue script handle for the gallery widget lib.
+	 *
 	 * @var string
 	 */
 	const GALLERY_LIBRARY_HANDLE = 'cld-gallery';
 
 	/**
+	 * The gallery widget lib cdn url.
+	 *
 	 * @var string
 	 */
 	const GALLERY_LIBRARY_URL = 'https://product-gallery.cloudinary.com/all.js';
@@ -36,6 +40,8 @@ class Gallery implements \JsonSerializable {
 	protected $is_woo_page = false;
 
 	/**
+	 * Holds instance of the Media class.
+	 *
 	 * @var Media
 	 */
 	protected $media;
@@ -61,7 +67,7 @@ class Gallery implements \JsonSerializable {
 	 */
 	public function __construct( Media $media ) {
 		$this->media           = $media;
-		$this->original_config = $media->plugin->config['settings']['gallery'];
+		$this->original_config = isset( $media->plugin->config['settings']['gallery'] ) ? $media->plugin->config['settings']['gallery'] : null;
 
 		if ( $this->gallery_enabled() ) {
 			$this->setup_hooks();
@@ -78,7 +84,11 @@ class Gallery implements \JsonSerializable {
 			return $this->config;
 		}
 
-		$config        = $this->media->plugin->config['settings']['gallery'];
+		if ( ! count( $this->original_config ) ) {
+			return array();
+		}
+
+		$config        = $this->original_config;
 		$custom_config = $config['custom_settings'];
 
 		// unset things that don't need to be in the final json.
@@ -135,10 +145,12 @@ class Gallery implements \JsonSerializable {
 	}
 
 	/**
-	 * @inheritdoc
+	 * Returns JSON format of the current config.
+	 *
+	 * @return string|null
 	 */
-	public function jsonSerialize() {
-		return wp_json_encode( $this->get_config() );
+	public function get_json() {
+		return count( $this->get_config() ) ? wp_json_encode( $this->get_config() ) : null;
 	}
 
 	/**
@@ -152,12 +164,35 @@ class Gallery implements \JsonSerializable {
 			$this->media->plugin->version,
 			true
 		);
+
+		$product = wc_get_product();
+		$config  = $this->get_config();
+
+		if ( $product ) {
+			$config['mediaAssets'] = $this->get_image_data( $product->get_gallery_image_ids() );
+		}
+
+		wp_localize_script(
+			self::GALLERY_LIBRARY_HANDLE,
+			'cloudinaryGallery',
+			array( 'config' => wp_json_encode( $config ) )
+		);
+
+		wp_enqueue_script(
+			'cloudinary-gallery-init',
+			$this->media->plugin->dir_url . 'assets/dist/gallery-init.js',
+			array( self::GALLERY_LIBRARY_HANDLE ),
+			$this->media->plugin->version,
+			true
+		);
 	}
 
 	/**
 	 * Register blocked editor assets for the gallery.
 	 */
 	public function block_editor_scripts_styles() {
+		$this->enqueue_gallery_library();
+
 		wp_enqueue_style(
 			'cloudinary-gallery-block-css',
 			$this->media->plugin->dir_url . 'assets/dist/block-gallery.css',
@@ -168,15 +203,9 @@ class Gallery implements \JsonSerializable {
 		wp_enqueue_script(
 			'cloudinary-gallery-block-js',
 			$this->media->plugin->dir_url . 'assets/dist/block-gallery.js',
-			array( 'wp-blocks', 'wp-editor', 'wp-element' ),
+			array( 'wp-blocks', 'wp-editor', 'wp-element', self::GALLERY_LIBRARY_HANDLE ),
 			$this->media->plugin->version,
 			true
-		);
-
-		wp_localize_script(
-			'cloudinary-gallery-block-js',
-			'defaultGalleryConfig',
-			$this->get_config()
 		);
 
 		wp_localize_script(
@@ -190,80 +219,12 @@ class Gallery implements \JsonSerializable {
 	}
 
 	/**
-	 * This is a woocommerce gallery hook which is run for each gallery item.
-	 *
-	 * @param string $html
-	 * @param int    $attachment_id
-	 *
-	 * @return string
-	 */
-	public function override_woocommerce_gallery( $html, $attachment_id ) {
-		$this->is_woo_page = true;
-
-		$cloudinary_url  = $this->media->filter->get_url_from_tag( $html );
-		$public_id       = $this->media->get_public_id( $attachment_id );
-		$transformations = $this->media->get_transformations_from_string( $cloudinary_url );
-
-		$json = array(
-			'publicId'       => $public_id,
-			'transformation' => array( 'transformation' => $transformations ),
-		);
-		$json = wp_json_encode( $json );
-
-		return "<script>galleryOptions.mediaAssets.push( JSON.parse( '{$json}' ) )</script>\n\t\t";
-	}
-
-	/**
-	 * Sets galleryOptions JS variable which will be used to init the gallery.
-	 */
-	public function add_config_to_head() {
-		// phpcs:disable
-		?>
-		<script>var galleryOptions = JSON.parse( '<?php echo $this->jsonSerialize(); ?>' )</script>
-		<?php
-		// phpcs:enable
-	}
-
-	/**
-	 * Deals with rendering the gallery in a WooCommerce or Post Block setting.
-	 *
-	 * @param string $html   The HTML to output.
-	 * @param string $handle Current JS handle.
-	 *
-	 * @return string
-	 */
-	public function prepare_gallery_assets( $html, $handle ) {
-		if ( self::GALLERY_LIBRARY_HANDLE === $handle ) {
-			$is_woo = $this->is_woo_page ? 'true' : 'false';
-			$html  .= <<<SCRIPT_TAG
-<script>
-	var configElements = document.querySelectorAll( '[data-cloudinary-gallery-config]' );
-
-	if ( configElements.length ) {
-		configElements.forEach( function ( el ) {
-			var configJson = decodeURIComponent( el.getAttribute( 'data-cloudinary-gallery-config' ) );
-			var options = JSON.parse( configJson );
-			options.container = '.' + options.container;
-			cloudinary.galleryWidget( options ).render();
-		});
-	} else if ( {$is_woo} ) {
-		cloudinary.galleryWidget( galleryOptions ).render();
-	}
-
-</script>
-SCRIPT_TAG;
-		}
-
-		return $html;
-	}
-
-	/**
 	 * Check if WooCommerce is active.
 	 *
 	 * @return bool
 	 */
 	protected function woocommerce_active() {
-		return in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ), true );
+		return class_exists( 'WooCommerce' );
 	}
 
 	/**
@@ -276,17 +237,84 @@ SCRIPT_TAG;
 	}
 
 	/**
+	 * Fetches image public id and transformations.
+	 *
+	 * @param array|int[]|array[] $images An array of image IDs or a multi-dimensional array with url and id keys.
+	 *
+	 * @return array
+	 */
+	public function get_image_data( array $images ) {
+		$image_data = array();
+
+		foreach ( $images as $index => $image ) {
+			$image_id  = is_int( $image ) ? $image : $image['id'];
+			$image_url = is_int( $image ) ? $this->media->cloudinary_url( $image_id ) : $image['url'];
+
+			$image_data[ $index ]             = array();
+			$image_data[ $index ]['publicId'] = $this->media->get_public_id( $image_id );
+
+			$transformations = $this->media->get_transformations_from_string( $image_url );
+
+			if ( $transformations ) {
+				$image_data[ $index ]['transformation'] = array( 'transformation' => $transformations );
+			}
+		}
+
+		return $image_data;
+	}
+
+	/**
+	 * This rest endpoint handler will fetch the public_id and transformations off of a list of images.
+	 *
+	 * @param \WP_REST_Request $request The request.
+	 *
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function rest_cloudinary_image_data( \WP_REST_Request $request ) {
+		$request_body = json_decode( $request->get_body(), true );
+
+		if ( empty( $request_body ) || empty( $request_body['images'] ) ) {
+			return new \WP_Error( 400, 'The "images" key must be present in the request body.' );
+		}
+
+		$image_data = $this->get_image_data( $request_body['images'] );
+
+		return new \WP_REST_Response( $image_data );
+	}
+
+	/**
+	 * Add endpoints to the \Cloudinary\REST_API::$endpoints array.
+	 *
+	 * @param array $endpoints Endpoints from the filter.
+	 *
+	 * @return array
+	 */
+	public function rest_endpoints( $endpoints ) {
+
+		$endpoints['image_data'] = array(
+			'method'              => \WP_REST_Server::CREATABLE,
+			'callback'            => array( $this, 'rest_cloudinary_image_data' ),
+			'args'                => array(),
+			'permission_callback' => function() {
+				return current_user_can( 'edit_posts' );
+			},
+		);
+
+		return $endpoints;
+	}
+
+	/**
 	 * Setup hooks for the gallery.
 	 */
 	public function setup_hooks() {
-		$this->enqueue_gallery_library();
+		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_gallery_library' ) );
+		add_filter( 'cloudinary_api_rest_endpoints', array( $this, 'rest_endpoints' ) );
+		add_action( 'enqueue_block_editor_assets', array( $this, 'block_editor_scripts_styles' ) );
 
-		if ( $this->woocommerce_active() && ! is_admin() ) {
-			add_filter( 'woocommerce_single_product_image_thumbnail_html', array( $this, 'override_woocommerce_gallery' ), 10, 2 );
-			add_filter( 'wp_head', array( $this, 'add_config_to_head' ) );
-			add_filter( 'script_loader_tag', array( $this, 'prepare_gallery_assets' ), 10, 2 );
-		} else {
-			add_action( 'enqueue_block_editor_assets', array( $this, 'block_editor_scripts_styles' ) );
+		if ( ! is_admin() ) {
+			// phpcs:disable
+			add_filter( 'woocommerce_single_product_image_thumbnail_html', function () { return ''; } );
+			// phpcs:enable
 		}
 	}
 }
