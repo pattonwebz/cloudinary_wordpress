@@ -11,11 +11,14 @@ import cloneDeep from 'lodash/cloneDeep';
  */
 import { __ } from '@wordpress/i18n';
 import { useEffect } from '@wordpress/element';
-import { InspectorControls, MediaPlaceholder } from '@wordpress/block-editor';
+import {
+	ColorPalette,
+	InspectorControls,
+	MediaPlaceholder,
+} from '@wordpress/block-editor';
 import {
 	Button,
 	ButtonGroup,
-	ColorPalette,
 	PanelBody,
 	RangeControl,
 	SelectControl,
@@ -33,7 +36,6 @@ import {
 	ASPECT_RATIOS,
 	CAROUSEL_LOCATION,
 	CAROUSEL_STYLE,
-	COLORS,
 	FADE_TRANSITIONS,
 	LAYOUT_OPTIONS,
 	MEDIA_ICON_SHAPE,
@@ -48,6 +50,17 @@ import {
 import { generateId } from './utils';
 
 const dot = new Dot('_');
+
+const ColorPaletteLabel = ({ children, value }) => (
+	<div className="colorpalette-color-label">
+		<span>{children}</span>
+		<span
+			className="component-color-indicator"
+			aria-label={`Color: ${value}`}
+			style={{ background: value }}
+		></span>
+	</div>
+);
 
 const Edit = ({ setAttributes, attributes, className }) => {
 	const onSelect = (images) => {
@@ -137,25 +150,28 @@ const Edit = ({ setAttributes, attributes, className }) => {
 					))}
 				</PanelBody>
 				<PanelBody title={__('Color Palette', 'cloudinary')}>
-					<p>{__('Primary', 'cloudinary')}</p>
+					<ColorPaletteLabel value={attributes.themeProps_primary}>
+						{__('Primary', 'cloudinary')}
+					</ColorPaletteLabel>
 					<ColorPalette
-						colors={COLORS}
 						value={attributes.themeProps_primary}
 						onChange={(value) =>
 							setAttributes({ themeProps_primary: value })
 						}
 					/>
-					<p>{__('On Primary', 'cloudinary')}</p>
+					<ColorPaletteLabel value={attributes.themeProps_onPrimary}>
+						{__('On Primary', 'cloudinary')}
+					</ColorPaletteLabel>
 					<ColorPalette
-						colors={COLORS}
 						value={attributes.themeProps_onPrimary}
 						onChange={(value) =>
 							setAttributes({ themeProps_onPrimary: value })
 						}
 					/>
-					<p>{__('Active', 'cloudinary')}</p>
+					<ColorPaletteLabel value={attributes.themeProps_active}>
+						{__('Active', 'cloudinary')}
+					</ColorPaletteLabel>
 					<ColorPalette
-						colors={COLORS}
 						value={attributes.themeProps_active}
 						onChange={(value) =>
 							setAttributes({ themeProps_active: value })
@@ -189,7 +205,7 @@ const Edit = ({ setAttributes, attributes, className }) => {
 								<Button
 									key={navType.value + '-navigation'}
 									isDefault
-									isPrimary={
+									isPressed={
 										navType.value === attributes.navigation
 									}
 									onClick={() =>
@@ -220,7 +236,7 @@ const Edit = ({ setAttributes, attributes, className }) => {
 											<Button
 												key={item.value + '-zoom-type'}
 												isDefault
-												isPrimary={
+												isPressed={
 													item.value ===
 													attributes.zoomProps_type
 												}
@@ -258,7 +274,7 @@ const Edit = ({ setAttributes, attributes, className }) => {
 													item.value + '-zoom-trigger'
 												}
 												isDefault
-												isPrimary={
+												isPressed={
 													item.value ===
 													attributes.zoomProps_trigger
 												}
@@ -286,7 +302,7 @@ const Edit = ({ setAttributes, attributes, className }) => {
 								<Button
 									key={item.value + '-carousel-location'}
 									isDefault
-									isPrimary={
+									isPressed={
 										item.value ===
 										attributes.carouselLocation
 									}
@@ -317,7 +333,7 @@ const Edit = ({ setAttributes, attributes, className }) => {
 								<Button
 									key={item.value + '-carousel-style'}
 									isDefault
-									isPrimary={
+									isPressed={
 										item.value === attributes.carouselStyle
 									}
 									onClick={() =>
@@ -374,7 +390,7 @@ const Edit = ({ setAttributes, attributes, className }) => {
 								<Button
 									key={item.value + '-selected-style'}
 									isDefault
-									isPrimary={
+									isPressed={
 										item.value ===
 										attributes.thumbnailProps_selectedStyle
 									}

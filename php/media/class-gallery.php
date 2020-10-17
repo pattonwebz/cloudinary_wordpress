@@ -19,7 +19,7 @@ use Cloudinary\Utils;
 class Gallery {
 
 	/**
-	 * The enquue script handle for the gallery widget lib.
+	 * The enqueue script handle for the gallery widget lib.
 	 *
 	 * @var string
 	 */
@@ -109,7 +109,10 @@ class Gallery {
 
 		if ( ! empty( $custom_config ) ) {
 			$custom_config = json_decode( $custom_config, true );
-			$config        = array_merge( $config, $custom_config );
+
+			if ( ! empty( $custom_config ) ) {
+				$config = array_merge( $config, $custom_config );
+			}
 		}
 
 		$this->config = $config;

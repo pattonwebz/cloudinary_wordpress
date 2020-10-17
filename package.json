@@ -1,11 +1,16 @@
 {
   "name": "cloudinary",
   "title": "Cloudinary",
+  "author": "XWP",
+  "license": "GPL-2.0+",
   "private": true,
-  "homepage": "https://github.com/CloudinaryLtd/cloudinary_wordpress_v2",
+  "homepage": "https://github.com/cloudinary/cloudinary_wordpress",
   "repository": {
     "type": "git",
-    "url": "https://github.com/CloudinaryLtd/cloudinary_wordpress_v2.git"
+    "url": "https://github.com/cloudinary/cloudinary_wordpress.git"
+  },
+  "engines": {
+    "node": ">=12"
   },
   "scripts": {
     "build": "encore production",
@@ -18,8 +23,6 @@
     "deploy-assets": "grunt deploy-assets",
     "postinstall": "composer install"
   },
-  "author": "XWP",
-  "license": "GPL-2.0+",
   "devDependencies": {
     "@babel/core": "^7.11.6",
     "@babel/preset-env": "^7.11.5",
