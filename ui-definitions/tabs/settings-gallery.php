@@ -101,25 +101,25 @@ $struct = array(
 			'default'     => 'none',
 		),
 		'zoom_type'                         => array(
-			'label'     => __( 'Zoom Type', 'cloudinary' ),
-			'type'      => 'select',
-			'choices'   => array(
+			'label'   => __( 'Zoom Type', 'cloudinary' ),
+			'type'    => 'select',
+			'choices' => array(
 				'inline' => __( 'Inline', 'cloudinary' ),
 				'flyout' => __( 'Flyout', 'cloudinary' ),
 				'popup'  => __( 'Popup', 'cloudinary' ),
 			),
-			'default'   => 'none',
+			'default' => 'none',
 		),
 		'zoom_viewer_position'              => array(
-			'label'     => __( 'Zoom Viewer Position', 'cloudinary' ),
-			'type'      => 'select',
-			'choices'   => array(
+			'label'   => __( 'Zoom Viewer Position', 'cloudinary' ),
+			'type'    => 'select',
+			'choices' => array(
 				'top'    => __( 'Top', 'cloudinary' ),
 				'right'  => __( 'Right', 'cloudinary' ),
 				'left'   => __( 'Left', 'cloudinary' ),
 				'bottom' => __( 'Bottom', 'cloudinary' ),
 			),
-			'default'   => 'none',
+			'default' => 'none',
 		),
 		'carousel_header'                   => array(
 			'type'  => 'heading',

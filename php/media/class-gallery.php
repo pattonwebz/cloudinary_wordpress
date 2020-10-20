@@ -33,13 +33,6 @@ class Gallery {
 	const GALLERY_LIBRARY_URL = 'https://product-gallery.cloudinary.com/all.js';
 
 	/**
-	 * Flag on whether this page is a WooCommerce product page with a gallery.
-	 *
-	 * @var bool
-	 */
-	protected $is_woo_page = false;
-
-	/**
 	 * Holds instance of the Media class.
 	 *
 	 * @var Media
@@ -168,11 +161,14 @@ class Gallery {
 			true
 		);
 
-		$product = wc_get_product();
-		$config  = $this->get_config();
+		$config = $this->get_config();
 
-		if ( $product ) {
-			$config['mediaAssets'] = $this->get_image_data( $product->get_gallery_image_ids() );
+		if ( $this->woocommerce_active() ) {
+			$product = wc_get_product();
+
+			if ( $product ) {
+				$config['mediaAssets'] = $this->get_image_data( $product->get_gallery_image_ids() );
+			}
 		}
 
 		wp_localize_script(
@@ -227,7 +223,7 @@ class Gallery {
 	 * @return bool
 	 */
 	protected function woocommerce_active() {
-		return class_exists( 'WooCommerce' );
+		return class_exists( 'WooCommerce' ) && function_exists( 'wc_get_product' );
 	}
 
 	/**
@@ -252,6 +248,10 @@ class Gallery {
 		foreach ( $images as $index => $image ) {
 			$image_id  = is_int( $image ) ? $image : $image['id'];
 			$image_url = is_int( $image ) ? $this->media->cloudinary_url( $image_id ) : $image['url'];
+
+			if ( ! $this->media->sync->is_synced( $image_id ) ) {
+				continue;
+			}
 
 			$image_data[ $index ]             = array();
 			$image_data[ $index ]['publicId'] = $this->media->get_public_id( $image_id );
@@ -310,14 +310,12 @@ class Gallery {
 	 * Setup hooks for the gallery.
 	 */
 	public function setup_hooks() {
-		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_gallery_library' ) );
 		add_filter( 'cloudinary_api_rest_endpoints', array( $this, 'rest_endpoints' ) );
 		add_action( 'enqueue_block_editor_assets', array( $this, 'block_editor_scripts_styles' ) );
+		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_gallery_library' ) );
 
-		if ( ! is_admin() ) {
-			// phpcs:disable
-			add_filter( 'woocommerce_single_product_image_thumbnail_html', function () { return ''; } );
-			// phpcs:enable
+		if ( ! is_admin() && $this->woocommerce_active() ) {
+			add_filter( 'woocommerce_single_product_image_thumbnail_html', '__return_empty_string' );
 		}
 	}
 }
