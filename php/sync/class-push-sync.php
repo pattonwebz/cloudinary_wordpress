@@ -201,15 +201,12 @@ class Push_Sync {
 		foreach ( $ids as $attachment_id ) {
 			// Flag attachment as being processed.
 			update_post_meta( $attachment_id, Sync::META_KEYS['syncing'], time() );
-			$type = $this->sync->get_sync_type( $attachment_id, false );
-			while ( $type ) {
+			while ( $type = $this->sync->get_sync_type( $attachment_id, false ) ) { // phpcs:ignore WordPress.CodeAnalysis.AssignmentInCondition
 				if ( isset( $stat[ $attachment_id ][ $type ] ) ) {
 					// Loop prevention.
 					break;
 				}
 				$stat[ $attachment_id ][ $type ] = $this->sync->run_sync_method( $type, 'sync', $attachment_id );
-				// Get next Type.
-				$type = $this->sync->get_sync_type( $attachment_id, false );
 			}
 			// remove pending.
 			delete_post_meta( $attachment_id, Sync::META_KEYS['pending'] );
@@ -270,12 +267,9 @@ class Push_Sync {
 		$queue  = $this->queue->get_thread_queue( $thread );
 
 		if ( ! empty( $queue ) && $this->queue->is_running() ) {
-			$attachment_id = $this->queue->get_post( $thread );
-			while ( $attachment_id ) {
+			while ( $attachment_id = $this->queue->get_post( $thread ) ) { // phpcs:ignore WordPress.CodeAnalysis.AssignmentInCondition
 				$this->process_assets( $attachment_id );
 				$this->queue->mark( $attachment_id, 'done' );
-				// Get new Attachment_ID.
-				$attachment_id = $this->queue->get_post( $thread );
 			}
 			$this->queue->stop_maybe();
 		}
