@@ -153,6 +153,7 @@ class Connect implements Config, Setup, Notice {
 	public function verify_connection( $data ) {
 		if ( empty( $data['cloudinary_url'] ) ) {
 			delete_option( self::META_KEYS['signature'] );
+			delete_option( self::META_KEYS['url'] ); // remove legacy URL in case it's still present.
 
 			add_settings_error(
 				'cloudinary_connect',
@@ -592,6 +593,7 @@ class Connect implements Config, Setup, Notice {
 				$sync['auto_sync'] = 'off';
 				update_option( 'cloudinary_sync_media', $sync );
 				delete_option( 'cloudinary_settings_cache' ); // remove the cache.
+				delete_option( self::META_KEYS['url'] ); // remove legacy setting.
 			}
 
 			$data['cloudinary_url'] = str_replace( 'CLOUDINARY_URL=', '', $data['cloudinary_url'] );
