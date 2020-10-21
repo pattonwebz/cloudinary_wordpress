@@ -407,10 +407,10 @@ class Filter {
 	protected function check_fmp4_presence( $cloudinary_url, $attachment_id ) {
 		$return = null;
 
-		if ( Utils::ends_with( $cloudinary_url, '.gif' ) ) {
-			$all_transformations = Utils::flatten( $this->media->get_transformations_from_string( $cloudinary_url ) );
-
-			if ( in_array( 'mp4', $all_transformations ) ) {
+		if ( 'image/gif' === get_post_mime_type( $attachment_id ) ) {
+			$all_transformations = $this->media->get_transformations_from_string( $cloudinary_url );
+			$index = $this->media->get_transformation( $all_transformations, 'fetch_format' );
+			if( false !== $index && 'mp4' === $all_transformations[ $index ][ 'fetch_format' ] ) {
 				$return = sprintf(
 					'<video class="cld-fluid wp-video-%s" autoplay controls src="%s">',
 					$attachment_id,
