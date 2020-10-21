@@ -221,10 +221,16 @@
 	box-shadow       : 0 1px 1px rgba(0, 0, 0, .04);
 }
 
-.settings-alert-warning {
+.settings-alert-info {
 	background-color : #e9faff;
 	border           : 1px solid #ccd0d4;
 	border-left      : 4px solid #00a0d2;
+}
+
+.settings-alert-warning {
+	background-color : #fff5e9;
+	border           : 1px solid #f6e7b6;
+	border-left      : 4px solid #e3be38;
 }
 
 .settings-alert-error {
@@ -261,8 +267,8 @@
 		cursor: pointer;
 		display: flex;
 		justify-content: space-between;
-		
-		h2 { 
+
+		h2 {
 			margin: 0 !important;
 		}
 
