@@ -592,6 +592,16 @@ class Connect implements Config, Setup, Notice {
 				$sync['auto_sync'] = 'off';
 				update_option( 'cloudinary_sync_media', $sync );
 				delete_option( 'cloudinary_settings_cache' ); // remove the cache.
+
+				/**
+				 * Do action to allow upgrading of different areas.
+				 *
+				 * @since 2.3.1
+				 *
+				 * @param string $new_version The version upgrading to.
+				 * @param string $old_version The version upgrading from.
+				 */
+				do_action( 'cloudinary_version_upgrade', $this->plugin->version, $version );
 			}
 
 			$data['cloudinary_url'] = str_replace( 'CLOUDINARY_URL=', '', $data['cloudinary_url'] );
