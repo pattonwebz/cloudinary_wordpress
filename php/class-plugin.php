@@ -12,6 +12,7 @@ use Cloudinary\Component\Config;
 use Cloudinary\Component\Notice;
 use Cloudinary\Component\Setup;
 use Cloudinary\Sync\Storage;
+use Cloudinary\Deactivation;
 
 /**
  * Main plugin bootstrap file.
@@ -116,8 +117,9 @@ class Plugin {
 	 * that extend the Customizer to ensure resources are available in time.
 	 */
 	public function init() {
-		$this->components['settings'] = new Settings_Page( $this );
-		$this->components['connect']  = new Connect( $this );
+		$this->components['settings']     = new Settings_Page( $this );
+		$this->components['connect']      = new Connect( $this );
+		$this->components['deactivation'] = new Deactivation( $this );
 
 		if ( $this->components['connect'] && $this->components['connect']->is_connected() ) {
 			$this->components['sync']    = new Sync( $this );
