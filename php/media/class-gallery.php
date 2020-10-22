@@ -246,12 +246,13 @@ class Gallery {
 		$image_data = array();
 
 		foreach ( $images as $index => $image ) {
-			$image_id  = is_int( $image ) ? $image : $image['id'];
-			$image_url = is_int( $image ) ? $this->media->cloudinary_url( $image_id ) : $image['url'];
+			$image_id = is_int( $image ) ? $image : $image['id'];
 
 			if ( ! $this->media->sync->is_synced( $image_id ) ) {
 				continue;
 			}
+
+			$image_url = is_int( $image ) ? $this->media->cloudinary_url( $image_id ) : $image['url'];
 
 			$image_data[ $index ]             = array();
 			$image_data[ $index ]['publicId'] = $this->media->get_public_id( $image_id );
