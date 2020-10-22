@@ -566,9 +566,8 @@ class Connect implements Config, Setup, Notice {
 	 * @return array The array of the config options stored.
 	 */
 	public function get_config() {
-		$signature   = get_option( self::META_KEYS['signature'], null );
 		$old_version = get_option( self::META_KEYS['version'] );
-		if ( empty( $signature ) || version_compare( $this->plugin->version, $old_version, '>' ) ) {
+		if ( version_compare( $this->plugin->version, $old_version, '>' ) ) {
 			/**
 			 * Do action to allow upgrading of different areas.
 			 *
@@ -580,7 +579,8 @@ class Connect implements Config, Setup, Notice {
 			do_action( 'cloudinary_version_upgrade', $old_version, $this->plugin->version );
 		}
 
-		return $signature;
+		// We get the signature here since the upgrade action, may change the signature.
+		return get_option( self::META_KEYS['signature'], null );
 	}
 
 	/**
