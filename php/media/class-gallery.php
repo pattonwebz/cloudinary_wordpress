@@ -179,7 +179,7 @@ class Gallery {
 
 		wp_enqueue_script(
 			'cloudinary-gallery-init',
-			$this->media->plugin->dir_url . 'assets/dist/gallery-init.js',
+			$this->media->plugin->dir_url . 'dist/gallery-init.js',
 			array( self::GALLERY_LIBRARY_HANDLE ),
 			$this->media->plugin->version,
 			true
@@ -194,14 +194,14 @@ class Gallery {
 
 		wp_enqueue_style(
 			'cloudinary-gallery-block-css',
-			$this->media->plugin->dir_url . 'assets/dist/block-gallery.css',
+			$this->media->plugin->dir_url . 'dist/block-gallery.css',
 			array(),
 			$this->media->plugin->version
 		);
 
 		wp_enqueue_script(
 			'cloudinary-gallery-block-js',
-			$this->media->plugin->dir_url . 'assets/dist/block-gallery.js',
+			$this->media->plugin->dir_url . 'dist/block-gallery.js',
 			array( 'wp-blocks', 'wp-editor', 'wp-element', self::GALLERY_LIBRARY_HANDLE ),
 			$this->media->plugin->version,
 			true

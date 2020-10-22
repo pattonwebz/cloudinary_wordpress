@@ -8,23 +8,23 @@ if (!Encore.isRuntimeEnvironmentConfigured()) {
 // If further loaders and/or plugins are needed, refer to this page:
 // https://symfony.com/doc/current/frontend/encore/custom-loaders-plugins.html
 
-Encore.setOutputPath('assets/dist/')
+Encore.setOutputPath('dist/')
 	.setPublicPath('./')
-	.setManifestKeyPrefix('assets/dist/')
+	.setManifestKeyPrefix('dist/')
 
-	.addEntry('cloudinary', './assets/js/main.js')
-	.addEntry('block-editor', './assets/js/blocks.js')
+	.addEntry('cloudinary', './js/main.js')
+	.addEntry('block-editor', './js/blocks.js')
 	.copyFiles({
-		from: './assets/js/components',
+		from: './js/components',
 		to: '[name].[ext]',
 		pattern: /gallery-init\.js/,
 	})
-	.addEntry('block-gallery', './assets/js/gallery-block/index.js')
-	.addStyleEntry('video', './assets/css/video.scss')
+	.addEntry('block-gallery', './js/gallery-block/index.js')
+	.addStyleEntry('video', './css/video.scss')
 	// Add more entries here if needed...
 
 	.copyFiles({
-		from: './assets/css',
+		from: './css',
 		to: '[path][name].[ext]',
 		pattern: /\.svg$/,
 	})

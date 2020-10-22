@@ -106,7 +106,7 @@ class Video {
 				if ( ! empty( $has_video ) || ! empty( $video_tags ) ) {
 					// Setup initial scripts.
 					wp_enqueue_style( 'cld-player' );
-					wp_enqueue_style( 'cld-player-local', $this->media->plugin->dir_url . 'assets/dist/video.css', null, self::PLAYER_VER );
+					wp_enqueue_style( 'cld-player-local', $this->media->plugin->dir_url . 'dist/video.css', null, self::PLAYER_VER );
 					wp_enqueue_script( 'cld-player' );
 
 					// Init cld script object.
@@ -366,7 +366,7 @@ class Video {
 				if ( empty( $config['size'] ) && ! empty( $config['transformation'] ) && ! $this->media->get_crop_from_transformation( $config['transformation'] ) ) {
 					$config['fluid'] = true;
 				}
-				
+
 				$config['controls']      = 'on' === $this->config['video_controls'] ? true : false;
 				$cld_videos[ $instance ] = $config;
 			}
@@ -396,7 +396,7 @@ class Video {
 						videoElement.style.width = '100%';
 						<?php if ( $this->config['video_freeform'] ) : ?>
 
-						if ( 
+						if (
 							videoElement.src.indexOf( '<?php echo esc_js( $this->config['video_freeform'] ); ?>' ) === -1 &&
 							! cldVideos[videoInstance]['overwrite_transformations']
 						) {
@@ -424,7 +424,7 @@ class Video {
 	 * Enqueue BLock Assets
 	 */
 	public function enqueue_block_assets() {
-		wp_enqueue_script( 'cloudinary-block', $this->media->plugin->dir_url . 'assets/dist/block-editor.js', array(), $this->media->plugin->version, true );
+		wp_enqueue_script( 'cloudinary-block', $this->media->plugin->dir_url . 'dist/block-editor.js', array(), $this->media->plugin->version, true );
 		wp_add_inline_script( 'cloudinary-block', 'var CLD_VIDEO_PLAYER = ' . wp_json_encode( $this->config ), 'before' );
 	}
 
@@ -463,7 +463,7 @@ class Video {
 						$content = str_replace( 'class="', 'class="' . $classes . ' ', $content );
 					} else {
 						$content = str_replace( '<video ', '<video class="' . $classes . '" ', $content );
-					}               
+					}
 				}
 			}
 		}
@@ -482,7 +482,7 @@ class Video {
 			// Filter for block rendering.
 			add_filter( 'render_block_data', array( $this, 'filter_video_block_pre_render' ), 10, 2 );
 		}
-		
+
 		add_action( 'wp_print_styles', array( $this, 'init_player' ) );
 		add_action( 'wp_footer', array( $this, 'print_video_scripts' ) );
 
