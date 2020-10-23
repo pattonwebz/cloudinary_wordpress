@@ -27,9 +27,6 @@
 	"lint-staged": {
 		"*.php": [
 			"npm run lint"
-		],
-		"*.js": [
-			"eslint"
 		]
 	},
 	"author": "XWP",
