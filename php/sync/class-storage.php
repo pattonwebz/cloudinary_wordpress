@@ -304,6 +304,8 @@ class Storage implements Notice {
 	public function tag_deactivate_link( $actions ) {
 		if ( 'cld' === $this->settings['offload'] ) {
 			$actions['deactivate'] = str_replace( '<a ', '<a class="cld-deactivate" ', $actions['deactivate'] );
+		} else {
+			$actions['deactivate'] = str_replace( '<a ', '<a class="cld-deactivate-link" ', $actions['deactivate'] );
 		}
 
 		return $actions;

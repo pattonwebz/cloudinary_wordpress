@@ -113,8 +113,17 @@ const cldBlockEditor = {
 	},
 };
 
+const cldDeactivate = {
+	...defaultConfig,
+	...sharedConfig,
+	entry: {
+		'deactivate': './js/src/deactivate.js',
+	}
+};
+
 
 module.exports = [
 	cldBlockEditor,
-	cldCore
+	cldCore,
+	cldDeactivate
 ];

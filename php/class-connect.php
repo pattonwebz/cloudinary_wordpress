@@ -104,6 +104,7 @@ class Connect implements Config, Setup, Notice {
 		add_filter( 'pre_update_option_cloudinary_connect', array( $this, 'verify_connection' ) );
 		add_filter( 'cron_schedules', array( $this, 'get_status_schedule' ) ); // phpcs:ignore WordPress.WP.CronInterval
 		add_action( 'cloudinary_status', array( $this, 'check_status' ) );
+		add_action( 'cloudinary_version_upgrade', array( $this, 'upgrade_connection' ) );
 	}
 
 	/**
@@ -153,7 +154,6 @@ class Connect implements Config, Setup, Notice {
 	public function verify_connection( $data ) {
 		if ( empty( $data['cloudinary_url'] ) ) {
 			delete_option( self::META_KEYS['signature'] );
-			delete_option( self::META_KEYS['url'] ); // remove legacy URL in case it's still present.
 
 			add_settings_error(
 				'cloudinary_connect',
@@ -566,53 +566,21 @@ class Connect implements Config, Setup, Notice {
 	 * @return array The array of the config options stored.
 	 */
 	public function get_config() {
-		$signature = get_option( self::META_KEYS['signature'], null );
-		$version   = get_option( self::META_KEYS['version'] );
-		if ( empty( $signature ) || version_compare( $this->plugin->version, $version, '>' ) ) {
-			// Check if there's a previous version, or missing signature.
-			$cld_url = get_option( self::META_KEYS['url'], null );
-			if ( null === $cld_url ) {
-				// Post V1.
-				$data = get_option( self::META_KEYS['connect'], array() );
-				if ( ! isset( $data['cloudinary_url'] ) || empty( $data['cloudinary_url'] ) ) {
-					return null; // return null to indicate not valid.
-				}
-			} else {
-				// from V1 to V2.
-				$data = array(
-					'cloudinary_url' => $cld_url,
-				);
-				// Set auto sync off.
-				$sync = get_option( 'cloudinary_sync_media' );
-				if ( empty( $sync ) ) {
-					$sync = array(
-						'auto_sync'         => '',
-						'cloudinary_folder' => '',
-					);
-				}
-				$sync['auto_sync'] = 'off';
-				update_option( 'cloudinary_sync_media', $sync );
-				delete_option( 'cloudinary_settings_cache' ); // remove the cache.
-				delete_option( self::META_KEYS['url'] ); // remove legacy setting.
-			}
-
-			$data['cloudinary_url'] = str_replace( 'CLOUDINARY_URL=', '', $data['cloudinary_url'] );
-			$test                   = $this->test_connection( $data['cloudinary_url'] );
-
-			if ( 'connection_success' === $test['type'] ) {
-				$signature = md5( $data['cloudinary_url'] );
-
-				// remove filters as we've already verified it and 'add_settings_error()' isin't available yet.
-				remove_filter( 'pre_update_option_cloudinary_connect', array( $this, 'verify_connection' ) );
-				update_option( self::META_KEYS['connect'], $data );
-				update_option( self::META_KEYS['signature'], $signature );
-				update_option( self::META_KEYS['version'], $this->plugin->version );
-				delete_option( self::META_KEYS['cache'] ); // remove the cache.
-				$this->plugin->config['settings']['connect'] = $data; // Set the connection url for this round.
-			}
+		$old_version = get_option( self::META_KEYS['version'] );
+		if ( version_compare( $this->plugin->version, $old_version, '>' ) ) {
+			/**
+			 * Do action to allow upgrading of different areas.
+			 *
+			 * @since 2.3.1
+			 *
+			 * @param string $old_version The version upgrading from.
+			 * @param string $new_version The version upgrading to.
+			 */
+			do_action( 'cloudinary_version_upgrade', $old_version, $this->plugin->version );
 		}
 
-		return $signature;
+		// We get the signature here since the upgrade action, may change the signature.
+		return get_option( self::META_KEYS['signature'], null );
 	}
 
 	/**
@@ -646,8 +614,8 @@ class Connect implements Config, Setup, Notice {
 					continue;
 				}
 				// translators: Placeholders are URLS and percentage values.
-				$message = sprintf(
-					/* translators: %1$s quota size, %2$s amount in percent, %3$s link URL, %4$s link anchor text. */
+				$message         = sprintf(
+				/* translators: %1$s quota size, %2$s amount in percent, %3$s link URL, %4$s link anchor text. */
 					__(
 						'<span class="dashicons dashicons-cloudinary"></span> You are %2$s of the way through your monthly quota for %1$s on your Cloudinary account. If you exceed your quota, the Cloudinary plugin will be deactivated until your next billing cycle and your media assets will be served from your WordPress Media Library. You may wish to <a href="%3$s" target="_blank">%4$s</a> and increase your quota to ensure you maintain full functionality.',
 						'cloudinary'
@@ -687,4 +655,57 @@ class Connect implements Config, Setup, Notice {
 		return $this->notices;
 	}
 
+	/**
+	 * Upgrade connection settings.
+	 *
+	 * @param string $old_version The previous version.
+	 *
+	 * @uses action:cloudinary_version_upgrade
+	 */
+	public function upgrade_connection( $old_version ) {
+
+		if ( version_compare( $old_version, '2.0.0', '>' ) ) {
+			// Post V1 - quick check all details are valid.
+			$data = get_option( self::META_KEYS['connect'], array() );
+			if ( ! isset( $data['cloudinary_url'] ) || empty( $data['cloudinary_url'] ) ) {
+				return; // Not setup at all, abort upgrade.
+			}
+		} elseif ( version_compare( $old_version, '2.0.0', '<' ) ) {
+			// from V1 to V2.
+			$cld_url = get_option( self::META_KEYS['url'], null );
+			if ( empty( $cld_url ) ) {
+				return; // Upgrade from a non setup V1 nothing to upgrade.
+			}
+			$data = array(
+				'cloudinary_url' => $cld_url,
+			);
+			// Set auto sync off.
+			$sync = get_option( 'cloudinary_sync_media' );
+			if ( empty( $sync ) ) {
+				$sync = array(
+					'auto_sync'         => '',
+					'cloudinary_folder' => '',
+				);
+			}
+			$sync['auto_sync'] = 'off';
+			update_option( 'cloudinary_sync_media', $sync );
+			delete_option( 'cloudinary_settings_cache' ); // remove the cache.
+		}
+
+		// Test upgraded details.
+		$data['cloudinary_url'] = str_replace( 'CLOUDINARY_URL=', '', $data['cloudinary_url'] );
+		$test                   = $this->test_connection( $data['cloudinary_url'] );
+
+		if ( 'connection_success' === $test['type'] ) {
+			$signature = md5( $data['cloudinary_url'] );
+
+			// remove filters as we've already verified it and 'add_settings_error()' isn't available yet.
+			remove_filter( 'pre_update_option_cloudinary_connect', array( $this, 'verify_connection' ) );
+			update_option( self::META_KEYS['connect'], $data );
+			update_option( self::META_KEYS['signature'], $signature );
+			update_option( self::META_KEYS['version'], $this->plugin->version );
+			delete_option( self::META_KEYS['cache'] ); // remove the cache.
+			$this->plugin->config['settings']['connect'] = $data; // Set the connection url for this round.
+		}
+	}
 }
