@@ -19,6 +19,11 @@
 		"deploy": "npm run build && grunt deploy",
 		"deploy-assets": "grunt deploy-assets"
 	},
+	"husky": {
+		"hooks": {
+			"pre-commit": "npm run lint"
+		}
+	},
 	"author": "XWP",
 	"license": "GPL-2.0+",
 	"devDependencies": {
