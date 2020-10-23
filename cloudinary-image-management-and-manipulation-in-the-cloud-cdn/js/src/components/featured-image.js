@@ -2,7 +2,6 @@
 
 import { __ } from '@wordpress/i18n';
 
-import { Component } from '@wordpress/element';
 import { ToggleControl } from '@wordpress/components';
 import { withSelect, withDispatch } from '@wordpress/data';
 
