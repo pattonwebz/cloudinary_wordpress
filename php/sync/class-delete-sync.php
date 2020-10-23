@@ -90,7 +90,7 @@ class Delete_Sync {
 		if ( $this->plugin->components['sync']->is_synced( $post_id ) ) {
 
 			// check if this is not a transformation base image.
-			$public_id = $this->plugin->components['media']->get_public_id( $post_id );
+			$public_id = $this->plugin->components['media']->get_public_id( $post_id, true );
 			$linked    = $this->plugin->components['media']->get_linked_attachments( $public_id );
 			if ( count( $linked ) > 1 ) {
 				// There are other attachments sharing this public_id, so skip it.
