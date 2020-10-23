@@ -49,7 +49,7 @@ const cldFilterFeatured = ( InitialMediaUpload ) => {
             // We only need this on a MediaUpload component that has a value.
             return (
                 <>
-                    { this.props.render( { open: this.openModal } ) }
+                    { super.render() }
                     { !! this.props.value &&
                         <FeaturedTransformationsToggle { ...this.props } />
                     }
