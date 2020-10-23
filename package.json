@@ -19,6 +19,16 @@
 		"deploy": "npm run build && grunt deploy",
 		"deploy-assets": "grunt deploy-assets"
 	},
+	"husky": {
+		"hooks": {
+			"pre-commit": "lint-staged"
+		}
+	},
+	"lint-staged": {
+		"*.php": [
+			"npm run lint"
+		]
+	},
 	"author": "XWP",
 	"license": "GPL-2.0+",
 	"devDependencies": {
@@ -70,6 +80,7 @@
 		"grunt-contrib-copy": "1.0.0",
 		"grunt-wp-deploy": "2.1.2",
 		"husky": "^4.3.0",
+		"lint-staged": "^10.4.2",
 		"load-grunt-tasks": "^5.1.0",
 		"loading-attribute-polyfill": "^1.5.4",
 		"lodash": "4.17.19",
