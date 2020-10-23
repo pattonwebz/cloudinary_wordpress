@@ -83,10 +83,14 @@ class Delete_Sync {
 	 * @param int $post_id The post id to delete asset for.
 	 */
 	public function delete_asset( $post_id ) {
+		// In some environments, the $post_id is a string, failing ahead on a strict compare.
+		// For that reason we need to ensure the variable type.
+		$post_id = absint( $post_id );
+
 		if ( $this->plugin->components['sync']->is_synced( $post_id ) ) {
 
 			// check if this is not a transformation base image.
-			$public_id = $this->plugin->components['media']->get_public_id( $post_id );
+			$public_id = $this->plugin->components['media']->get_public_id( $post_id, true );
 			$linked    = $this->plugin->components['media']->get_linked_attachments( $public_id );
 			if ( count( $linked ) > 1 ) {
 				// There are other attachments sharing this public_id, so skip it.
