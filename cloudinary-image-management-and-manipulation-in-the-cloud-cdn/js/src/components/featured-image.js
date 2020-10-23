@@ -2,7 +2,8 @@
 
 import { __ } from '@wordpress/i18n';
 
-import { ToggleControl, PanelBody } from '@wordpress/components';
+import { Component } from '@wordpress/element';
+import { ToggleControl } from '@wordpress/components';
 import { withSelect, withDispatch } from '@wordpress/data';
 
 // Set our component.
@@ -48,7 +49,7 @@ const cldFilterFeatured = ( InitialMediaUpload ) => {
             // We only need this on a MediaUpload component that has a value.
             return (
                 <>
-                    <InitialMediaUpload { ...this.props }  />
+                    { this.props.render( { open: this.openModal } ) }
                     { !! this.props.value &&
                         <FeaturedTransformationsToggle { ...this.props } />
                     }
