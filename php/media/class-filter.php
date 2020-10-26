@@ -7,7 +7,6 @@
 
 namespace Cloudinary\Media;
 
-use Cloudinary\Utils;
 use Cloudinary\Connect\Api;
 
 /**
