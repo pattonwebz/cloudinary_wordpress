@@ -1860,9 +1860,9 @@ class Media implements Setup {
 	 * @uses action:cloudinary_version_upgrade
 	 */
 	public function upgrade_media_settings() {
-		// Check that transformations is in default (hasn't been saved before)  .
+		// Check that transformations is in default (hasn't been saved before).
 		if ( empty( get_option( 'cloudinary_global_video_transformations', null ) ) ) {
-			// Setup default to CLD, since default changed from WP to CLD after 2.0.3
+			// Setup default to CLD, since default changed from WP to CLD after 2.0.3.
 			$video = array(
 				'video_player' => 'cld',
 			);
