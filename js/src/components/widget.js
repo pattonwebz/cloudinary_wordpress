@@ -36,7 +36,7 @@ if ( wp.media && window.CLDN ) {
 		if ( 'send-attachment-to-editor' === action ) {
 			let state  = wp.media.editor.get().state();
 			let attach = state.get( 'selection' ).get( data.attachment );
-			if ( attach.attributes.transformations ) {
+			if ( attach && attach.attributes.transformations ) {
 				data.attachment.transformations = attach.attributes.transformations;
 			}
 			if( data.html.indexOf('cld-overwrite') > -1 || true === currentOverwrite ){

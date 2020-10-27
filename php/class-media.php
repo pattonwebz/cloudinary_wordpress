@@ -125,6 +125,9 @@ class Media implements Setup {
 	 */
 	public function __construct( Plugin $plugin ) {
 		$this->plugin = $plugin;
+
+		// Add upgrade hook, since setup methods are called after the connect upgrade has run.
+		add_action( 'cloudinary_version_upgrade', array( $this, 'upgrade_media_settings' ) );
 	}
 
 	/**
@@ -1650,7 +1653,7 @@ class Media implements Setup {
 			if ( ! empty( $transformations ) ) {
 				$breakpoints['transformation'] = Api::generate_transformation_string( $transformations );
 			}
-			$breakpoints              = array(
+			$breakpoints = array(
 				'public_id'              => $this->get_public_id( $attachment_id ),
 				'type'                   => 'upload',
 				'responsive_breakpoints' => $breakpoint_options,
@@ -1849,6 +1852,22 @@ class Media implements Setup {
 		$version = (int) $this->get_post_meta( $attachment_id, Sync::META_KEYS['version'], true );
 
 		return $version ? $version : 1;
+	}
+
+	/**
+	 * Upgrade media related settings, including global transformations etc.
+	 *
+	 * @uses action:cloudinary_version_upgrade
+	 */
+	public function upgrade_media_settings() {
+		// Check that transformations is in default (hasn't been saved before).
+		if ( empty( get_option( 'cloudinary_global_video_transformations', null ) ) ) {
+			// Setup default to CLD, since default changed from WP to CLD after 2.0.3.
+			$video = array(
+				'video_player' => 'cld',
+			);
+			update_option( 'cloudinary_global_video_transformations', $video );
+		}
 	}
 
 	/**

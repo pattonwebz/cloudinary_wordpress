@@ -49,7 +49,7 @@ $manage_text = sprintf(
 				<strong><?php echo esc_html( $connection->get_usage_stat( 'plan' ) ); ?></strong> |
 				<?php if ( false !== $connection->get_usage_stat( 'credits', 'limit' ) ) : ?>
 					<span class="cloudinary-stat" title="<?php esc_attr_e( 'Credits', 'cloudinary' ); ?>">
-					<span class="dashicons dashicons-marker"></span> <?php esc_html_e( number_format_i18n( $connection->get_usage_stat( 'credits', 'limit' ) ) ); ?>
+					<span class="dashicons dashicons-marker"></span> <?php echo esc_html( number_format_i18n( $connection->get_usage_stat( 'credits', 'limit' ) ) ); ?>
 					<?php if ( false !== $connection->get_usage_stat( 'credits', 'used_percent' ) ) : ?>
 						<span class="cloudinary-percent"> <?php echo esc_html( $connection->get_usage_stat( 'credits', 'used_percent' ) . '%' ); ?></span> |
 					<?php endif; ?>
