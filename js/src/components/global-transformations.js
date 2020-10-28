@@ -1,4 +1,5 @@
 /* global window wp */
+
 const Global_Transformations = {
 	sample: {
 		image: document.getElementById( 'transformation-sample-image' ),
@@ -17,6 +18,7 @@ const Global_Transformations = {
 		image : document.getElementById( 'image-loader' ),
 		video : document.getElementById( 'video-loader' ),
 	},
+	error_container: document.getElementById('cld-preview-error'),
 	activeItem: null,
 	elements: {
 		image: [],
@@ -72,15 +74,15 @@ const Global_Transformations = {
 	},
 	_clearLoading: function( type ) {
 		this.spinner[ type ].style.visibility = 'hidden';
-		this.activeItem               = null;
-		this.preview[ type ].style.opacity      = 1;
+		this.activeItem                       = null;
+		this.preview[ type ].style.opacity    = 1;
 	},
 	_refresh: function( e, type ) {
 		if( e ) {
 			e.preventDefault();
 		}
-		let self                  = this;
-		let new_src               = CLD_GLOBAL_TRANSFORMATIONS[ type ].preview_url + self.elements[ type ].join( ',' ) + CLD_GLOBAL_TRANSFORMATIONS[ type ].file;
+		let self    = this;
+		let new_src = CLD_GLOBAL_TRANSFORMATIONS[ type ].preview_url + self.elements[ type ].join( ',' ) + CLD_GLOBAL_TRANSFORMATIONS[ type ].file;
 		this.button[ type ].style.display = 'none';
 		this._placeItem( this.spinner[ type ] );
 		if ( type === 'image' ) {
@@ -88,10 +90,27 @@ const Global_Transformations = {
 			newImg.onload = function() {
 				self.preview[ type ].src = this.src;
 				self._clearLoading( type );
+				if ( self.error_container ) {
+					self.error_container.style.display = 'none';
+				}
 				newImg.remove();
 			};
 			newImg.onerror = function() {
-				alert( CLD_GLOBAL_TRANSFORMATIONS[type].error );
+				const has_fmp4 = self.elements[ type ].includes( 'f_mp4' );
+
+				if ( self.error_container ) {
+					self.error_container.style.display = 'block';
+
+					if (!has_fmp4) {
+						self.error_container.innerHTML = CLD_GLOBAL_TRANSFORMATIONS[type].error;
+						self.error_container.classList.replace('settings-alert-warning', 'settings-alert-error');
+					} else {
+						// temporary, will be replaced with i18n.sprintf instead of .replace
+						self.error_container.innerHTML = CLD_GLOBAL_TRANSFORMATIONS[type].warning.replace('%s', 'f_mp4');
+						self.error_container.classList.replace('settings-alert-error', 'settings-alert-warning');
+					}
+				}
+
 				self._clearLoading( type );
 			};
 			newImg.src = new_src;

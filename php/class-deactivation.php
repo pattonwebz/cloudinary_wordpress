@@ -45,7 +45,7 @@ class Deactivation {
 	/**
 	 * Initiate the plugin deactivation.
 	 *
-	 * @param Plugin $plugin Instance of the plugin
+	 * @param Plugin $plugin Instance of the plugin.
 	 */
 	public function __construct( Plugin $plugin ) {
 		$this->plugin = $plugin;
@@ -116,7 +116,7 @@ class Deactivation {
 				'id'   => 'other_reason',
 				'text' => __( 'Other', 'cloudinary' ),
 				'more' => true,
-			)
+			),
 		);
 	}
 
@@ -141,7 +141,7 @@ class Deactivation {
 					<label for="reason-<?php echo esc_attr( $reason['id'] ); ?>">
 						<?php echo esc_html( $reason['text'] ); ?>
 					</label>
-					<?php if ( ! empty( $reason['more'] )  ) : ?>
+					<?php if ( ! empty( $reason['more'] ) ) : ?>
 						<label for="more-<?php echo esc_attr( $reason['id'] ); ?>" class="more">
 							<?php esc_html_e( 'Can you please add more details.', 'cloudinary' ); ?><br>
 							<textarea name="reason-more" id="more-<?php echo esc_attr( $reason['id'] ); ?>" cols="50" rows="5"></textarea>
@@ -165,7 +165,7 @@ class Deactivation {
 		</div>
 	</div>
 </div>
-	<?php
+		<?php
 	}
 
 	/**
@@ -208,7 +208,7 @@ class Deactivation {
 	/**
 	 * Processes the feedback and dispatches it to Cloudinary services.
 	 *
-	 * @param WP_REST_Request $request
+	 * @param WP_REST_Request $request The Rest Request.
 	 *
 	 * @return WP_Error|WP_HTTP_Response|WP_REST_Response
 	 */
@@ -238,7 +238,7 @@ class Deactivation {
 			self::$cld_endpoint
 		);
 
-		$response = wp_remote_get( $url );
+		$response = wp_remote_get( $url ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.wp_remote_get_wp_remote_get
 
 		return rest_ensure_response(
 			wp_remote_retrieve_response_code( $response )

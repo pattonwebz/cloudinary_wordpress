@@ -136,7 +136,7 @@ $struct = array(
 			'label'             => __( 'Image transformations', 'cloudinary' ),
 			'description'       => sprintf(
 				// translators: Placeholders are <a> tags.
-				__( 'The set of transformations to apply to all image assets, as a URL transformation string. %1$sImage transformation reference%2$s.%3$s<span class="settings-warning"><strong>Note</strong>: When updating transformations, all relevant assets will have new transformations applied; This may cause an increase in your Cloudinary usage.</span>', 'cloudinary' ),
+				__( 'The set of transformations to apply to all image assets, as a URL transformation string. %1$sImage transformation reference%2$s.%3$s<span class="settings-alert settings-alert-info"><strong>Note</strong>: When updating transformations, all relevant assets will have new transformations applied; This may cause an increase in your Cloudinary usage.</span>', 'cloudinary' ),
 				'<br><a href="https://cloudinary.com/documentation/image_transformation_reference" target="_blank">',
 				'</a>',
 				'<br><br>'
