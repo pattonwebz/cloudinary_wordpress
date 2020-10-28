@@ -282,3 +282,39 @@
 		}
 	}
 }
+
+.cloudinary-deactivation {
+	.more {
+		display: none;
+	}
+
+	input[type="radio"]:checked ~ .more {
+		color: #32373c;
+		display: block;
+		line-height: 2;
+		margin-left: 2em;
+		margin-top: .5em;
+	}
+
+	.modal-footer {
+		background-color: #fcfcfc;
+		border-top: 1px solid #ddd;
+		bottom: 0;
+		margin: 0 -15px;
+		padding: 1em;
+		position: absolute;
+		width: calc(100% - 2em);
+
+		.button-link {
+			float: right;
+
+			&:hover {
+				background: transparent;
+			}
+		}
+	}
+
+	textarea {
+		resize: none;
+	}
+}

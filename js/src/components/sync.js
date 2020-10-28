@@ -124,6 +124,8 @@ let triggers = document.getElementsByClassName( 'cld-deactivate' );
     trigger.addEventListener( 'click', function( ev ) {
         if ( !confirm( wp.i18n.__( 'Caution: Your storage setting is currently set to "Cloudinary only", disabling the plugin will result in broken links to media assets. Are you sure you want to continue?', 'cloudinary' ) ) ) {
             ev.preventDefault();
+            // Close the feedback form.
+            document.getElementById( 'TB_closeWindowButton' ).click();
         }
     } );
 } );

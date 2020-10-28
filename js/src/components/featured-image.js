@@ -2,7 +2,7 @@
 
 import { __ } from '@wordpress/i18n';
 
-import { ToggleControl, PanelBody } from '@wordpress/components';
+import { ToggleControl } from '@wordpress/components';
 import { withSelect, withDispatch } from '@wordpress/data';
 
 // Set our component.
@@ -37,18 +37,24 @@ FeaturedTransformationsToggle = withDispatch(
     }
 )( FeaturedTransformationsToggle );
 
-// Hook in and add our component.
-const cldFilterFeatured = ( BlockEdit ) => {
-    return ( props ) => {
-        // We only need this on a MediaUpload component that has a value.
-        return (
-            <>
-                <BlockEdit { ...props }  />
-                { !! props.value &&
-                    <FeaturedTransformationsToggle { ...props } />
-                }
-            </>
-        );
+// This filter callback must return a class component because the original from core is a class component. See: 
+// https://github.com/WordPress/gutenberg/blob/95188199c8b8045322d7f75a2666d47ea6504ad2/packages/media-utils/src/components/media-upload/index.js#L227
+// If this callback returns a function component and other components use the same filter expecting a class component, the
+// resulting error will break the editor. 
+// @see https://github.com/ampproject/amp-wp/issues/5534
+const cldFilterFeatured = ( InitialMediaUpload ) => {
+    return class CloudinaryMediaUpload extends InitialMediaUpload {
+        render() {
+            // We only need this on a MediaUpload component that has a value.
+            return (
+                <>
+                    { super.render() }
+                    { !! this.props.value &&
+                        <FeaturedTransformationsToggle { ...this.props } />
+                    }
+                </>
+            );
+        }
     };
 };
 
