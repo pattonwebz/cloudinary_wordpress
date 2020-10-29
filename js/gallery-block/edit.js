@@ -1,5 +1,3 @@
-/* global cloudinaryGalleryApi */
-
 /**
  * External dependencies
  */

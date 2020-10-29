@@ -1,5 +1,3 @@
-/* global cloudinaryGallery */
-
 /**
  * WordPress dependencies
  */

@@ -1,5 +1,3 @@
-/* global wpAjax */
-
 const TermsOrder = {
 	template: '',
 	tags: jQuery('#cld-tax-items'),

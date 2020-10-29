@@ -1,5 +1,3 @@
-/* global cloudinaryGallery */
-
 const configElements = document.querySelectorAll(
 	'[data-cloudinary-gallery-config]'
 );

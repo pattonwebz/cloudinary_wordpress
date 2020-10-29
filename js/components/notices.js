@@ -1,4 +1,3 @@
-/* global CLDIS */
 const Notices = {
 	_init() {
 		const self = this;

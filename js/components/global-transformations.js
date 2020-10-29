@@ -1,5 +1,4 @@
-/* global CLD_GLOBAL_TRANSFORMATIONS samplePlayer */
-const Global_Transformations = {
+const GlobalTransformations = {
 	sample: {
 		image: document.getElementById('transformation-sample-image'),
 		video: document.getElementById('transformation-sample-video'),

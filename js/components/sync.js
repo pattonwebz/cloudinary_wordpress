@@ -1,5 +1,3 @@
-/* global cloudinaryApi */
-
 const Sync = {
 	progress: document.getElementById('progress-wrapper'),
 	submitButton: document.getElementById('submit'),

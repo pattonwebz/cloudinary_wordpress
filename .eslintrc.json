@@ -3,10 +3,20 @@
     "browser": true
   },
   "globals": {
-    "cloudinary": "readonly",
-    "jQuery": "readonly",
     "$": "readonly",
-    "CLDN": "readonly"
+    "CLDIS": "readonly",
+    "CLDN": "readonly",
+    "CLD_GLOBAL_TRANSFORMATIONS": "readonly",
+    "CLD_ML": "readonly",
+    "CLD_VIDEO_PLAYER": "readonly",
+    "cloudinary": "readonly",
+    "cloudinaryApi": "readonly",
+    "cloudinaryGallery": "readonly",
+    "cloudinaryGalleryApi": "readonly",
+    "jQuery": "readonly",
+    "samplePlayer": "readonly",
+    "wp": "readonly",
+    "wpAjax": "readonly"
   },
   "extends": [
     "plugin:@wordpress/eslint-plugin/recommended"
