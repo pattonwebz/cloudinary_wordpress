@@ -16,7 +16,7 @@
     "build": "encore production",
     "dev": "encore dev --watch",
     "lint:php": "composer lint",
-    "lint:js": "eslint ./js",
+    "lint:js": "eslint .",
     "lint": "npm-run-all lint:php lint:js",
     "package": "npm run build && grunt package",
     "deploy": "npm run build && grunt deploy",
