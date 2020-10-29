@@ -10,7 +10,7 @@ import { registerBlockType } from '@wordpress/blocks';
 import edit from './edit';
 import save from './save';
 
-cloudinaryGallery = JSON.parse( cloudinaryGallery.config );
+cloudinaryGallery = JSON.parse(cloudinaryGallery.config);
 
 const {
 	aspectRatio = '1:1',
@@ -30,8 +30,8 @@ const {
 	carouselStyle = 'thumbnails',
 } = cloudinaryGallery;
 
-registerBlockType( 'cloudinary/gallery', {
-	title: __( 'Cloudinary Gallery', 'cloudinary' ),
+registerBlockType('cloudinary/gallery', {
+	title: __('Cloudinary Gallery', 'cloudinary'),
 	description: __(
 		'Add a gallery powered by the Cloudinary Gallery Widget to your post.',
 		'cloudinary'
@@ -102,4 +102,4 @@ registerBlockType( 'cloudinary/gallery', {
 	},
 	edit,
 	save,
-} );
+});
