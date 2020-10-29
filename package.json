@@ -23,6 +23,19 @@
     "deploy-assets": "grunt deploy-assets",
     "postinstall": "composer install"
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.php": [
+      "npm run lint"
+    ],
+    "*.js": [
+      "eslint ."
+    ]
+  },
   "devDependencies": {
     "@babel/core": "^7.11.6",
     "@babel/preset-env": "^7.11.5",
