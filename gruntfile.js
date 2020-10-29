@@ -1,12 +1,12 @@
-module.exports = function (grunt) {
+module.exports = function( grunt ) {
 	// Load all Grunt plugins.
-	require('load-grunt-tasks')(grunt);
+	require( 'load-grunt-tasks' )( grunt );
 
-	grunt.initConfig({
+	grunt.initConfig( {
 		dist_dir: 'build',
 
 		clean: {
-			build: ['<%= dist_dir %>'],
+			build: [ '<%= dist_dir %>' ],
 		},
 
 		copy: {
@@ -33,7 +33,7 @@ module.exports = function (grunt) {
 				cwd: 'build',
 				dest:
 					'cloudinary-image-management-and-manipulation-in-the-cloud-cdn',
-				src: ['**/*'],
+				src: [ '**/*' ],
 			},
 		},
 
@@ -54,11 +54,11 @@ module.exports = function (grunt) {
 				deploy_tag: false,
 			},
 		},
-	});
+	} );
 
-	grunt.registerTask('package', ['clean', 'copy', 'compress']);
+	grunt.registerTask( 'package', [ 'clean', 'copy', 'compress' ] );
 
-	grunt.registerTask('deploy', ['package', 'wp_deploy']);
+	grunt.registerTask( 'deploy', [ 'package', 'wp_deploy' ] );
 
-	grunt.registerTask('deploy-assets', ['wp_deploy:assets']);
+	grunt.registerTask( 'deploy-assets', [ 'wp_deploy:assets' ] );
 };
