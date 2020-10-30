@@ -60,7 +60,10 @@ class Gallery {
 	 */
 	public function __construct( Media $media ) {
 		$this->media           = $media;
-		$this->original_config = isset( $media->plugin->config['settings']['gallery'] ) ? $media->plugin->config['settings']['gallery'] : null;
+		$this->original_config =
+			isset( $media->plugin->config['settings']['gallery'] ) && count( $media->plugin->config['settings']['gallery'] ) ?
+				$media->plugin->config['settings']['gallery'] :
+				$this->default_config();
 
 		if ( $this->gallery_enabled() ) {
 			$this->setup_hooks();
@@ -75,10 +78,6 @@ class Gallery {
 	public function get_config() {
 		if ( count( $this->config ) ) {
 			return $this->config;
-		}
-
-		if ( ! count( $this->original_config ) ) {
-			return array();
 		}
 
 		$config        = $this->original_config;
@@ -141,12 +140,31 @@ class Gallery {
 	}
 
 	/**
-	 * Returns JSON format of the current config.
+	 * Sensible defaults if settings haven't been saved.
 	 *
-	 * @return string|null
+	 * @return array
 	 */
-	public function get_json() {
-		return count( $this->get_config() ) ? wp_json_encode( $this->get_config() ) : null;
+	protected function default_config() {
+		return array(
+			'primaryColor'                   => '#606060',
+			'onPrimaryColor'                 => '#55009b',
+			'activeColor'                    => '#0f6363',
+			'onActiveColor'                  => '#aaaaaa',
+			'aspectRatio'                    => '1:1',
+			'zoomTrigger'                    => 'click',
+			'zoomType'                       => 'popup',
+			'zoomViewerPosition'             => 'bottom',
+			'carouselLocation'               => 'top',
+			'carouselOffset'                 => 5,
+			'carouselStyle'                  => 'thumbnails',
+			'carouselThumbnailWidth'         => 64,
+			'carouselThumbnailHeight'        => 64,
+			'carouselButtonShape'            => 'radius',
+			'carouselThumbnailSelectedStyle' => 'gradient',
+			'cloudName'                      => $this->media->plugin->components['connect']->get_cloud_name(),
+			'container'                      => '.woocommerce-product-gallery',
+			'mediaAssets'                    => array(),
+		);
 	}
 
 	/**
