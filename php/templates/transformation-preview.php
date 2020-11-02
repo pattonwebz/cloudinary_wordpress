@@ -15,7 +15,7 @@ $script_data = array(
 	'file'        => $sample,
 	'error'       => esc_html__( 'Invalid transformations or error loading preview.', 'cloudinary' ),
 	/* translators: %s is the transformation that breaks the preview. */
-	'warning'     => esc_html__( 'Preview cannot be generated because %s was used.', 'cloudinary' ),
+	'warning'     => esc_html__( 'Preview cannot be generated because %s transformation was used.', 'cloudinary' ),
 	'valid_types' => \Cloudinary\Connect\Api::$transformation_index['image'],
 );
 
