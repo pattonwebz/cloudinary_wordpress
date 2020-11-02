@@ -177,7 +177,7 @@ class Deactivation {
 		wp_enqueue_script( 'cloudinary-deactivation', $this->plugin->dir_url . 'js/deactivate.js', array(), $this->plugin->version, true );
 		wp_localize_script(
 			'cloudinary-deactivation',
-			'cloudinaryApi',
+			'CLD_Deactivate',
 			array(
 				'endpoint' => rest_url( REST_API::BASE . '/' . self::$internal_endpoint ),
 				'nonce'    => wp_create_nonce( 'wp_rest' ),

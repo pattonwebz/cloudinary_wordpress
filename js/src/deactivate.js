@@ -1,4 +1,4 @@
-/* global window wp cloudinaryApi */
+/* global window wp CLD_Deactivate */
 
 const Deactivate = {
 	// The link that triggers the ThickBox
@@ -58,13 +58,13 @@ const Deactivate = {
 		// Add event listener to submit the feedback.
 		context.submitButton.addEventListener( 'click', function() {
 			wp.ajax.send( {
-				url: cloudinaryApi.endpoint,
+				url: CLD_Deactivate.endpoint,
 				data: {
 					reason: context.reason,
 					more: context.more?.value,
 				},
 				beforeSend: function( request ) {
-					request.setRequestHeader( 'X-WP-Nonce', cloudinaryApi.nonce );
+					request.setRequestHeader( 'X-WP-Nonce', CLD_Deactivate.nonce );
 				},
 			} ).always( function() {
 				window.location.href = context.deactivationUrl;
