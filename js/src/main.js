@@ -14,7 +14,7 @@ import TermsOrder from './components/terms-order';
 import MediaLibrary from './components/media-library';
 import Notices from './components/notices';
 
-import '../css/main.scss';
+import '../../css/src/main.scss';
 
 // jQuery, because reasons.
 window.$ = window.jQuery;

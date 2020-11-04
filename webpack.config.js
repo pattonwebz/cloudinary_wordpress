@@ -1,51 +1,181 @@
-const Encore = require('@symfony/webpack-encore');
+/**
+ * External dependencies
+ */
+const path = require('path');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
 
-if (!Encore.isRuntimeEnvironmentConfigured()) {
-	Encore.configureRuntimeEnvironment(process.env.NODE_ENV || 'dev');
-}
+/**
+ * WordPress dependencies
+ */
+const defaultConfig = require('@wordpress/scripts/config/webpack.config');
 
-// Encore is a small wrapper around Webpack, which makes Webpack configs easy.
-// If further loaders and/or plugins are needed, refer to this page:
-// https://symfony.com/doc/current/frontend/encore/custom-loaders-plugins.html
+const sharedConfig = {
+	output: {
+		path: path.resolve(process.cwd(), 'js'),
+		filename: '[name].js',
+		chunkFilename: '[name].js',
+	},
+	optimization: {
+		minimizer: [
+			new TerserPlugin({
+				parallel: true,
+				sourceMap: false,
+				cache: true,
+				terserOptions: {
+					output: {
+						comments: /translators:/i,
+					},
+				},
+				extractComments: false,
+			}),
+			new OptimizeCSSAssetsPlugin({}),
+		],
+	},
+};
 
-Encore.setOutputPath('dist/')
-	.setPublicPath('./')
-	.setManifestKeyPrefix('dist/')
+const cldCore = {
+	...sharedConfig,
+	entry: {
+		cloudinary: './js/src/main.js',
+	},
+	output: {
+		path: path.resolve(process.cwd(), 'js'),
+		filename: '[name].js',
+	},
+	module: {
+		rules: [
+			{
+				test: /\.(png|svg|jpg|gif)$/,
+				use: [
+					{
+						loader: 'file-loader',
+						options: {
+							name: '[name].[ext]',
+							outputPath: '../css/',
+						},
+					},
+				],
+			},
+			{
+				test: /\.(woff|woff2|eot|ttf|otf)$/,
+				use: [
+					{
+						loader: 'file-loader',
+						options: {
+							name: '[name].[contenthash].[ext]',
+							outputPath: '../css/fonts/',
+						},
+					},
+				],
+			},
+			{
+				test: /\.(sa|sc|c)ss$/,
+				use: [
+					{
+						loader: MiniCssExtractPlugin.loader,
+						options: {
+							hmr: process.env.NODE_ENV === 'development',
+						},
+					},
+					'css-loader',
+					'sass-loader',
+				],
+			},
+		],
+	},
+	plugins: [
+		new MiniCssExtractPlugin({
+			filename: '../css/[name].css',
+		}),
+	],
+	optimization: {
+		...sharedConfig.optimization,
+	},
+};
 
-	.addEntry('cloudinary', './js/main.js')
-	.addEntry('block-editor', './js/blocks.js')
-	.copyFiles({
-		from: './js/components',
-		to: '[name].[ext]',
-		pattern: /gallery-init\.js/,
-	})
-	.addEntry('block-gallery', './js/gallery-block/index.js')
-	.addStyleEntry('video', './css/video.scss')
-	// Add more entries here if needed...
+const cldBlockEditor = {
+	...defaultConfig,
+	...sharedConfig,
+	entry: {
+		'block-editor': './js/src/blocks.js',
+	},
+	module: {
+		...defaultConfig.module,
+		rules: [
+			...defaultConfig.module.rules,
+			{
+				test: /\.(sa|sc|c)ss$/,
+				use: 'null-loader',
+			},
+		],
+	},
+};
 
-	.copyFiles({
-		from: './css',
-		to: '[path][name].[ext]',
-		pattern: /\.svg$/,
-	})
+const cldGalleryBlock = {
+	...sharedConfig,
+	entry: {
+		'gallery-block': './js/src/gallery-block/index.js',
+	},
+	output: {
+		path: path.resolve(process.cwd(), 'js'),
+		filename: '[name].js',
+	},
+	module: {
+		rules: [
+			{
+				test: /\.(png|svg|jpg|gif)$/,
+				use: [
+					{
+						loader: 'file-loader',
+						options: {
+							name: '[name].[ext]',
+							outputPath: '../css/',
+						},
+					},
+				],
+			},
+			{
+				test: /\.(woff|woff2|eot|ttf|otf)$/,
+				use: [
+					{
+						loader: 'file-loader',
+						options: {
+							name: '[name].[contenthash].[ext]',
+							outputPath: '../css/fonts/',
+						},
+					},
+				],
+			},
+			{
+				test: /\.(sa|sc|c)ss$/,
+				use: [
+					{
+						loader: MiniCssExtractPlugin.loader,
+						options: {
+							hmr: process.env.NODE_ENV === 'development',
+						},
+					},
+					'css-loader',
+					'sass-loader',
+				],
+			},
+		],
+	},
+	plugins: [
+		new MiniCssExtractPlugin({
+			filename: '../css/[name].css',
+		}),
+	],
+};
 
-	.enableSingleRuntimeChunk()
-	.cleanupOutputBeforeBuild()
-	.enableBuildNotifications()
-	.enableSourceMaps(!Encore.isProduction())
+const cldGalleryInit = {
+	...defaultConfig,
+	...sharedConfig,
+	entry: {
+		'gallery-init': './js/src/components/gallery-init.js',
+	},
+};
 
-	// Enable plugins/loaders
-	.enableSassLoader()
-	.addExternals(['lodash', '_'])
-	.addExternals({ '@wordpress/blocks': 'wp.blocks' })
-	.addExternals({ '@wordpress/block-editor': 'wp.editor' })
-	.addExternals({ '@wordpress/element': 'wp.element' })
-	.addExternals({ react: 'React' })
-	.addExternals({ 'react-dom': 'ReactDOM' })
-	.configureBabelPresetEnv((config) => {
-		config.useBuiltIns = 'usage';
-		config.corejs = 3;
-	})
-	.enableReactPreset();
-
-module.exports = Encore.getWebpackConfig();
+module.exports = [cldBlockEditor, cldCore, cldGalleryBlock, cldGalleryInit];

@@ -1,10 +1,10 @@
 @font-face {
 	font-family : 'cloudinary';
-	src         : url('../fonts/cloudinary.eot');
-	src         : url('../fonts/cloudinary.eot?x#iefix') format('embedded-opentype'),
-	url('../fonts/cloudinary.ttf') format('truetype'),
-	url('../fonts/cloudinary.woff') format('woff'),
-	url('../fonts/cloudinary.svg?x#cloudinary') format('svg');;
+	src         : url('fonts/cloudinary.eot');
+	src         : url('fonts/cloudinary.eot?x#iefix') format('embedded-opentype'),
+				  url('fonts/cloudinary.ttf') format('truetype'),
+				  url('fonts/cloudinary.woff') format('woff'),
+				  url('fonts/cloudinary.svg?x#cloudinary') format('svg');
 	font-weight : normal;
 	font-style  : normal;
 }
@@ -97,7 +97,7 @@
 
 .cloudinary {
 	&-welcome {
-		background-image    : url("../logo.svg");
+		background-image    : url("logo.svg");
 		background-repeat   : no-repeat;
 		background-size     : 153px;
 		background-position : top 12px right 20px;

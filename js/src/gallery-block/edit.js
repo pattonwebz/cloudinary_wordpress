@@ -5,6 +5,7 @@
  */
 import Dot from 'dot-object';
 import cloneDeep from 'lodash/cloneDeep';
+import '@wordpress/components/build-style/style.css';
 
 /**
  * WordPress dependencies
@@ -28,7 +29,7 @@ import {
 /**
  * Internal dependencies
  */
-import './gallery.scss';
+import '../../../css/src/gallery.scss';
 import defaults from './defaults.json';
 import Radio from './radio';
 import {
