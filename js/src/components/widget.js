@@ -78,7 +78,15 @@ if ( wp.media && window.CLDN ) {
 				} else {
 					CLDN.mloptions.asset = null;
 				}
-				window.ml = cloudinary.openMediaLibrary( CLDN.mloptions, {
+
+				try {
+					const type = selection.props.attributes.type
+					CLDN.mloptions.folder.resource_type = Array.isArray(type) ? type[0] : type;
+				} catch (err) {}
+
+				window.ml = cloudinary.openMediaLibrary(
+					CLDN.mloptions,
+					{
 						insertHandler: function( data ) {
 							for (let i = 0; i < data.assets.length; i++) {
 								let temp = data.assets[ i ];
@@ -157,7 +165,7 @@ if ( wp.media && window.CLDN ) {
 			return this;
 		},
 	} );
-	let extend_type                       = function( type ) {
+	let extend_type = function( type ) {
 		let obj = {
 
 			/**
