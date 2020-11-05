@@ -13,11 +13,10 @@
     "node": ">=12"
   },
   "scripts": {
-    "wp:build": "wp-scripts build",
-    "build": "encore production",
-    "dev": "encore dev --watch",
+    "build": "webpack --mode=production",
+    "dev": "webpack --mode=development --watch",
     "lint:php": "composer lint",
-    "lint:js": "eslint ./js",
+    "lint:js": "eslint .",
     "lint": "npm-run-all lint:php lint:js",
     "package": "npm run build && grunt package",
     "deploy": "npm run build && grunt deploy",
