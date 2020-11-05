@@ -115,6 +115,7 @@ const cldBlockEditor = {
 };
 
 const cldGalleryBlock = {
+	...defaultConfig,
 	...sharedConfig,
 	entry: {
 		'gallery-block': './js/src/gallery-block/index.js',
@@ -124,31 +125,9 @@ const cldGalleryBlock = {
 		filename: '[name].js',
 	},
 	module: {
+		...defaultConfig.module,
 		rules: [
-			{
-				test: /\.(png|svg|jpg|gif)$/,
-				use: [
-					{
-						loader: 'file-loader',
-						options: {
-							name: '[name].[ext]',
-							outputPath: '../css/',
-						},
-					},
-				],
-			},
-			{
-				test: /\.(woff|woff2|eot|ttf|otf)$/,
-				use: [
-					{
-						loader: 'file-loader',
-						options: {
-							name: '[name].[contenthash].[ext]',
-							outputPath: '../css/fonts/',
-						},
-					},
-				],
-			},
+			...defaultConfig.module.rules,
 			{
 				test: /\.(sa|sc|c)ss$/,
 				use: [
