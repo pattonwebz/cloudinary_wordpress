@@ -69,9 +69,7 @@
     "svg-inline-loader": "^0.8.2",
     "terser-webpack-plugin": "^4.2.3",
     "webpack-notifier": "^1.8.0",
-    "webpackbar": "^5.0.0-3"
-  },
-  "dependencies": {
+    "webpackbar": "^5.0.0-3",
     "classnames": "^2.2.6",
     "core-js": "^3.6.5",
     "dot-object": "^2.1.4",
