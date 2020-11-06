@@ -4,7 +4,9 @@
 const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
-const TerserPlugin = require('terser-webpack-plugin');
+const RtlCssPlugin = require( 'rtlcss-webpack-plugin' );
+const TerserPlugin = require( 'terser-webpack-plugin' );
+const WebpackBar = require( 'webpackbar' );
 
 /**
  * WordPress dependencies
@@ -33,6 +35,39 @@ const sharedConfig = {
 			new OptimizeCSSAssetsPlugin({}),
 		],
 	},
+	module: {
+		...defaultConfig.module,
+		rules: [
+			// Remove the css/postcss loaders from `@wordpress/scripts` due to version conflicts.
+			...defaultConfig.module.rules.filter(
+				rule => ! rule.test.toString().match( '.css' )
+			),
+			{
+				test: /\.css$/,
+				use: [
+					// prettier-ignore
+					MiniCssExtractPlugin.loader,
+					'css-loader',
+					'postcss-loader',
+				],
+			},
+		],
+	},
+	plugins: [
+		// Remove the CleanWebpackPlugin and  FixStyleWebpackPlugin plugins from `@wordpress/scripts` due to version conflicts.
+		...defaultConfig.plugins.filter(
+			plugin =>
+				! [ 'CleanWebpackPlugin', 'FixStyleWebpackPlugin' ].includes(
+					plugin.constructor.name
+				)
+		),
+		new MiniCssExtractPlugin( {
+			filename: '../css/[name]-compiled.css',
+		} ),
+		new RtlCssPlugin( {
+			filename: '../css/[name]-compiled-rtl.css',
+		} ),
+	],
 };
 
 const cldCore = {
@@ -124,30 +159,6 @@ const cldGalleryBlock = {
 		path: path.resolve(process.cwd(), 'js'),
 		filename: '[name].js',
 	},
-	module: {
-		...defaultConfig.module,
-		rules: [
-			...defaultConfig.module.rules,
-			{
-				test: /\.(sa|sc|c)ss$/,
-				use: [
-					{
-						loader: MiniCssExtractPlugin.loader,
-						options: {
-							hmr: process.env.NODE_ENV === 'development',
-						},
-					},
-					'css-loader',
-					'sass-loader',
-				],
-			},
-		],
-	},
-	plugins: [
-		new MiniCssExtractPlugin({
-			filename: '../css/[name].css',
-		}),
-	],
 };
 
 const cldGalleryInit = {
