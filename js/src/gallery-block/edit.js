@@ -65,7 +65,6 @@ const ColorPaletteLabel = ({ children, value }) => (
 
 const Edit = ({ setAttributes, attributes, className }) => {
 	const onSelect = (images) => {
-		console.log(images);
 		fetch(cloudinaryGalleryApi.endpoint, {
 			method: 'POST',
 			body: JSON.stringify({ images }),
