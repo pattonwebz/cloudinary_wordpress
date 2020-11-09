@@ -1,3 +1,13 @@
+import { dispatch } from '@wordpress/data';
+
+export const showNotice = ({ status, message, options = {} }) => {
+	dispatch( 'core/notices' ).createNotice(
+        status, // Can be one of: success, info, warning, error.
+        message,
+        { isDismissible: true, ...options }
+    );
+}
+
 const dec2hex = (dec) => {
 	return dec < 10 ? '0' + String(dec) : dec.toString(16);
 };

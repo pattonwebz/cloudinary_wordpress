@@ -1,9 +1,9 @@
 /**
  * External dependencies
  */
-const path = require('path');
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+const path = require( 'path' );
+const MiniCssExtractPlugin = require( 'mini-css-extract-plugin' );
+const OptimizeCSSAssetsPlugin = require( 'optimize-css-assets-webpack-plugin' );
 const RtlCssPlugin = require( 'rtlcss-webpack-plugin' );
 const TerserPlugin = require( 'terser-webpack-plugin' );
 const WebpackBar = require( 'webpackbar' );
@@ -11,17 +11,17 @@ const WebpackBar = require( 'webpackbar' );
 /**
  * WordPress dependencies
  */
-const defaultConfig = require('@wordpress/scripts/config/webpack.config');
+const defaultConfig = require( '@wordpress/scripts/config/webpack.config' );
 
 const sharedConfig = {
 	output: {
-		path: path.resolve(process.cwd(), 'js'),
+		path: path.resolve( process.cwd(), 'js' ),
 		filename: '[name].js',
 		chunkFilename: '[name].js',
 	},
 	optimization: {
 		minimizer: [
-			new TerserPlugin({
+			new TerserPlugin( {
 				parallel: true,
 				sourceMap: true,
 				cache: true,
@@ -31,8 +31,8 @@ const sharedConfig = {
 					},
 				},
 				extractComments: false,
-			}),
-			new OptimizeCSSAssetsPlugin({}),
+			} ),
+			new OptimizeCSSAssetsPlugin( {} ),
 		],
 	},
 	module: {
@@ -40,7 +40,7 @@ const sharedConfig = {
 		rules: [
 			// Remove the css/postcss loaders from `@wordpress/scripts` due to version conflicts.
 			...defaultConfig.module.rules.filter(
-				rule => ! rule.test.toString().match( '.css' )
+				( rule ) => ! rule.test.toString().match( '.css' )
 			),
 			{
 				test: /\.css$/,
@@ -56,7 +56,7 @@ const sharedConfig = {
 	plugins: [
 		// Remove the CleanWebpackPlugin and  FixStyleWebpackPlugin plugins from `@wordpress/scripts` due to version conflicts.
 		...defaultConfig.plugins.filter(
-			plugin =>
+			( plugin ) =>
 				! [ 'CleanWebpackPlugin', 'FixStyleWebpackPlugin' ].includes(
 					plugin.constructor.name
 				)
@@ -77,7 +77,7 @@ const cldCore = {
 		cloudinary: './js/src/main.js',
 	},
 	output: {
-		path: path.resolve(process.cwd(), 'js'),
+		path: path.resolve( process.cwd(), 'js' ),
 		filename: '[name].js',
 	},
 	module: {
@@ -111,9 +111,6 @@ const cldCore = {
 				use: [
 					{
 						loader: MiniCssExtractPlugin.loader,
-						options: {
-							hmr: process.env.NODE_ENV === 'development',
-						},
 					},
 					'css-loader',
 					'sass-loader',
@@ -122,9 +119,9 @@ const cldCore = {
 		],
 	},
 	plugins: [
-		new MiniCssExtractPlugin({
+		new MiniCssExtractPlugin( {
 			filename: '../css/[name].css',
-		}),
+		} ),
 	],
 	optimization: {
 		...sharedConfig.optimization,
@@ -156,7 +153,7 @@ const cldGalleryBlock = {
 		'gallery-block': './js/src/gallery-block/index.js',
 	},
 	output: {
-		path: path.resolve(process.cwd(), 'js'),
+		path: path.resolve( process.cwd(), 'js' ),
 		filename: '[name].js',
 	},
 };
@@ -169,4 +166,4 @@ const cldGalleryInit = {
 	},
 };
 
-module.exports = [cldBlockEditor, cldCore, cldGalleryBlock, cldGalleryInit];
+module.exports = [ cldBlockEditor, cldCore, cldGalleryBlock, cldGalleryInit ];

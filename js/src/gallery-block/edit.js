@@ -11,13 +11,14 @@ import '@wordpress/components/build-style/style.css';
  * WordPress dependencies
  */
 import { __ } from '@wordpress/i18n';
-import { useEffect } from '@wordpress/element';
+import { useEffect, useState } from '@wordpress/element';
 import {
 	ColorPalette,
 	InspectorControls,
 	MediaPlaceholder,
 } from '@wordpress/block-editor';
 import {
+	Notice,
 	Button,
 	ButtonGroup,
 	PanelBody,
@@ -48,7 +49,7 @@ import {
 	ZOOM_TYPE,
 	ZOOM_VIEWER_POSITION,
 } from './options';
-import { generateId } from './utils';
+import { generateId, showNotice } from './utils';
 
 const dot = new Dot('_');
 
@@ -64,6 +65,8 @@ const ColorPaletteLabel = ({ children, value }) => (
 );
 
 const Edit = ({ setAttributes, attributes, className }) => {
+	const [errorMessage, setErrorMessage] = useState(null)
+
 	const onSelect = (images) => {
 		fetch(cloudinaryGalleryApi.endpoint, {
 			method: 'POST',
@@ -73,10 +76,16 @@ const Edit = ({ setAttributes, attributes, className }) => {
 			},
 		})
 			.then((res) => res.json())
-			.then((selectedImages) => setAttributes({ selectedImages }));
+			.then((selectedImages) => setAttributes({ selectedImages }))
+			.catch(() => setErrorMessage(__('Could not load selected images. Please try again.', 'cloudinary')));
 	};
 
 	useEffect(() => {
+		if (errorMessage) {
+			showNotice({ status: 'error', message: errorMessage })
+			setErrorMessage(null)
+		}
+
 		if (attributes.selectedImages.length) {
 			const attributesClone = cloneDeep(attributes);
 			const { selectedImages, ...config } = dot.object(
@@ -113,7 +122,7 @@ const Edit = ({ setAttributes, attributes, className }) => {
 	const hasImages = !!attributes.selectedImages.length;
 
 	return (
-		<div>
+		<>
 			<>
 				<div className={attributes.container || className}></div>
 				<MediaPlaceholder
@@ -445,7 +454,7 @@ const Edit = ({ setAttributes, attributes, className }) => {
 					))}
 				</PanelBody>
 			</InspectorControls>
-		</div>
+		</>
 	);
 };
 
