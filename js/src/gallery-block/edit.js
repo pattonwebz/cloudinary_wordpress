@@ -18,7 +18,6 @@ import {
 	MediaPlaceholder,
 } from '@wordpress/block-editor';
 import {
-	Notice,
 	Button,
 	ButtonGroup,
 	PanelBody,
@@ -51,233 +50,248 @@ import {
 } from './options';
 import { generateId, showNotice } from './utils';
 
-const dot = new Dot('_');
+const dot = new Dot( '_' );
 
-const ColorPaletteLabel = ({ children, value }) => (
+const ColorPaletteLabel = ( { children, value } ) => (
 	<div className="colorpalette-color-label">
-		<span>{children}</span>
+		<span>{ children }</span>
 		<span
 			className="component-color-indicator"
-			aria-label={`Color: ${value}`}
-			style={{ background: value }}
+			aria-label={ `Color: ${ value }` }
+			style={ { background: value } }
 		></span>
 	</div>
 );
 
-const Edit = ({ setAttributes, attributes, className }) => {
-	const [errorMessage, setErrorMessage] = useState(null)
+const Edit = ( { setAttributes, attributes, className } ) => {
+	const [ errorMessage, setErrorMessage ] = useState( null );
 
-	const onSelect = (images) => {
-		fetch(cloudinaryGalleryApi.endpoint, {
+	const onSelect = ( images ) => {
+		fetch( cloudinaryGalleryApi.endpoint, {
 			method: 'POST',
-			body: JSON.stringify({ images }),
+			body: JSON.stringify( { images } ),
 			headers: {
 				'X-WP-Nonce': cloudinaryGalleryApi.nonce,
 			},
-		})
-			.then((res) => res.json())
-			.then((selectedImages) => setAttributes({ selectedImages }))
-			.catch(() => setErrorMessage(__('Could not load selected images. Please try again.', 'cloudinary')));
+		} )
+			.then( ( res ) => res.json() )
+			.then( ( selectedImages ) => setAttributes( { selectedImages } ) )
+			.catch( () =>
+				setErrorMessage(
+					__(
+						'Could not load selected images. Please try again.',
+						'cloudinary'
+					)
+				)
+			);
 	};
 
-	useEffect(() => {
-		if (errorMessage) {
-			showNotice({ status: 'error', message: errorMessage })
-			setErrorMessage(null)
+	useEffect( () => {
+		if ( errorMessage ) {
+			showNotice( { status: 'error', message: errorMessage } );
+			setErrorMessage( null );
 		}
 
-		if (attributes.selectedImages.length) {
-			const attributesClone = cloneDeep(attributes);
+		if ( attributes.selectedImages.length ) {
+			const attributesClone = cloneDeep( attributes );
 			const { selectedImages, ...config } = dot.object(
 				attributesClone,
 				{}
 			);
 
-			if (config.displayProps.mode !== 'classic') {
+			if ( config.displayProps.mode !== 'classic' ) {
 				delete config.transition;
 			} else {
 				delete config.displayProps.columns;
 			}
 
-			if (!attributes.container) {
-				setAttributes({
-					container: `${className}${generateId(15)}`,
-				});
+			if ( ! attributes.container ) {
+				setAttributes( {
+					container: `${ className }${ generateId( 15 ) }`,
+				} );
 			}
 
-			const gallery = cloudinary.galleryWidget({
+			const gallery = cloudinary.galleryWidget( {
 				cloudName: CLDN.mloptions.cloud_name,
 				mediaAssets: selectedImages,
 				...defaults,
 				...config,
 				container: '.' + attributes.container,
-			});
+			} );
 
 			gallery.render();
 
 			return () => gallery.destroy();
 		}
-	});
+	}, [ errorMessage, attributes, setAttributes, className ] );
 
-	const hasImages = !!attributes.selectedImages.length;
+	const hasImages = !! attributes.selectedImages.length;
 
 	return (
 		<>
 			<>
-				<div className={attributes.container || className}></div>
+				<div className={ attributes.container || className }></div>
 				<MediaPlaceholder
-					labels={{
-						title: __('Cloudinary Gallery', 'cloudinary'),
-					}}
+					labels={ {
+						title: __( 'Cloudinary Gallery', 'cloudinary' ),
+					} }
 					icon="format-gallery"
-					allowedTypes={ALLOWED_MEDIA_TYPES}
+					allowedTypes={ ALLOWED_MEDIA_TYPES }
 					multiple
-					isAppender={hasImages}
-					onSelect={onSelect}
+					isAppender={ hasImages }
+					onSelect={ onSelect }
 				/>
 			</>
 			<InspectorControls>
-				<PanelBody title={__('Layout', 'cloudinary')}>
-					{LAYOUT_OPTIONS.map((item) => (
+				<PanelBody title={ __( 'Layout', 'cloudinary' ) }>
+					{ LAYOUT_OPTIONS.map( ( item ) => (
 						<Radio
-							key={item.value.type + '-layout'}
-							value={item.value}
-							onChange={(value) => {
-								setAttributes({
+							key={ item.value.type + '-layout' }
+							value={ item.value }
+							onChange={ ( value ) => {
+								setAttributes( {
 									displayProps_mode: value.type,
 									displayProps_columns: value.columns,
-								});
-							}}
-							icon={item.icon}
-							current={{
+								} );
+							} }
+							icon={ item.icon }
+							current={ {
 								type: attributes.displayProps_mode,
 								columns: attributes.displayProps_columns,
-							}}
+							} }
 						>
-							{item.label}
+							{ item.label }
 						</Radio>
-					))}
+					) ) }
 				</PanelBody>
-				<PanelBody title={__('Color Palette', 'cloudinary')}>
-					<ColorPaletteLabel value={attributes.themeProps_primary}>
-						{__('Primary', 'cloudinary')}
+				<PanelBody title={ __( 'Color Palette', 'cloudinary' ) }>
+					<ColorPaletteLabel value={ attributes.themeProps_primary }>
+						{ __( 'Primary', 'cloudinary' ) }
 					</ColorPaletteLabel>
 					<ColorPalette
-						value={attributes.themeProps_primary}
-						onChange={(value) =>
-							setAttributes({ themeProps_primary: value })
+						value={ attributes.themeProps_primary }
+						onChange={ ( value ) =>
+							setAttributes( { themeProps_primary: value } )
 						}
 					/>
-					<ColorPaletteLabel value={attributes.themeProps_onPrimary}>
-						{__('On Primary', 'cloudinary')}
+					<ColorPaletteLabel
+						value={ attributes.themeProps_onPrimary }
+					>
+						{ __( 'On Primary', 'cloudinary' ) }
 					</ColorPaletteLabel>
 					<ColorPalette
-						value={attributes.themeProps_onPrimary}
-						onChange={(value) =>
-							setAttributes({ themeProps_onPrimary: value })
+						value={ attributes.themeProps_onPrimary }
+						onChange={ ( value ) =>
+							setAttributes( { themeProps_onPrimary: value } )
 						}
 					/>
-					<ColorPaletteLabel value={attributes.themeProps_active}>
-						{__('Active', 'cloudinary')}
+					<ColorPaletteLabel value={ attributes.themeProps_active }>
+						{ __( 'Active', 'cloudinary' ) }
 					</ColorPaletteLabel>
 					<ColorPalette
-						value={attributes.themeProps_active}
-						onChange={(value) =>
-							setAttributes({ themeProps_active: value })
+						value={ attributes.themeProps_active }
+						onChange={ ( value ) =>
+							setAttributes( { themeProps_active: value } )
 						}
 					/>
 				</PanelBody>
-				{attributes.displayProps_mode === 'classic' && (
-					<PanelBody title={__('Fade Transition', 'cloudinary')}>
+				{ attributes.displayProps_mode === 'classic' && (
+					<PanelBody title={ __( 'Fade Transition', 'cloudinary' ) }>
 						<SelectControl
-							value={attributes.transition}
-							options={FADE_TRANSITIONS}
-							onChange={(value) =>
-								setAttributes({ transition: value })
+							value={ attributes.transition }
+							options={ FADE_TRANSITIONS }
+							onChange={ ( value ) =>
+								setAttributes( { transition: value } )
 							}
 						/>
 					</PanelBody>
-				)}
-				<PanelBody title={__('Main Viewer Parameters', 'cloudinary')}>
+				) }
+				<PanelBody
+					title={ __( 'Main Viewer Parameters', 'cloudinary' ) }
+				>
 					<SelectControl
-						label={__('Aspect Ratio', 'cloudinary')}
-						value={attributes.aspectRatio}
-						options={ASPECT_RATIOS}
-						onChange={(value) =>
-							setAttributes({ aspectRatio: value })
+						label={ __( 'Aspect Ratio', 'cloudinary' ) }
+						value={ attributes.aspectRatio }
+						options={ ASPECT_RATIOS }
+						onChange={ ( value ) =>
+							setAttributes( { aspectRatio: value } )
 						}
 					/>
-					<p>{__('Navigation', 'cloudinary')}</p>
+					<p>{ __( 'Navigation', 'cloudinary' ) }</p>
 					<p>
 						<ButtonGroup>
-							{NAVIGATION.map((navType) => (
+							{ NAVIGATION.map( ( navType ) => (
 								<Button
-									key={navType.value + '-navigation'}
+									key={ navType.value + '-navigation' }
 									isDefault
 									isPressed={
 										navType.value === attributes.navigation
 									}
-									onClick={() =>
-										setAttributes({
+									onClick={ () =>
+										setAttributes( {
 											navigation: navType.value,
-										})
+										} )
 									}
 								>
-									{navType.label}
+									{ navType.label }
 								</Button>
-							))}
+							) ) }
 						</ButtonGroup>
 					</p>
-					<div style={{ marginTop: '30px' }}>
+					<div style={ { marginTop: '30px' } }>
 						<ToggleControl
-							label={__('Show Zoom', 'cloudinary')}
-							checked={attributes.zoom}
-							onChange={() =>
-								setAttributes({ zoom: !attributes.zoom })
+							label={ __( 'Show Zoom', 'cloudinary' ) }
+							checked={ attributes.zoom }
+							onChange={ () =>
+								setAttributes( { zoom: ! attributes.zoom } )
 							}
 						/>
-						{attributes.zoom && (
+						{ attributes.zoom && (
 							<>
-								<p>{__('Zoom Type', 'cloudinary')}</p>
+								<p>{ __( 'Zoom Type', 'cloudinary' ) }</p>
 								<p>
 									<ButtonGroup>
-										{ZOOM_TYPE.map((item) => (
+										{ ZOOM_TYPE.map( ( item ) => (
 											<Button
-												key={item.value + '-zoom-type'}
+												key={
+													item.value + '-zoom-type'
+												}
 												isDefault
 												isPressed={
 													item.value ===
 													attributes.zoomProps_type
 												}
-												onClick={() =>
-													setAttributes({
+												onClick={ () =>
+													setAttributes( {
 														zoomProps_type:
 															item.value,
-													})
+													} )
 												}
 											>
-												{item.label}
+												{ item.label }
 											</Button>
-										))}
+										) ) }
 									</ButtonGroup>
 								</p>
 								<SelectControl
-									label={__(
+									label={ __(
 										'Zoom Viewer Position',
 										'cloudinary'
-									)}
-									value={attributes.zoomProps_viewerPosition}
-									options={ZOOM_VIEWER_POSITION}
-									onChange={(value) =>
-										setAttributes({
+									) }
+									value={
+										attributes.zoomProps_viewerPosition
+									}
+									options={ ZOOM_VIEWER_POSITION }
+									onChange={ ( value ) =>
+										setAttributes( {
 											zoomProps_viewerPosition: value,
-										})
+										} )
 									}
 								/>
-								<p>{__('Zoom Trigger', 'cloudinary')}</p>
+								<p>{ __( 'Zoom Trigger', 'cloudinary' ) }</p>
 								<p>
 									<ButtonGroup>
-										{ZOOM_TRIGGER.map((item) => (
+										{ ZOOM_TRIGGER.map( ( item ) => (
 											<Button
 												key={
 													item.value + '-zoom-trigger'
@@ -287,171 +301,177 @@ const Edit = ({ setAttributes, attributes, className }) => {
 													item.value ===
 													attributes.zoomProps_trigger
 												}
-												onClick={() =>
-													setAttributes({
+												onClick={ () =>
+													setAttributes( {
 														zoomProps_trigger:
 															item.value,
-													})
+													} )
 												}
 											>
-												{item.label}
+												{ item.label }
 											</Button>
-										))}
+										) ) }
 									</ButtonGroup>
 								</p>
 							</>
-						)}
+						) }
 					</div>
 				</PanelBody>
-				<PanelBody title={__('Carousel Parameters', 'cloudinary')}>
-					<p>{__('Carousel Location', 'cloudinary')}</p>
+				<PanelBody title={ __( 'Carousel Parameters', 'cloudinary' ) }>
+					<p>{ __( 'Carousel Location', 'cloudinary' ) }</p>
 					<p>
 						<ButtonGroup>
-							{CAROUSEL_LOCATION.map((item) => (
+							{ CAROUSEL_LOCATION.map( ( item ) => (
 								<Button
-									key={item.value + '-carousel-location'}
+									key={ item.value + '-carousel-location' }
 									isDefault
 									isPressed={
 										item.value ===
 										attributes.carouselLocation
 									}
-									onClick={() =>
-										setAttributes({
+									onClick={ () =>
+										setAttributes( {
 											carouselLocation: item.value,
-										})
+										} )
 									}
 								>
-									{item.label}
+									{ item.label }
 								</Button>
-							))}
+							) ) }
 						</ButtonGroup>
 					</p>
 					<RangeControl
-						label={__('Carousel Offset', 'cloudinary')}
-						value={attributes.carouselOffset}
-						onChange={(offset) =>
-							setAttributes({ carouselOffset: offset })
+						label={ __( 'Carousel Offset', 'cloudinary' ) }
+						value={ attributes.carouselOffset }
+						onChange={ ( offset ) =>
+							setAttributes( { carouselOffset: offset } )
 						}
-						min={0}
-						max={100}
+						min={ 0 }
+						max={ 100 }
 					/>
-					<p>{__('Carousel Style', 'cloudinary')}</p>
+					<p>{ __( 'Carousel Style', 'cloudinary' ) }</p>
 					<p>
 						<ButtonGroup>
-							{CAROUSEL_STYLE.map((item) => (
+							{ CAROUSEL_STYLE.map( ( item ) => (
 								<Button
-									key={item.value + '-carousel-style'}
+									key={ item.value + '-carousel-style' }
 									isDefault
 									isPressed={
 										item.value === attributes.carouselStyle
 									}
-									onClick={() =>
-										setAttributes({
+									onClick={ () =>
+										setAttributes( {
 											carouselStyle: item.value,
-										})
+										} )
 									}
 								>
-									{item.label}
+									{ item.label }
 								</Button>
-							))}
+							) ) }
 						</ButtonGroup>
 					</p>
 					<RangeControl
-						label={__('Width', 'cloudinary')}
-						value={attributes.thumbnailProps_width}
-						onChange={(newWidth) =>
-							setAttributes({ thumbnailProps_width: newWidth })
+						label={ __( 'Width', 'cloudinary' ) }
+						value={ attributes.thumbnailProps_width }
+						onChange={ ( newWidth ) =>
+							setAttributes( { thumbnailProps_width: newWidth } )
 						}
-						min={5}
-						max={300}
+						min={ 5 }
+						max={ 300 }
 					/>
 					<RangeControl
-						label={__('Height', 'cloudinary')}
-						value={attributes.thumbnailProps_height}
-						onChange={(newHeight) =>
-							setAttributes({
+						label={ __( 'Height', 'cloudinary' ) }
+						value={ attributes.thumbnailProps_height }
+						onChange={ ( newHeight ) =>
+							setAttributes( {
 								thumbnailProps_height: newHeight,
-							})
+							} )
 						}
-						min={5}
-						max={300}
+						min={ 5 }
+						max={ 300 }
 					/>
-					<p>{__('Navigation Button Shape', 'cloudinary')}</p>
-					{NAVIGATION_BUTTON_SHAPE.map((item) => (
+					<p>{ __( 'Navigation Button Shape', 'cloudinary' ) }</p>
+					{ NAVIGATION_BUTTON_SHAPE.map( ( item ) => (
 						<Radio
-							key={item.value + '-navigation-button-shape'}
-							value={item.value}
-							onChange={(value) =>
-								setAttributes({
+							key={ item.value + '-navigation-button-shape' }
+							value={ item.value }
+							onChange={ ( value ) =>
+								setAttributes( {
 									thumbnailProps_navigationShape: value,
-								})
+								} )
 							}
-							icon={item.icon}
-							current={attributes.thumbnailProps_navigationShape}
+							icon={ item.icon }
+							current={
+								attributes.thumbnailProps_navigationShape
+							}
 						>
-							{item.label}
+							{ item.label }
 						</Radio>
-					))}
-					<p>{__('Selected Style', 'cloudinary')}</p>
+					) ) }
+					<p>{ __( 'Selected Style', 'cloudinary' ) }</p>
 					<p>
 						<ButtonGroup>
-							{SELECTED_STYLE.map((item) => (
+							{ SELECTED_STYLE.map( ( item ) => (
 								<Button
-									key={item.value + '-selected-style'}
+									key={ item.value + '-selected-style' }
 									isDefault
 									isPressed={
 										item.value ===
 										attributes.thumbnailProps_selectedStyle
 									}
-									onClick={() =>
-										setAttributes({
+									onClick={ () =>
+										setAttributes( {
 											thumbnailProps_selectedStyle:
 												item.value,
-										})
+										} )
 									}
 								>
-									{item.label}
+									{ item.label }
 								</Button>
-							))}
+							) ) }
 						</ButtonGroup>
 					</p>
 					<SelectControl
-						label={__('Selected Border Position', 'cloudinary')}
-						value={attributes.thumbnailProps_selectedBorderPosition}
-						options={SELECTED_BORDER_POSITION}
-						onChange={(value) =>
-							setAttributes({
+						label={ __( 'Selected Border Position', 'cloudinary' ) }
+						value={
+							attributes.thumbnailProps_selectedBorderPosition
+						}
+						options={ SELECTED_BORDER_POSITION }
+						onChange={ ( value ) =>
+							setAttributes( {
 								thumbnailProps_selectedBorderPosition: value,
-							})
+							} )
 						}
 					/>
 					<RangeControl
-						label={__('Selected Border Width', 'cloudinary')}
-						value={attributes.thumbnailProps_selectedBorderWidth}
-						onChange={(newBw) =>
-							setAttributes({
+						label={ __( 'Selected Border Width', 'cloudinary' ) }
+						value={ attributes.thumbnailProps_selectedBorderWidth }
+						onChange={ ( newBw ) =>
+							setAttributes( {
 								thumbnailProps_selectedBorderWidth: newBw,
-							})
+							} )
 						}
-						min={0}
-						max={10}
+						min={ 0 }
+						max={ 10 }
 					/>
-					<p>{__('Media Shape Icon', 'cloudinary')}</p>
-					{MEDIA_ICON_SHAPE.map((item) => (
+					<p>{ __( 'Media Shape Icon', 'cloudinary' ) }</p>
+					{ MEDIA_ICON_SHAPE.map( ( item ) => (
 						<Radio
-							key={item.value + '-media'}
-							value={item.value}
-							onChange={(value) =>
-								setAttributes({
+							key={ item.value + '-media' }
+							value={ item.value }
+							onChange={ ( value ) =>
+								setAttributes( {
 									thumbnailProps_mediaSymbolShape: value,
-								})
+								} )
 							}
-							icon={item.icon}
-							current={attributes.thumbnailProps_mediaSymbolShape}
+							icon={ item.icon }
+							current={
+								attributes.thumbnailProps_mediaSymbolShape
+							}
 						>
-							{item.label}
+							{ item.label }
 						</Radio>
-					))}
+					) ) }
 				</PanelBody>
 			</InspectorControls>
 		</>

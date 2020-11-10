@@ -7,46 +7,48 @@ import { ToggleControl } from '@wordpress/components';
 import { withDispatch, withSelect } from '@wordpress/data';
 
 // Set our component.
-let FeaturedTransformationsToggle = (props) => {
+let FeaturedTransformationsToggle = ( props ) => {
 	return (
 		<>
-			{props.modalClass && (
+			{ props.modalClass && (
 				<ToggleControl
-					label={__('Overwrite Transformations', 'cloudinary')}
-					checked={props.overwrite_featured_transformations}
-					onChange={(value) => props.setOverwrite(value)}
+					label={ __( 'Overwrite Transformations', 'cloudinary' ) }
+					checked={ props.overwrite_featured_transformations }
+					onChange={ ( value ) => props.setOverwrite( value ) }
 				/>
-			)}
+			) }
 		</>
 	);
 };
 
 // Setup our properties.
-FeaturedTransformationsToggle = withSelect((select) => ({
+FeaturedTransformationsToggle = withSelect( ( select ) => ( {
 	overwrite_featured_transformations:
-		select('core/editor')?.getEditedPostAttribute('meta')
+		select( 'core/editor' )?.getEditedPostAttribute( 'meta' )
 			._cloudinary_featured_overwrite ?? false,
-}))(FeaturedTransformationsToggle);
+} ) )( FeaturedTransformationsToggle );
 
 // Setup our update method.
-FeaturedTransformationsToggle = withDispatch((dispatch) => {
+FeaturedTransformationsToggle = withDispatch( ( dispatch ) => {
 	return {
-		setOverwrite: (value) => {
-			dispatch('core/editor').editPost({
+		setOverwrite: ( value ) => {
+			dispatch( 'core/editor' ).editPost( {
 				meta: { _cloudinary_featured_overwrite: value },
-			});
+			} );
 		},
 	};
-})(FeaturedTransformationsToggle);
+} )( FeaturedTransformationsToggle );
 
 // Hook in and add our component.
-const cldFilterFeatured = (BlockEdit) => {
-	return (props) => {
+const cldFilterFeatured = ( BlockEdit ) => {
+	return ( props ) => {
 		// We only need this on a MediaUpload component that has a value.
 		return (
 			<>
-				<BlockEdit {...props} />
-				{!!props.value && <FeaturedTransformationsToggle {...props} />}
+				<BlockEdit { ...props } />
+				{ !! props.value && (
+					<FeaturedTransformationsToggle { ...props } />
+				) }
 			</>
 		);
 	};

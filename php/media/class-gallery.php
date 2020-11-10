@@ -56,7 +56,7 @@ class Gallery {
 	/**
 	 * Init gallery.
 	 *
-	 * @param Media $media
+	 * @param Media $media Media class instance.
 	 */
 	public function __construct( Media $media ) {
 		$this->media           = $media;

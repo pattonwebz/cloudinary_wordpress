@@ -13,16 +13,21 @@
     "node": ">=12",
     "npm": ">=6.9"
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run lint"
+    }
+  },
   "scripts": {
     "build": "wp-scripts build",
     "dev": "wp-scripts start",
     "lint:php": "composer lint",
     "lint:js": "wp-scripts lint-js",
     "lint": "npm-run-all lint:php lint:js",
-    "package": "npm run build && grunt package",
+  "package": "npm run build && grunt package",
     "deploy": "npm run build && grunt deploy",
     "deploy-assets": "grunt deploy-assets",
-    "postinstall": "composer install",
+    "postinstall": "composer install && husky install",
     "readme": "composer readme"
   },
   "devDependencies": {
@@ -74,6 +79,7 @@
     "grunt-contrib-copy": "1.0.0",
     "grunt-shell": "3.0.1",
     "grunt-wp-deploy": "2.1.2",
+    "husky": "^4.3.0",
     "istanbul-lib-coverage": "3.0.0",
     "istanbul-lib-report": "3.0.0",
     "istanbul-reports": "3.0.2",
