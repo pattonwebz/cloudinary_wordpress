@@ -7,11 +7,16 @@
 
 namespace Cloudinary;
 
+/**
+ * Class that includes utility methods.
+ *
+ * @package Cloudinary
+ */
 class Utils {
 	/**
 	 * Flattens a multi-dimensional array
 	 *
-	 * @param array $array
+	 * @param array $array The array to flatten.
 	 *
 	 * @return array
 	 */
@@ -31,8 +36,8 @@ class Utils {
 	/**
 	 * Check if string begins with needle.
 	 *
-	 * @param string $haystack
-	 * @param string $needle
+	 * @param string $haystack String to search in.
+	 * @param string $needle   The needle to look out for.
 	 *
 	 * @return bool
 	 */
@@ -44,8 +49,8 @@ class Utils {
 	/**
 	 * Check if string ends with needle.
 	 *
-	 * @param string $haystack
-	 * @param string $needle
+	 * @param string $haystack String to search in.
+	 * @param string $needle   The needle to look out for.
 	 *
 	 * @return bool
 	 */
@@ -77,7 +82,9 @@ class Utils {
 				$value = array( $inner_key => $value );
 			}
 
+			// phpcs:disable Generic.Commenting.DocComment.MissingShort
 			/** @noinspection SlowArrayOperationsInLoopInspection */
+			// phpcs:enable Generic.Commenting.DocComment.MissingShort
 			$result = array_merge_recursive( $result, $value );
 		}
 
@@ -87,8 +94,8 @@ class Utils {
 	/**
 	 * Filter an array recursively
 	 *
-	 * @param array          $input    The array to filter.
-	 * @param callable|null  $callback The callback to run for filtering.
+	 * @param array         $input    The array to filter.
+	 * @param callable|null $callback The callback to run for filtering.
 	 *
 	 * @return array
 	 */

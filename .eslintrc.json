@@ -12,7 +12,6 @@
     "plugin:@wordpress/eslint-plugin/recommended"
   ],
   "rules": {
-    "camelcase": "warn",
     "no-alert": "off",
     "no-console": "off",
     "no-nested-ternary": "off",
