@@ -98,7 +98,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 				) {
 					continue;
 				}
-				$this->handles[] = add_submenu_page( $this->ui['slug'], $page['page_title'], $page['menu_title'], $this->ui['capability'], $page['slug'], array( $this, 'render' ) );
+				$this->handles[] = add_submenu_page( $this->ui['slug'], $page['page_title'], $page['menu_title'], $this->ui['capability'], $page['slug'], array( $this, 'render_page' ) );
 			}
 		}
 
@@ -224,21 +224,49 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		}
 	}
 
+	public function render_page() {
+		$ui       = $this->get_page();
+		$contents = array();
+		if ( ! empty( $ui['content'] ) ) {
+			$contents = $ui['content'];
+		}
+		$html = $this->render( $contents );
+
+		echo $html; // phpcs:ignore
+	}
+
 	/**
 	 * Render the settings page.
 	 *
 	 * @since 0.1
 	 */
-	public function render() {
+	public function render( $contents = array() ) {
 
-		$this->header();
+		$defaults = array(
+			'type'    => 'text',
+			'width'   => '100%',
+			'content' => array(),
+		);
 
-		$this->tabs();
+		$html = array();
+		foreach ( $contents as $content ) {
+			$component = wp_parse_args( $content, $defaults );
+			$html[]    = '<div class="cloudinary-ui-component">';
+			$html[]    = $this->render_component( $component );
+			$html[]    = '</div>';
+		}
 
-		$this->section();
+		return implode( '', $html );
+	}
 
-		$this->footer();
+	public function render_component( $component ) {
+		$html   = array();
+		$html[] = $component['type'];
+		if ( ! empty( $component['content'] ) ) {
+			$html[] = $this->render( $component['content'] );
+		}
 
+		return implode( '', $html );
 	}
 
 	/**
@@ -311,10 +339,10 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 				?>
 				<input type="hidden" name="<?php echo esc_attr( $setting_slug ); ?>[<?php echo esc_attr( $field['slug'] ); ?>]" value="off">
 				<input type="<?php echo esc_attr( $type ); ?>" class="cld-field regular-<?php echo esc_attr( $type ); ?>" id="<?php echo esc_attr( $field['label_for'] ); ?>" name="<?php echo esc_attr( $setting_slug ); ?>[<?php echo esc_attr( $field['slug'] ); ?>]"
-										<?php
-										if ( ! empty( $field['pattern'] ) ) :
-											?>
-					pattern="<?php echo esc_attr( $field['pattern'] ); ?>"<?php endif; ?> data-condition="<?php echo esc_attr( $condition ); ?>" data-context="<?php echo esc_attr( $context ); ?>" <?php echo esc_attr( $required ); ?> <?php checked( 'on', $value ); ?>>
+					<?php
+					if ( ! empty( $field['pattern'] ) ) :
+						?>
+						pattern="<?php echo esc_attr( $field['pattern'] ); ?>"<?php endif; ?> data-condition="<?php echo esc_attr( $condition ); ?>" data-context="<?php echo esc_attr( $context ); ?>" <?php echo esc_attr( $required ); ?> <?php checked( 'on', $value ); ?>>
 				<?php
 				break;
 			case 'radio':
@@ -335,7 +363,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 							value="<?php echo esc_attr( $key ); ?>"
 					/>
 					<label for="<?php echo esc_attr( $field['label_for'] . '_' . $key ); ?>"><?php echo esc_html( $option ); ?></label>
-					<?php
+				<?php
 				endforeach;
 				break;
 			case 'textarea':
@@ -668,7 +696,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		if ( ! empty( $ui['pages'] ) ) {
 			foreach ( $ui['pages'] as $page_slug => $page ) {
 				// Register Pages and slugs.
-				$this->pages[ $page['slug'] ] = $page_slug;
+				$this->pages[ $page_slug ] = $page_slug;
 				if ( ! empty( $page['tabs'] ) ) {
 					$tabs = array();
 					foreach ( $page['tabs'] as $tab_slug ) {
