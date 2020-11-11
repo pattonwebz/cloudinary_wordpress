@@ -30,6 +30,13 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	private $ui = array();
 
 	/**
+	 * Settings page UI components.
+	 *
+	 * @var array
+	 */
+	private $components = array();
+
+	/**
 	 * Settings page slugs.
 	 *
 	 * @var array
@@ -260,8 +267,15 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	}
 
 	public function render_component( $component ) {
-		$html   = array();
-		$html[] = $component['type'];
+		$html            = array();
+		$html[]          = $component['type'];
+		$render_function = array( $this, 'render_field' );
+		if ( isset( $this->components[ $component['type'] ] ) && is_callable( $this->components[ $component['type'] ] ) ) {
+			$render_function = $this->components[ $component['type'] ];
+		}
+		ob_start(); // Temp WIP for prototype.
+		call_user_func( $render_function, $component );
+		$html[] = ob_get_clean();
 		if ( ! empty( $component['content'] ) ) {
 			$html[] = $this->render( $component['content'] );
 		}
@@ -287,9 +301,9 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		$type         = empty( $field['type'] ) ? 'text' : $field['type'];
 		$data_meta    = empty( $field['data_meta'] ) ? $field['slug'] : $field['data_meta'];
 		if ( is_callable( $type ) ) {
-			call_user_func_array( $type, $field );
+			//call_user_func_array( $type, $field );
 
-			return;
+			//return;
 		}
 		// Conditions.
 		$condition = 'false';
@@ -558,6 +572,8 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		$page = $this->get_page();
 		if ( ! empty( $page['tabs'] ) && ! empty( $page['tabs'][ $tab_slug ] ) ) {
 			$tab = $page['tabs'][ $tab_slug ];
+		} else {
+			$tab['fields'] = array(); // WIP temp.
 		}
 
 		return $tab;
@@ -773,6 +789,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	 */
 	public function setup() {
 		$this->active_page();
+		$this->components = apply_filters( 'cloudinary_settings_ui_components', $this->get_components() );
 		add_action( 'admin_menu', array( $this, 'register_admin' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 	}
@@ -1005,6 +1022,21 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		if ( null === $page_slug || isset( $this->pages[ $page_slug ] ) ) {
 			$this->active_page = $page_slug;
 		}
+	}
+
+	public function get_components() {
+		$components = array(
+			'text' => array( $this, 'render_field' ),
+			'panel' => function( $content ){
+				$title = '';
+				if( !empty( $content['title'] ) ){
+					$title = '<h3>' . $content['title'] . '</h3>';
+				}
+				echo $title;
+			}
+		);
+
+		return $components;
 	}
 
 }
