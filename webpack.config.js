@@ -21,7 +21,7 @@ const sharedConfig = {
 		minimizer: [
 			new TerserPlugin( {
 				parallel: true,
-				sourceMap: true,
+				sourceMap: false,
 				cache: true,
 				terserOptions: {
 					output: {
