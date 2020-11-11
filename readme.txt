@@ -126,11 +126,13 @@ The following plugins/themes/page-builders might not be fully compatible with th
 = 2.4.0 (10 Nov 2020) = 
 
 New Features:
+
 * Added breakpoints support for featured images
 * Global transformations on both Categories and Tags pages are now collapsible
 * On plugin deactivation, we will ask you to share with us the reason. It’s important to us :)
 
 Fixes and improvements:
+
 * Fixed an issue with syncing a deleted asset
 * Improved the mechanism for removing the Cloudinary account
 * The warning message for exceeding the annual unit plan was revised
