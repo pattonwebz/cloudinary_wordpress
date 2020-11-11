@@ -21,7 +21,7 @@ const sharedConfig = {
 		minimizer: [
 			new TerserPlugin( {
 				parallel: true,
-				sourceMap: false,
+				sourceMap: true,
 				cache: true,
 				terserOptions: {
 					output: {
@@ -121,9 +121,17 @@ const cldDeactivate = {
 	}
 };
 
+const cldVideoInit = {
+	...defaultConfig,
+	...sharedConfig,
+	entry: {
+		'video-init': './js/src/video-init.js',
+	}
+};
 
 module.exports = [
 	cldBlockEditor,
 	cldCore,
-	cldDeactivate
+	cldDeactivate,
+	cldVideoInit
 ];
