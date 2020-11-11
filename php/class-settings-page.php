@@ -251,7 +251,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		$html = array();
 		foreach ( $contents as $content ) {
 			$component = wp_parse_args( $content, $defaults );
-			$html[]    = '<div class="cloudinary-ui-component">';
+			$html[]    = '<div class="cloudinary-ui-component cloudinary-ui-component-' . $component['type'] . '">';
 			$html[]    = $this->render_component( $component );
 			$html[]    = '</div>';
 		}
