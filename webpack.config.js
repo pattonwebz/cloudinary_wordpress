@@ -165,4 +165,12 @@ const cldGalleryInit = {
 	},
 };
 
-module.exports = [ cldBlockEditor, cldCore, cldGalleryBlock, cldGalleryInit ];
+const cldDeactivate = {
+	...defaultConfig,
+	...sharedConfig,
+	entry: {
+		'deactivate': './js/src/deactivate.js',
+	}
+};
+
+module.exports = [ cldBlockEditor, cldCore, cldGalleryBlock, cldGalleryInit, cldDeactivate ];

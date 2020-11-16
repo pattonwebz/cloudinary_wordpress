@@ -12,6 +12,7 @@ use Cloudinary\Component\Config;
 use Cloudinary\Component\Notice;
 use Cloudinary\Component\Setup;
 use Cloudinary\Sync\Storage;
+use Cloudinary\Deactivation;
 use WP_REST_Request;
 use WP_REST_Server;
 use const E_USER_WARNING;
@@ -120,8 +121,9 @@ class Plugin {
 	 * that extend the Customizer to ensure resources are available in time.
 	 */
 	public function init() {
-		$this->components['settings'] = new Settings_Page( $this );
-		$this->components['connect']  = new Connect( $this );
+		$this->components['settings']     = new Settings_Page( $this );
+		$this->components['connect']      = new Connect( $this );
+		$this->components['deactivation'] = new Deactivation( $this );
 
 		if ( $this->components['connect'] && $this->components['connect']->is_connected() ) {
 			$this->components['sync']    = new Sync( $this );

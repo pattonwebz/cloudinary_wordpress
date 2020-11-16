@@ -27,7 +27,7 @@ class REST_API {
 	 * @param Plugin $plugin Instance of the global Plugin.
 	 */
 	public function __construct( Plugin $plugin ) {
-		add_action( 'rest_api_init', array( $this, 'rest_api_init' ) );
+		add_action( 'rest_api_init', array( $this, 'rest_api_init' ), PHP_INT_MAX );
 	}
 
 	/**
