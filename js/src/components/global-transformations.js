@@ -17,7 +17,7 @@ const GlobalTransformations = {
 		image: document.getElementById( 'image-loader' ),
 		video: document.getElementById( 'video-loader' ),
 	},
-	error_container: document.getElementById('cld-preview-error'),
+	error_container: document.getElementById( 'cld-preview-error' ),
 	activeItem: null,
 	elements: {
 		image: [],
@@ -106,19 +106,28 @@ const GlobalTransformations = {
 				}
 				newImg.remove();
 			};
-			newImg.onerror = function() {
-				const has_fmp4 = self.elements[ type ].includes( 'f_mp4' );
+			newImg.onerror = function () {
+				const hasMp4 = self.elements[ type ].includes( 'f_mp4' );
 
 				if ( self.error_container ) {
 					self.error_container.style.display = 'block';
 
-					if (!has_fmp4) {
-						self.error_container.innerHTML = CLD_GLOBAL_TRANSFORMATIONS[type].error;
-						self.error_container.classList.replace('settings-alert-warning', 'settings-alert-error');
+					if ( ! hasMp4 ) {
+						self.error_container.innerHTML =
+							CLD_GLOBAL_TRANSFORMATIONS[ type ].error;
+						self.error_container.classList.replace(
+							'settings-alert-warning',
+							'settings-alert-error'
+						);
 					} else {
 						// temporary, will be replaced with i18n.sprintf instead of .replace
-						self.error_container.innerHTML = CLD_GLOBAL_TRANSFORMATIONS[type].warning.replace('%s', 'f_mp4');
-						self.error_container.classList.replace('settings-alert-error', 'settings-alert-warning');
+						self.error_container.innerHTML = CLD_GLOBAL_TRANSFORMATIONS[
+							type
+						].warning.replace( '%s', 'f_mp4' );
+						self.error_container.classList.replace(
+							'settings-alert-error',
+							'settings-alert-warning'
+						);
 					}
 				}
 
