@@ -99,8 +99,8 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		}
 
 		$this->handles[] = add_menu_page( $this->ui['page_title'], $this->ui['menu_title'] . $count_html, $this->ui['capability'], $this->ui['slug'], null, 'dashicons-cloudinary' );
-		if ( ! empty( $this->ui['pages'] ) ) {
-			foreach ( $this->ui['pages'] as $page ) {
+		if ( ! empty( $this->ui['settings'] ) ) {
+			foreach ( $this->ui['settings'] as $page ) {
 				// If this page has "require_config" set, ensure we're fully connected to cloudinary.
 				if (
 					! empty( $page['requires_config'] ) &&
@@ -155,8 +155,8 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		foreach ( $page_slugs as $page ) {
 			$this->set_active_page( $page );
 			$page = $this->get_page( $page );
-			if ( ! empty( $page['tabs'] ) ) {
-				$tabs = array_keys( $page['tabs'] );
+			if ( ! empty( $page['settings'] ) ) {
+				$tabs = array_keys( $page['settings'] );
 				if ( ! empty( $tabs ) ) {
 					array_map( array( $this, 'register_section' ), $tabs );
 				}
@@ -207,7 +207,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	 */
 	private function register_section_fields( $tab, $setting_slug ) {
 
-		foreach ( $tab['fields'] as $field_slug => $field ) {
+		foreach ( $tab['settings'] as $field_slug => $field ) {
 			$field['slug'] = $field_slug;
 
 			/**
@@ -474,20 +474,20 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	public function get_page_config( $page_slug = null ) {
 		$page    = $this->get_page( $page_slug );
 		$setting = array();
-		if ( ! empty( $page['tabs'] ) ) {
-			foreach ( $page['tabs'] as $tab ) {
+		if ( ! empty( $page['settings'] ) ) {
+			foreach ( $page['settings'] as $tab ) {
 
 				if ( ! empty( $tab ) ) {
 					$setting_slug = $this->setting_slug( $tab['slug'] );
 					$defaults     = array();
-					foreach ( $tab['fields'] as $slug => $field ) {
+					foreach ( $tab['settings'] as $slug => $field ) {
 						$defaults[ $slug ] = null;
 						if ( ! empty( $field['default'] ) ) {
 							$defaults[ $slug ] = $field['default'];
 						}
 					}
 					$tab_setting             = get_option( $setting_slug, $defaults );
-					$setting[ $tab['slug'] ] = $this->sanitize( $tab_setting, $tab['fields'] );
+					$setting[ $tab['slug'] ] = $this->sanitize( $tab_setting, $tab['settings'] );
 				}
 			}
 		}
@@ -508,7 +508,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		$tab          = $this->get_tab( $tab_slug );
 		$setting_slug = $this->setting_slug( $tab['slug'] );
 		$defaults     = array();
-		foreach ( $tab['fields'] as $slug => $field ) {
+		foreach ( $tab['settings'] as $slug => $field ) {
 			$defaults[ $slug ] = null;
 			if ( ! empty( $field['default'] ) ) {
 				$defaults[ $slug ] = $field['default'];
@@ -516,7 +516,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		}
 		$setting = get_option( $setting_slug, $defaults );
 
-		return $this->sanitize( $setting, $tab['fields'] );
+		return $this->sanitize( $setting, $tab['settings'] );
 	}
 
 	/**
@@ -591,10 +591,10 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		}
 		$tab  = null;
 		$page = $this->get_page();
-		if ( ! empty( $page['tabs'] ) && ! empty( $page['tabs'][ $tab_slug ] ) ) {
-			$tab = $page['tabs'][ $tab_slug ];
+		if ( ! empty( $page['settings'] ) && ! empty( $page['settings'][ $tab_slug ] ) ) {
+			$tab = $page['settings'][ $tab_slug ];
 		} else {
-			$tab['fields'] = array(); // WIP temp.
+			$tab['settings'] = array(); // WIP temp.
 		}
 
 		return $tab;
@@ -614,10 +614,9 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		if ( null === $page_slug ) {
 			$page_slug = $this->active_page();
 		}
-		$page          = null;
-		$page_slug_key = $this->pages[ $page_slug ];
-		if ( ! empty( $this->ui['pages'][ $page_slug_key ] ) ) {
-			$page = $this->ui['pages'][ $page_slug_key ];
+		$page = null;
+		if ( ! empty( $this->ui['settings'][ $page_slug ] ) ) {
+			$page = $this->ui['settings'][ $page_slug ];
 		}
 
 		return $page;
@@ -710,26 +709,52 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		}
 	}
 
-	protected function setup_ui() {
+	/**
+	 * Register core setting.
+	 */
+	protected function register_setting() {
 		$ui_settings    = array(
-			'page_title' => __( 'Cloudinary', 'cloudinary' ),
+			'title'      => __( 'Cloudinary', 'cloudinary' ),
 			'menu_title' => __( 'Cloudinary', 'cloudinary' ),
 			'version'    => $this->plugin->version,
 			'slug'       => 'cloudinary',
 			'capability' => 'manage_options',
-			'pages'      => array(),
 		);
 		$this->settings = new Setting( $this->plugin->slug, $this );
 		$this->settings->register_setting( $ui_settings );
-		$component_settings = array();
-		$components         = $this->plugin->components;
+	}
+
+	/**
+	 * Register the dashboard page.
+	 */
+	protected function register_dashboard() {
+		$dashboard          = array(
+			'title'      => __( 'Cloudinary Dashboard', 'cloudinary' ),
+			'menu_title' => __( 'Dashboard', 'cloudinary' ),
+			'slug'       => 'cloudinary',
+			'asset_init' => array( '\Cloudinary\Media\Video', 'register_scripts_styles' ),
+		);
+		$dashboard_settings = new Setting( $this->plugin->slug, $this, $this->settings );
+		$dashboard_settings->register_setting( $dashboard );
+	}
+
+	/**
+	 * Setup the UI.
+	 */
+	protected function setup_ui() {
+
+		$this->register_setting();
+		$this->register_dashboard();
+
+		$components = $this->plugin->components;
 		foreach ( $components as $slug => $component ) {
 			if ( $component instanceof Component\Settings ) {
 				$component->register_settings( $this->settings );
 			}
 		}
-		$ui_structure = $this->get_ui();
+		$ui_structure = $this->settings->get_params_recursive();
 		$this->ui     = apply_filters( 'cloudinary_settings_ui_definition', $ui_structure, $this );
+		$this->pages  = $this->settings->get_children_slugs();
 	}
 
 	/**
@@ -739,17 +764,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	 * @return array
 	 */
 	public function get_ui() {
-
-		$structure = $this->settings->get_params();
-		if ( $this->settings->has_children() ) {
-			$children = $this->settings->get_children();
-			foreach ( $children as $child ) {
-				$slug                        = $child->get_slug();
-				$structure['pages'][ $slug ] = $child->get_params_recursive();
-			}
-		}
-
-		return $structure;
+		return $this->ui;
 	}
 
 	/**
@@ -790,14 +805,11 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	 * @return array The array of the config options stored.
 	 */
 	public function get_config() {
-		$config = get_option( 'cloudinary_settings_cache', array() );
+		$this->setup_ui();
+		$config = '';//get_option( 'cloudinary_settings_cache', array() );
 		if ( empty( $config ) ) {
-			$page_slugs = array_keys( $this->pages );
-			foreach ( $page_slugs as $page ) {
-				$this->set_active_page( $page );
-				$page_config = $this->get_page_config( $page );
-				$config      = array_merge( $config, $page_config );
-			}
+
+			$config = $this->settings->get_value();
 
 			$this->set_active_page( null );
 			update_option( 'cloudinary_settings_cache', $config );
@@ -813,7 +825,6 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	 * @since  0.1
 	 */
 	public function setup() {
-		$this->setup_ui();
 		$this->active_page();
 		$this->components = apply_filters( 'cloudinary_settings_ui_components', $this->get_components() );
 		add_action( 'admin_menu', array( $this, 'register_admin' ) );
@@ -825,8 +836,8 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	 */
 	public function register_assets() {
 		// Bring in tab specific assets.
-		if ( ! empty( $this->ui['tabs'] ) ) {
-			foreach ( $this->ui['tabs'] as $tab_slug => $tab ) {
+		if ( ! empty( $this->ui['settings'] ) ) {
+			foreach ( $this->ui['settings'] as $tab_slug => $tab ) {
 				if ( empty( $tab['assets'] ) ) {
 					continue;
 				}
@@ -851,7 +862,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 			} else {
 				$call = 'wp_register_script';
 			}
-			$this->ui['tabs'][ $tab['slug'] ]['assets'][ $type ] = $this->register_tab_asset( $set, $call );
+			$this->ui['settings'][ $tab['slug'] ]['assets'][ $type ] = $this->register_tab_asset( $set, $call );
 		}
 	}
 
@@ -959,14 +970,14 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	 */
 	public function active_tab() {
 		$page = $this->get_page();
-		if ( empty( $page['tabs'] ) ) {
+		if ( empty( $page['settings'] ) ) {
 			return null;
 		}
 		$tab = filter_input( INPUT_GET, 'tab', FILTER_SANITIZE_STRING );
 		if ( ! $this->validate_tab( $tab ) ) { // Tab is invalid or not set, check if in a POST.
 			$tab = filter_input( INPUT_POST, 'tab', FILTER_SANITIZE_STRING );
 			if ( ! $this->validate_tab( $tab ) ) { // Tab is invalid or not set, load the default/first tab.
-				$tab = array_keys( $page['tabs'] );
+				$tab = array_keys( $page['settings'] );
 				$tab = array_shift( $tab );
 			}
 		}
@@ -1020,8 +1031,8 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	public function validate_tab( $tab ) {
 		$page  = $this->get_page();
 		$valid = false;
-		if ( ! empty( $page['tabs'] ) ) {
-			$all_tabs = array_keys( $page['tabs'] );
+		if ( ! empty( $page['settings'] ) ) {
+			$all_tabs = array_keys( $page['settings'] );
 			$valid    = in_array( $tab, $all_tabs, true );
 		}
 

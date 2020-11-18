@@ -47,6 +47,13 @@ class Setting {
 	public $slug;
 
 	/**
+	 * Setting Value.
+	 *
+	 * @var mixed
+	 */
+	protected $value;
+
+	/**
 	 * Setting constructor.
 	 *
 	 * @param string       $slug The setting slug
@@ -129,6 +136,15 @@ class Setting {
 	}
 
 	/**
+	 * Check if setting has a parent.
+	 *
+	 * @return bool
+	 */
+	public function has_parent() {
+		return ! empty( $this->parent );
+	}
+
+	/**
 	 * Check if setting has children.
 	 *
 	 * @return bool
@@ -172,10 +188,11 @@ class Setting {
 	 * @param array $params The setting params.
 	 */
 	public function register_setting( $params ) {
+		$owner   = get_class( $this->owner );
 		$default = array(
-			'title'       => '',
+			'title'       => $owner,
 			'description' => null,
-			'slug'        => '',
+			'slug'        => strtolower( $owner ),
 			'assets'      => array(),
 			'fields'      => array(),
 		);
@@ -193,6 +210,75 @@ class Setting {
 	 */
 	public function get_slug() {
 		return $this->slug;
+	}
+
+	/**
+	 * Get the option slug.
+	 *
+	 * @return string
+	 */
+	public function get_option_slug() {
+		$option_slugs = array(
+			$this->get_slug(), // Root level settings don't have an option slug.
+		);
+		if ( $this->has_parent() ) {
+			$option_slugs[] = $this->parent->get_option_slug();
+		}
+
+		$option_slugs = array_filter( $option_slugs );
+		$option_slugs = array_reverse( $option_slugs );
+
+		return implode( '_', $option_slugs );
+	}
+
+	/**
+	 * Get the value.
+	 *
+	 * @return mixed
+	 */
+	public function get_value() {
+		$value = null;
+		if ( $this->has_parent() ) {
+			$option_slug = $this->get_option_slug();
+			$value       = get_option( $option_slug );
+		}
+		if ( $this->has_children() ) {
+			$child_values = $this->get_child_values();
+		}
+
+		return $value;
+	}
+
+	/**
+	 * Get the value of a child.
+	 *
+	 * @param string $child_slug The child slug to get a value for.
+	 *
+	 * @return mixed
+	 */
+	public function get_child_value( $child_slug ) {
+		$value = null;
+		if ( isset( $this->children[ $child_slug ] ) ) {
+			$value = $this->children[ $child_slug ]->get_value();
+		}
+
+		return $value;
+	}
+
+	/**
+	 * Get the value of a child.
+	 *
+	 * @return mixed
+	 */
+	public function get_child_values() {
+		$values = array();
+		if ( $this->has_children() ) {
+			foreach ( $this->get_children_slugs() as $child_slug ) {
+				$values[ $child_slug ] = $this->get_child_value( $child_slug );
+			}
+		}
+
+		return $values;
 	}
 
 	/**

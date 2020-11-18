@@ -1880,9 +1880,19 @@ class Media implements Setup, Settings {
 	 * @return Setting
 	 */
 	public function register_settings( $settings ) {
-		$structure = include $this->plugin->dir_path . 'ui-definitions/settings-media.php';
-		$setting   = new Setting( 'global_transformation', $this, $settings );
-		$setting->register_setting( $structure );
+		$tabs = array(
+			'page_title'      => __( 'Global Transformations Settings', 'cloudinary' ),
+			'menu_title'      => __( 'Global Transformations', 'cloudinary' ),
+			'slug'            => 'cld_global_transformation',
+			'requires_config' => true,
+		);
+
+		$setting = new Setting( 'global_transformation', $this, $settings );
+		$setting->register_setting( $tabs );
+
+		$structure              = include $this->plugin->dir_path . 'ui-definitions/settings-media.php';
+		$global_transformations = new Setting( 'global_transformations', $this, $setting );
+		$global_transformations->register_setting( $structure );
 
 		return $setting;
 	}
