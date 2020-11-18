@@ -8,6 +8,7 @@
 namespace Cloudinary;
 
 use Cloudinary\Component;
+use Cloudinary\Settings\Setting;
 
 /**
  * Handles Cloudinary's admin settings.
@@ -28,6 +29,13 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	 * @var array
 	 */
 	private $ui = array();
+
+	/**
+	 * Settings object.
+	 *
+	 * @var \Cloudinary\Settings\Setting
+	 */
+	public $settings;
 
 	/**
 	 * Settings page UI components.
@@ -72,7 +80,6 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	 */
 	public function __construct( $plugin ) {
 		$this->plugin = $plugin;
-		$this->ui     = apply_filters( 'cloudinary_settings_ui_definition', $this->get_ui(), $this );
 	}
 
 	/**
@@ -231,6 +238,9 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		}
 	}
 
+	/**
+	 * Render a page.
+	 */
 	public function render_page() {
 		$ui       = $this->get_page();
 		$contents = array();
@@ -246,6 +256,10 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	 * Render the settings page.
 	 *
 	 * @since 0.1
+	 *
+	 * @param array $contents The contents.
+	 *
+	 * @return array
 	 */
 	public function render( $contents = array() ) {
 
@@ -266,6 +280,13 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		return implode( '', $html );
 	}
 
+	/**
+	 * Render a component.
+	 *
+	 * @param array $component HTML Array.
+	 *
+	 * @return string
+	 */
 	public function render_component( $component ) {
 		$html            = array();
 		$html[]          = $component['type'];
@@ -301,9 +322,9 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		$type         = empty( $field['type'] ) ? 'text' : $field['type'];
 		$data_meta    = empty( $field['data_meta'] ) ? $field['slug'] : $field['data_meta'];
 		if ( is_callable( $type ) ) {
-			//call_user_func_array( $type, $field );
+			call_user_func_array( $type, $field );
 
-			//return;
+			return;
 		}
 		// Conditions.
 		$condition = 'false';
@@ -689,6 +710,28 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		}
 	}
 
+	protected function setup_ui() {
+		$ui_settings    = array(
+			'page_title' => __( 'Cloudinary', 'cloudinary' ),
+			'menu_title' => __( 'Cloudinary', 'cloudinary' ),
+			'version'    => $this->plugin->version,
+			'slug'       => 'cloudinary',
+			'capability' => 'manage_options',
+			'pages'      => array(),
+		);
+		$this->settings = new Setting( $this->plugin->slug, $this );
+		$this->settings->register_setting( $ui_settings );
+		$component_settings = array();
+		$components         = $this->plugin->components;
+		foreach ( $components as $slug => $component ) {
+			if ( $component instanceof Component\Settings ) {
+				$component->register_settings( $this->settings );
+			}
+		}
+		$ui_structure = $this->get_ui();
+		$this->ui     = apply_filters( 'cloudinary_settings_ui_definition', $ui_structure, $this );
+	}
+
 	/**
 	 * Get the ui structures.
 	 *
@@ -696,35 +739,17 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	 * @return array
 	 */
 	public function get_ui() {
-		$defaults = array(
-			'save_button_label' => __( 'Save Changes' ),
-			'capability'        => 'manage_options',
-			'tabs'              => array(),
-		);
 
-		$settings_definition_file_path = $this->plugin->dir_path . 'ui-definitions/settings.php';
-		if ( ! file_exists( $settings_definition_file_path ) ) {
-			return $defaults;
-		}
-
-		$pre_ui = include $settings_definition_file_path; // phpcs:ignore
-		$ui     = apply_filters( 'cloudinary_settings_ui_pre_definition', wp_parse_args( $pre_ui, $defaults ) );
-		if ( ! empty( $ui['pages'] ) ) {
-			foreach ( $ui['pages'] as $page_slug => $page ) {
-				// Register Pages and slugs.
-				$this->pages[ $page_slug ] = $page_slug;
-				if ( ! empty( $page['tabs'] ) ) {
-					$tabs = array();
-					foreach ( $page['tabs'] as $tab_slug ) {
-						$tabs[ $tab_slug ] = $this->load_tab_definition( $tab_slug );
-					}
-					$ui['pages'][ $page_slug ]['tabs'] = array_filter( $tabs );
-
-				}
+		$structure = $this->settings->get_params();
+		if ( $this->settings->has_children() ) {
+			$children = $this->settings->get_children();
+			foreach ( $children as $child ) {
+				$slug                        = $child->get_slug();
+				$structure['pages'][ $slug ] = $child->get_params_recursive();
 			}
 		}
 
-		return $ui;
+		return $structure;
 	}
 
 	/**
@@ -788,6 +813,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	 * @since  0.1
 	 */
 	public function setup() {
+		$this->setup_ui();
 		$this->active_page();
 		$this->components = apply_filters( 'cloudinary_settings_ui_components', $this->get_components() );
 		add_action( 'admin_menu', array( $this, 'register_admin' ) );
@@ -1026,14 +1052,14 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 
 	public function get_components() {
 		$components = array(
-			'text' => array( $this, 'render_field' ),
-			'panel' => function( $content ){
+			'text'  => array( $this, 'render_field' ),
+			'panel' => function ( $content ) {
 				$title = '';
-				if( !empty( $content['title'] ) ){
+				if ( ! empty( $content['title'] ) ) {
 					$title = '<h3>' . $content['title'] . '</h3>';
 				}
 				echo $title;
-			}
+			},
 		);
 
 		return $components;

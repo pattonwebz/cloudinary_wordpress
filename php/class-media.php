@@ -7,17 +7,19 @@
 
 namespace Cloudinary;
 
+use Cloudinary\Component\Settings;
 use Cloudinary\Component\Setup;
 use Cloudinary\Connect\Api;
 use Cloudinary\Media\Filter;
 use Cloudinary\Media\Upgrade;
 use Cloudinary\Media\Global_Transformations;
 use Cloudinary\Media\Video;
+use Cloudinary\Settings\Setting;
 
 /**
  * Class Media
  */
-class Media implements Setup {
+class Media implements Setup, Settings {
 
 	/**
 	 * Holds the plugin instance.
@@ -1868,6 +1870,21 @@ class Media implements Setup {
 			);
 			update_option( 'cloudinary_global_video_transformations', $video );
 		}
+	}
+
+	/**
+	 * Get the settings.
+	 *
+	 * @param Setting $settings The main settings object.
+	 *
+	 * @return Setting
+	 */
+	public function register_settings( $settings ) {
+		$structure = include $this->plugin->dir_path . 'ui-definitions/settings-media.php';
+		$setting   = new Setting( 'global_transformation', $this, $settings );
+		$setting->register_setting( $structure );
+
+		return $setting;
 	}
 
 	/**
