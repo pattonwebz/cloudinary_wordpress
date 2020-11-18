@@ -1884,6 +1884,7 @@ class Media implements Setup, Settings {
 			'page_title'      => __( 'Global Transformations Settings', 'cloudinary' ),
 			'menu_title'      => __( 'Global Transformations', 'cloudinary' ),
 			'slug'            => 'cld_global_transformation',
+			'options_slug'    => 'global_transformations',
 			'requires_config' => true,
 		);
 

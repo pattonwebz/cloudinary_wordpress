@@ -807,7 +807,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	 */
 	public function get_config() {
 		$this->setup_ui();
-		$config = '';//get_option( 'cloudinary_settings_cache', array() );
+		$config = get_option( 'cloudinary_settings_cache', array() );
 		if ( empty( $config ) ) {
 
 			$config = $this->settings->get_value();

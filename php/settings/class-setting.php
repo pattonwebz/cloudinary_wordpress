@@ -94,6 +94,19 @@ class Setting {
 	}
 
 	/**
+	 *
+	 * Check if a param exists.
+	 *
+	 * @param string $param The param to check.
+	 *
+	 * @return bool
+	 *
+	 */
+	public function has_param( $param ) {
+		return isset( $this->params[ $param ] );
+	}
+
+	/**
 	 * Get params param.
 	 *
 	 * @param string $param The param to get.
@@ -103,9 +116,7 @@ class Setting {
 	 *
 	 */
 	public function get_param( $param, $default = null ) {
-		$return = isset( $this->params[ $param ] ) ? $this->params[ $param ] : $default;
-
-		return $return;
+		return isset( $this->params[ $param ] ) ? $this->params[ $param ] : $default;
 	}
 
 	/**
@@ -237,13 +248,16 @@ class Setting {
 	 * @return mixed
 	 */
 	public function get_value() {
-		$value = null;
-		if ( $this->has_parent() ) {
+		$value = array();
+		if ( $this->has_param( 'options_slug' ) ) {
 			$option_slug = $this->get_option_slug();
-			$value       = get_option( $option_slug );
+			$value       = get_option( $option_slug, array() );
 		}
 		if ( $this->has_children() ) {
 			$child_values = $this->get_child_values();
+			if ( ! empty( $child_values ) ) {
+				$value = array_merge( $value, $child_values );
+			}
 		}
 
 		return $value;
