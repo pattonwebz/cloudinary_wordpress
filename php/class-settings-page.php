@@ -714,11 +714,12 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	 */
 	protected function register_setting() {
 		$ui_settings    = array(
-			'title'      => __( 'Cloudinary', 'cloudinary' ),
-			'menu_title' => __( 'Cloudinary', 'cloudinary' ),
-			'version'    => $this->plugin->version,
-			'slug'       => 'cloudinary',
-			'capability' => 'manage_options',
+			'title'        => __( 'Cloudinary', 'cloudinary' ),
+			'menu_title'   => __( 'Cloudinary', 'cloudinary' ),
+			'version'      => $this->plugin->version,
+			'slug'         => 'cloudinary',
+			'capability'   => 'manage_options',
+			'options_slug' => 'cloudinary',
 		);
 		$this->settings = new Setting( $this->plugin->slug, $this );
 		$this->settings->register_setting( $ui_settings );

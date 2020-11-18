@@ -219,7 +219,7 @@ class Setting {
 	 */
 	public function get_option_slug() {
 		$option_slugs = array(
-			$this->get_slug(), // Root level settings don't have an option slug.
+			$this->get_param( 'options_slug' ),
 		);
 		if ( $this->has_parent() ) {
 			$option_slugs[] = $this->parent->get_option_slug();
