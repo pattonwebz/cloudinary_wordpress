@@ -10,8 +10,8 @@ namespace Cloudinary;
 use Cloudinary\Component\Setup;
 use Cloudinary\Connect\Api;
 use Cloudinary\Media\Filter;
-use Cloudinary\Media\Upgrade;
 use Cloudinary\Media\Global_Transformations;
+use Cloudinary\Media\Upgrade;
 use Cloudinary\Media\Video;
 
 /**
@@ -770,7 +770,7 @@ class Media implements Setup {
 		 */
 		$pre_args['transformation'] = apply_filters( 'cloudinary_transformations', $transformations, $attachment_id );
 		// Defaults are only to be added on front, main images ( not breakpoints, since these are adapted down), and videos.
-		if ( ( ! defined( 'REST_REQUEST' ) || false === REST_REQUEST ) && ! is_admin() && false === $overwrite_transformations ) {
+		if ( false === $overwrite_transformations && ! is_admin() ) {
 			$pre_args['transformation'] = $this->apply_default_transformations( $pre_args['transformation'], $resource_type );
 		}
 
