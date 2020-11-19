@@ -61,10 +61,10 @@ const sharedConfig = {
 				)
 		),
 		new MiniCssExtractPlugin( {
-			filename: '../css/[name]-compiled.css',
+			filename: '../css/[name].css',
 		} ),
 		new RtlCssPlugin( {
-			filename: '../css/[name]-compiled-rtl.css',
+			filename: '../css/[name]-rtl.css',
 		} ),
 	],
 };
@@ -74,6 +74,7 @@ const cldCore = {
 	...sharedConfig,
 	entry: {
 		cloudinary: './js/src/main.js',
+		video: './css/src/video.scss',
 	},
 	output: {
 		path: path.resolve( process.cwd(), 'js' ),
@@ -134,9 +135,9 @@ const cldBlockEditor = {
 		'block-editor': './js/src/blocks.js',
 	},
 	module: {
-		...defaultConfig.module,
+		...sharedConfig.module,
 		rules: [
-			...defaultConfig.module.rules,
+			...sharedConfig.module.rules,
 			{
 				test: /\.(sa|sc|c)ss$/,
 				use: 'null-loader',
