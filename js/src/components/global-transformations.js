@@ -1,4 +1,3 @@
-/* global CLD_GLOBAL_TRANSFORMATIONS samplePlayer */
 const GlobalTransformations = {
 	sample: {
 		image: document.getElementById( 'transformation-sample-image' ),

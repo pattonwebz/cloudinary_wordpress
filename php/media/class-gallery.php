@@ -107,7 +107,7 @@ class Gallery {
 			}
 		}
 
-		$this->config = $config;
+		$this->config = apply_filters( 'cloudinary_gallery_config', $config );
 
 		return $config;
 	}
@@ -295,7 +295,7 @@ class Gallery {
 	public function rest_cloudinary_image_data( \WP_REST_Request $request ) {
 		$request_body = json_decode( $request->get_body(), true );
 
-		if ( empty( $request_body ) || empty( $request_body['images'] ) ) {
+		if ( empty( $request_body['images'] ) ) {
 			return new \WP_Error( 400, 'The "images" key must be present in the request body.' );
 		}
 

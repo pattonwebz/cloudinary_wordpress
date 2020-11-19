@@ -6,7 +6,9 @@
     "cloudinary": "readonly",
     "jQuery": "readonly",
     "$": "readonly",
-    "CLDN": "readonly"
+    "CLDN": "readonly",
+    "CLD_GLOBAL_TRANSFORMATIONS": "readonly",
+    "samplePlayer": "readonly"
   },
   "extends": [
     "plugin:@wordpress/eslint-plugin/recommended"

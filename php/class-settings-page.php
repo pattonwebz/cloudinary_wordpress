@@ -340,7 +340,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 							value="<?php echo esc_attr( $key ); ?>"
 					/>
 					<label for="<?php echo esc_attr( sprintf( '%s-%s', $field['label_for'], $key ) ); ?>">
-						<?php esc_html( $option ); ?>
+						<?php echo esc_html( $option ); ?>
 					</label>
 					<?php
 				endforeach;
