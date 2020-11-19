@@ -13,7 +13,7 @@ use Cloudinary\Settings\Setting;
 /**
  * Handles Cloudinary's admin settings.
  */
-class Settings_Page implements Component\Assets, Component\Config, Component\Setup {
+class Settings_Page implements Component\Assets, Component\Config, Component\Setup, Component\Settings {
 
 	/**
 	 * Holds the plugin instance.
@@ -146,11 +146,12 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	}
 
 	/**
-	 * Register the settings
+	 * Register the pages
 	 *
 	 * @since 0.1
+	 *
 	 */
-	public function register_settings() {
+	public function register_pages() {
 		$page_slugs = array_keys( $this->pages );
 		foreach ( $page_slugs as $page ) {
 			$this->set_active_page( $page );
@@ -710,31 +711,18 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	}
 
 	/**
-	 * Register core setting.
+	 * Register the dashboard setting.
+	 *
+	 * @param Setting $setting The setting object.
 	 */
-	protected function register_setting() {
-		$ui_settings    = array(
-			'title'      => __( 'Cloudinary', 'cloudinary' ),
-			'menu_title' => __( 'Cloudinary', 'cloudinary' ),
-			'version'    => $this->plugin->version,
-			'slug'       => 'cloudinary',
-			'capability' => 'manage_options',
-		);
-		$this->settings = new Setting( $this->plugin->slug, $this );
-		$this->settings->register_setting( $ui_settings );
-	}
-
-	/**
-	 * Register the dashboard page.
-	 */
-	protected function register_dashboard() {
+	public function register_settings( $setting ) {
 		$dashboard          = array(
 			'title'      => __( 'Cloudinary Dashboard', 'cloudinary' ),
 			'menu_title' => __( 'Dashboard', 'cloudinary' ),
 			'slug'       => 'cloudinary',
 			'asset_init' => array( '\Cloudinary\Media\Video', 'register_scripts_styles' ),
 		);
-		$dashboard_settings = new Setting( $this->plugin->slug, $this, $this->settings );
+		$dashboard_settings = new Setting( $this->plugin->slug, $this, $setting );
 		$dashboard_settings->register_setting( $dashboard );
 	}
 
@@ -742,20 +730,9 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	 * Setup the UI.
 	 */
 	protected function setup_ui() {
-
-		$this->register_setting();
-		$this->register_dashboard();
-
-		$components = $this->plugin->components;
-		foreach ( $components as $slug => $component ) {
-			if ( $component instanceof Component\Settings ) {
-				$component->register_settings( $this->settings );
-			}
-		}
-
-		$ui_structure = $this->settings->get_params_recursive();
+		$ui_structure = $this->plugin->settings->get_params_recursive();
 		$this->ui     = apply_filters( 'cloudinary_settings_ui_definition', $ui_structure, $this );
-		$this->pages  = $this->settings->get_setting_slugs();
+		$this->pages  = $this->plugin->settings->get_setting_slugs();
 	}
 
 	/**
@@ -826,7 +803,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		$this->active_page();
 		$this->components = apply_filters( 'cloudinary_settings_ui_components', $this->get_components() );
 		add_action( 'admin_menu', array( $this, 'register_admin' ) );
-		add_action( 'admin_init', array( $this, 'register_settings' ) );
+		add_action( 'admin_init', array( $this, 'register_pages' ) );
 	}
 
 	/**
