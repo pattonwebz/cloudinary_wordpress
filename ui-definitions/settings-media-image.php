@@ -11,6 +11,7 @@ $struct = array(
 	'description'    => __( 'Define the global (default) transformations to be applied to all image assets. These transformations can be overridden by transformations you apply to individual assets.', 'cloudinary' ),
 	'success_notice' => __( 'Global Image Settings have been updated.', 'cloudinary' ),
 	'slug'           => 'global_transformation',
+	'options_slug'   => 'global_transformations',
 	'classes'        => array(
 		'connect',
 	),

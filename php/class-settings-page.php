@@ -719,7 +719,6 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 			'version'      => $this->plugin->version,
 			'slug'         => 'cloudinary',
 			'capability'   => 'manage_options',
-			'options_slug' => 'cloudinary',
 		);
 		$this->settings = new Setting( $this->plugin->slug, $this );
 		$this->settings->register_setting( $ui_settings );
@@ -808,12 +807,12 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	public function get_config() {
 		$this->setup_ui();
 		$config = get_option( 'cloudinary_settings_cache', array() );
-		if ( empty( $config ) ) {
+		if ( ! empty( $config ) ) {
 
-			$config = $this->settings->get_value();
-
+			$setting_value = $this->settings->get_value();
+			$config = $setting_value[ $this->settings->get_slug() ];
 			$this->set_active_page( null );
-			update_option( 'cloudinary_settings_cache', $config );
+			//update_option( 'cloudinary_settings_cache', $config );
 		}
 
 		return $config;

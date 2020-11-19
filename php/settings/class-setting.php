@@ -243,6 +243,22 @@ class Setting {
 	}
 
 	/**
+	 * Get the value slug.
+	 *
+	 * @return string
+	 */
+	public function get_value_slug() {
+		$value_slug = null;
+		if ( $this->has_param( 'options_slug' ) ) {
+			$value_slug = $this->get_slug();
+		} elseif ( $this->has_parent() ) {
+			$value_slug = $this->parent->get_value_slug();
+		}
+
+		return $value_slug;
+	}
+
+	/**
 	 * Get the value.
 	 *
 	 * @return mixed
@@ -288,7 +304,8 @@ class Setting {
 		$values = array();
 		if ( $this->has_children() ) {
 			foreach ( $this->get_children_slugs() as $child_slug ) {
-				$values[ $child_slug ] = $this->get_child_value( $child_slug );
+				$value_slug            = $this->get_child( $child_slug )->get_value_slug();
+				$values[ $value_slug ] = $this->get_child_value( $child_slug );
 			}
 		}
 

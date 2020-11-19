@@ -1884,14 +1884,17 @@ class Media implements Setup, Settings {
 			'page_title'      => __( 'Global Transformations Settings', 'cloudinary' ),
 			'menu_title'      => __( 'Global Transformations', 'cloudinary' ),
 			'slug'            => 'cld_global_transformation',
-			'options_slug'    => 'global_transformations',
 			'requires_config' => true,
 		);
 
-		$setting = new Setting( 'global_transformation', $this, $settings );
+		$setting = new Setting( 'media', $this, $settings );
 		$setting->register_setting( $tabs );
-
-		$structure              = include $this->plugin->dir_path . 'ui-definitions/settings-media.php';
+		// Add Image global settings.
+		$structure              = include $this->plugin->dir_path . 'ui-definitions/settings-media-image.php';
+		$global_transformations = new Setting( 'global_transformations', $this, $setting );
+		$global_transformations->register_setting( $structure );
+		// Add video global settings.
+		$structure              = include $this->plugin->dir_path . 'ui-definitions/settings-media-video.php';
 		$global_transformations = new Setting( 'global_transformations', $this, $setting );
 		$global_transformations->register_setting( $structure );
 
