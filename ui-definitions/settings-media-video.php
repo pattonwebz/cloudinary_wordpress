@@ -9,6 +9,8 @@ $struct = array(
 	'title'             => __( 'Video Settings', 'cloudinary' ),
 	'heading'           => __( 'Global Video Settings', 'cloudinary' ),
 	'success_notice'    => __( 'Global Video Settings have been updated.', 'cloudinary' ),
+	'slug'              => 'global_video_transformation',
+	'options_slug'      => 'global_video_transformations',
 	'classes'           => array(
 		'connect',
 	),

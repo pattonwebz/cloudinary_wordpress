@@ -15,7 +15,7 @@ $struct = array(
 	'classes'        => array(
 		'connect',
 	),
-	'fields'         => array(
+	'settings'         => array(
 		'responsive_header'  => array(
 			'type'  => 'heading',
 			'label' => __( 'Responsive Image Settings', 'cloudinary' ),

@@ -31,7 +31,7 @@ class Setting {
 	/**
 	 * @var Setting[]
 	 */
-	public $children = array();
+	public $settings = array();
 	/**
 	 * The plugin component that created the setting.
 	 *
@@ -51,7 +51,7 @@ class Setting {
 	 *
 	 * @var mixed
 	 */
-	protected $value;
+	protected $value = null;
 
 	/**
 	 * Setting constructor.
@@ -68,7 +68,7 @@ class Setting {
 		$this->parent = $parent;
 		// Connect setting to parent.
 		if ( $parent instanceof Setting ) {
-			$parent->add_child( $this );
+			$parent->add_setting( $this );
 		}
 
 		return $this;
@@ -135,11 +135,11 @@ class Setting {
 	 */
 	public function get_params_recursive() {
 		$params = $this->get_params();
-		if ( $this->has_children() ) {
-			$child_slugs = $this->get_children_slugs();
-			foreach ( $child_slugs as $child_slug ) {
-				$child                             = $this->get_child( $child_slug );
-				$params['settings'][ $child_slug ] = $child->get_params_recursive();
+		if ( $this->has_settings() ) {
+			$setting_slugs = $this->get_setting_slugs();
+			foreach ( $setting_slugs as $setting_slug ) {
+				$setting                             = $this->get_setting( $setting_slug );
+				$params['settings'][ $setting_slug ] = $setting->get_params_recursive();
 			}
 		}
 
@@ -156,41 +156,89 @@ class Setting {
 	}
 
 	/**
-	 * Check if setting has children.
+	 * Check if setting has settings.
 	 *
 	 * @return bool
 	 */
-	public function has_children() {
-		return ! empty( $this->children );
+	public function has_settings() {
+		return ! empty( $this->settings );
 	}
 
 	/**
-	 * Get all children settings.
+	 * Check if setting has settings.
+	 *
+	 * @param string $setting_slug The setting slug to check.
+	 *
+	 * @return bool
+	 */
+	public function has_setting( $setting_slug ) {
+		$setting_slugs = $this->get_setting_slugs();
+
+		return in_array( $setting_slug, $setting_slugs, true );
+	}
+
+	/**
+	 * Get all settings settings.
 	 *
 	 * @return Setting[]
 	 */
-	public function get_children() {
-		return $this->children;
+	public function get_settings() {
+		return $this->settings;
 	}
 
 	/**
-	 * Get all slugs of children.
+	 * Get all slugs of settings.
 	 *
 	 * @return array
 	 */
-	public function get_children_slugs() {
-		return array_keys( $this->children );
+	public function get_setting_slugs() {
+		return array_keys( $this->settings );
 	}
 
 	/**
-	 * Get a child setting.
+	 * Get a setting setting.
 	 *
-	 * @param string $slug The child slug to get.
+	 * @param string $slug The setting slug to get.
 	 *
 	 * @return Setting|null
 	 */
-	public function get_child( $slug ) {
-		return isset( $this->children[ $slug ] ) ? $this->children[ $slug ] : null;
+	public function get_setting( $slug ) {
+		$setting = null;
+		if ( $this->has_setting( $slug ) ) {
+			$setting = $this->settings[ $slug ];
+		}
+
+		return $setting;
+	}
+
+	/**
+	 * Get a setting recursively.
+	 *
+	 * @param string $slug The setting slug to get.
+	 *
+	 * @return Setting|null
+	 */
+	public function find_setting( $slug ) {
+		$setting = null;
+		if ( $this->has_setting( $slug ) ) {
+			$setting = $this->get_setting( $slug );
+		} else {
+			// loop through settings to find it.
+			foreach ( $this->get_settings() as $sub_setting ) {
+				$setting = $sub_setting->find_setting( $slug );
+				if ( ! is_null( $setting ) ) {
+					break;
+				}
+			}
+		}
+		// If none found, we can make a temp setting to store/cache.
+		if ( is_null( $setting ) && ! $this->has_parent() ) {
+			// Create on the root setting only.
+			$setting = new Setting( $slug, $this, $this );
+			$setting->set_value( null ); // Set value to null
+		}
+
+		return $setting;
 	}
 
 	/**
@@ -209,9 +257,25 @@ class Setting {
 		);
 		$params  = wp_parse_args( $params, $default );
 		foreach ( $params as $param => $value ) {
-			$this->set_param( $param, $value );
+			if ( 'settings' === $param ) {
+				$this->register_setting_settings( $value );
+			} else {
+				$this->set_param( $param, $value );
+			}
 		}
 
+	}
+
+	/**
+	 * Register sub settings.
+	 *
+	 * @param array $settings The array of sub settings.
+	 */
+	protected function register_setting_settings( $settings ) {
+		foreach ( $settings as $setting => $structure ) {
+			$setting = new Setting( $setting, $this->owner, $this );
+			$setting->register_setting( $structure );
+		}
 	}
 
 	/**
@@ -234,6 +298,8 @@ class Setting {
 		);
 		if ( $this->has_parent() ) {
 			$option_slugs[] = $this->parent->get_option_slug();
+		} else {
+			$option_slugs[] = $this->get_slug(); // The root setting always prefixes settings slug.
 		}
 
 		$option_slugs = array_filter( $option_slugs );
@@ -248,14 +314,58 @@ class Setting {
 	 * @return string
 	 */
 	public function get_value_slug() {
-		$value_slug = null;
-		if ( $this->has_param( 'options_slug' ) ) {
-			$value_slug = $this->get_slug();
-		} elseif ( $this->has_parent() ) {
+		$value_slug = $this->get_slug();
+		if ( ! $this->has_param( 'options_slug' ) && $this->has_parent() ) {
 			$value_slug = $this->parent->get_value_slug();
 		}
 
 		return $value_slug;
+	}
+
+	/**
+	 * Set the settings value.
+	 *
+	 * @param mixed $value The value to set.
+	 */
+	public function set_value( $value ) {
+		if ( is_array( $value ) ) {
+			// Attempt to match array keys to settings settings.
+			foreach ( $value as $key => $val ) {
+				$setting = $this->get_setting( $key );
+				if ( ! is_null( $setting ) ) {
+					$setting->set_value( $val );
+				}
+			}
+		}
+		$this->value = $value;
+	}
+
+	public function save_value() {
+		if ( $this->has_param( 'options_slug' ) ) {
+			$slug = $this->get_option_slug();
+
+			return update_option( $slug, $this->value );
+		}
+		if ( $this->has_parent() ) {
+			$parent_value = $this->parent->get_value();
+
+
+		}
+	}
+
+	/**
+	 * Load settings value.
+	 */
+	protected function load_value() {
+		if ( $this->has_param( 'options_slug' ) ) {
+			$option_slug  = $this->get_option_slug();
+			$option_value = get_option( $option_slug  );
+			var_dump( $option_value );
+			if ( ! empty( $option_value ) ) {
+				$this->set_value( $option_value );
+				// Push
+			}
+		}
 	}
 
 	/**
@@ -264,60 +374,61 @@ class Setting {
 	 * @return mixed
 	 */
 	public function get_value() {
-		$value = array();
-		if ( $this->has_param( 'options_slug' ) ) {
-			$option_slug = $this->get_option_slug();
-			$value       = get_option( $option_slug, array() );
+
+		if ( empty( $this->value ) ) {
+			$this->load_value();
 		}
-		if ( $this->has_children() ) {
-			$child_values = $this->get_child_values();
-			if ( ! empty( $child_values ) ) {
-				$value = array_merge( $value, $child_values );
+		if ( $this->has_settings() ) {
+			$setting_values = $this->get_setting_values();
+			$setting_slug   = $this->get_slug();
+			if ( ! empty( $setting_values ) ) {
+				$this->value = $setting_values;
 			}
 		}
 
-		return $value;
+		return $this->value;
 	}
 
 	/**
-	 * Get the value of a child.
-	 *
-	 * @param string $child_slug The child slug to get a value for.
+	 * Get the value of a setting.
 	 *
 	 * @return mixed
 	 */
-	public function get_child_value( $child_slug ) {
-		$value = null;
-		if ( isset( $this->children[ $child_slug ] ) ) {
-			$value = $this->children[ $child_slug ]->get_value();
-		}
-
-		return $value;
-	}
-
-	/**
-	 * Get the value of a child.
-	 *
-	 * @return mixed
-	 */
-	public function get_child_values() {
+	public function get_setting_values() {
 		$values = array();
-		if ( $this->has_children() ) {
-			foreach ( $this->get_children_slugs() as $child_slug ) {
-				$value_slug            = $this->get_child( $child_slug )->get_value_slug();
-				$values[ $value_slug ] = $this->get_child_value( $child_slug );
+		if ( $this->has_settings() ) {
+
+			foreach ( $this->get_settings() as $setting ) {
+
+				$value_slug    = $setting->get_slug();
+				$setting_value = $setting->get_value();
+
+				if ( is_null( $setting_value ) ) {
+					continue;
+				}
+				if ( ! is_array( $setting_value ) ) {
+					$setting_value = array( $setting->get_slug() => $setting_value );
+				}
+				if ( empty( $values[ $value_slug ] ) ) {
+					$values[ $value_slug ] = array();
+				}
+				$values[$value_slug] = array_merge( $values[$value_slug],  $setting_value);
 			}
+		}
+
+		if ( ! $this->has_parent() && 1 === count( $values ) ) {
+			//	return array_shift( $values );
 		}
 
 		return $values;
 	}
 
 	/**
-	 * Add a child setting.
+	 * Add a setting setting.
 	 *
-	 * @param Setting $child The child setting.
+	 * @param Setting $setting The setting setting.
 	 */
-	public function add_child( $child ) {
-		$this->children[ $child->get_slug() ] = $child;
+	public function add_setting( $setting ) {
+		$this->settings[ $setting->get_slug() ] = $setting;
 	}
 }

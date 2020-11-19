@@ -752,9 +752,10 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 				$component->register_settings( $this->settings );
 			}
 		}
+
 		$ui_structure = $this->settings->get_params_recursive();
 		$this->ui     = apply_filters( 'cloudinary_settings_ui_definition', $ui_structure, $this );
-		$this->pages  = $this->settings->get_children_slugs();
+		$this->pages  = $this->settings->get_setting_slugs();
 	}
 
 	/**

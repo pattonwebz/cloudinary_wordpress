@@ -9,14 +9,16 @@ namespace Cloudinary;
 
 use Cloudinary\Component\Config;
 use Cloudinary\Component\Notice;
+use Cloudinary\Component\Settings;
 use Cloudinary\Component\Setup;
+use Cloudinary\Settings\Setting;
 
 /**
  * Cloudinary connection class.
  *
  * Sets up the initial cloudinary connection and makes the API object available for some uses.
  */
-class Connect implements Config, Setup, Notice {
+class Connect implements Config, Setup, Notice, Settings {
 
 	/**
 	 * Holds the plugin instance.
@@ -457,6 +459,31 @@ class Connect implements Config, Setup, Notice {
 		if ( ! empty( $cname ) ) {
 			$this->set_credentials( array( 'cname' => $cname ) );
 		}
+	}
+
+	/**
+	 * Get the settings.
+	 *
+	 * @param Setting $settings The main settings object.
+	 *
+	 * @return Setting
+	 */
+	public function register_settings( $settings ) {
+		$tabs = array(
+			'page_title' => __( 'Cloudinary Connection', 'cloudinary' ),
+			'menu_title' => __( 'Connect', 'cloudinary' ),
+			'slug'       => 'cld_connect',
+		);
+
+		$setting = new Setting( 'connection', $this, $settings );
+		$setting->register_setting( $tabs );
+
+		// Add connect settings.
+		$structure    = include $this->plugin->dir_path . 'ui-definitions/settings-connect.php';
+		$global_image = new Setting( 'connect', $this, $setting );
+		$global_image->register_setting( $structure );
+
+		return $setting;
 	}
 
 	/**
