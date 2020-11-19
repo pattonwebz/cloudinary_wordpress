@@ -12,9 +12,9 @@ use Cloudinary\REST_API;
 use Cloudinary\Utils;
 
 /**
- * Class Filter.
+ * Class Gallery.
  *
- * Handles filtering of HTML content.
+ * Handles gallery.
  */
 class Gallery {
 
@@ -59,11 +59,13 @@ class Gallery {
 	 * @param Media $media Media class instance.
 	 */
 	public function __construct( Media $media ) {
-		$this->media           = $media;
-		$this->original_config =
-			isset( $media->plugin->config['settings']['gallery'] ) && count( $media->plugin->config['settings']['gallery'] ) ?
-				$media->plugin->config['settings']['gallery'] :
-				$this->default_config();
+		$this->media = $media;
+
+		if ( isset( $media->plugin->config['settings']['gallery'] ) && count( $media->plugin->config['settings']['gallery'] ) ) {
+			$this->original_config = $media->plugin->config['settings']['gallery'];
+		} else {
+			$this->original_config = $this->default_config();
+		}
 
 		if ( $this->gallery_enabled() ) {
 			$this->setup_hooks();
@@ -179,21 +181,8 @@ class Gallery {
 			true
 		);
 
-		$config = $this->get_config();
-
-		if ( $this->woocommerce_active() ) {
-			$product = wc_get_product();
-
-			if ( $product ) {
-				$config['mediaAssets'] = $this->get_image_data( $product->get_gallery_image_ids() );
-			}
-		}
-
-		wp_localize_script(
-			self::GALLERY_LIBRARY_HANDLE,
-			'cloudinaryGallery',
-			array( 'config' => wp_json_encode( $config ) )
-		);
+		$json_config = wp_json_encode( $this->get_config() );
+		wp_add_inline_script( self::GALLERY_LIBRARY_HANDLE, "var cloudinaryGalleryConfig = JSON.parse( '{$json_config}' );" );
 
 		wp_enqueue_script(
 			'cloudinary-gallery-init',
@@ -233,15 +222,6 @@ class Gallery {
 				'nonce'    => wp_create_nonce( 'wp_rest' ),
 			)
 		);
-	}
-
-	/**
-	 * Check if WooCommerce is active.
-	 *
-	 * @return bool
-	 */
-	protected function woocommerce_active() {
-		return class_exists( 'WooCommerce' ) && function_exists( 'wc_get_product' );
 	}
 
 	/**
@@ -332,9 +312,5 @@ class Gallery {
 		add_filter( 'cloudinary_api_rest_endpoints', array( $this, 'rest_endpoints' ) );
 		add_action( 'enqueue_block_editor_assets', array( $this, 'block_editor_scripts_styles' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_gallery_library' ) );
-
-		if ( ! is_admin() && $this->woocommerce_active() ) {
-			add_filter( 'woocommerce_single_product_image_thumbnail_html', '__return_empty_string' );
-		}
 	}
 }

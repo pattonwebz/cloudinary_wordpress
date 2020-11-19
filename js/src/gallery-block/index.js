@@ -1,4 +1,4 @@
-/* global cloudinaryGallery */
+/* global cloudinaryGalleryConfig */
 
 /**
  * WordPress dependencies
@@ -11,8 +11,6 @@ import { registerBlockType } from '@wordpress/blocks';
  */
 import edit from './edit';
 import save from './save';
-
-cloudinaryGallery = JSON.parse( cloudinaryGallery.config );
 
 const {
 	aspectRatio = '1:1',
@@ -30,7 +28,7 @@ const {
 	primaryColor = '#FFF',
 	transition = 'fade',
 	carouselStyle = 'thumbnails',
-} = cloudinaryGallery;
+} = cloudinaryGalleryConfig;
 
 registerBlockType( 'cloudinary/gallery', {
 	title: __( 'Cloudinary Gallery', 'cloudinary' ),

@@ -1,4 +1,4 @@
-/* global cloudinaryGallery */
+/* global cloudinaryGalleryConfig */
 
 const configElements = document.querySelectorAll(
 	'[data-cloudinary-gallery-config]'
@@ -15,7 +15,7 @@ if ( configElements.length ) {
 	} );
 } else if (
 	document.querySelector( '.woocommerce-page' ) &&
-	cloudinaryGallery
+	cloudinaryGalleryConfig
 ) {
-	cloudinary.galleryWidget( JSON.parse( cloudinaryGallery.config ) ).render();
+	cloudinary.galleryWidget( cloudinaryGalleryConfig ).render();
 }

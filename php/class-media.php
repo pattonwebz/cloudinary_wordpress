@@ -14,6 +14,7 @@ use Cloudinary\Media\Gallery;
 use Cloudinary\Media\Global_Transformations;
 use Cloudinary\Media\Upgrade;
 use Cloudinary\Media\Video;
+use Cloudinary\Media\WooCommerceGallery;
 
 /**
  * Class Media
@@ -97,6 +98,13 @@ class Media implements Setup {
 	 * @var \Cloudinary\Media\Gallery.
 	 */
 	public $gallery;
+
+	/**
+	 * WooCommerceGallery instance.
+	 *
+	 * @var \Cloudinary\Media\WooCommerceGallery
+	 */
+	public $woocommerce_gallery;
 
 	/**
 	 * Sync instance.
@@ -1907,6 +1915,7 @@ class Media implements Setup {
 			// Internal components.
 			$this->global_transformations = new Global_Transformations( $this );
 			$this->gallery                = new Gallery( $this );
+			$this->woocommerce_gallery    = new WooCommerceGallery( $this->gallery );
 			$this->filter                 = new Filter( $this );
 			$this->upgrade                = new Upgrade( $this );
 			$this->video                  = new Video( $this );
