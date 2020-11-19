@@ -810,9 +810,17 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 		$config = get_option( 'cloudinary_settings_cache', array() );
 		if ( ! empty( $config ) ) {
 
-			$setting_value = $this->settings->get_value();
-			$config = $setting_value[ $this->settings->get_slug() ];
-			$this->set_active_page( null );
+			$config = $this->settings->get_value();
+			var_dump( $config );
+			die;
+			//$this->settings->get_setting( 'sweets' )->set_value('NICE');
+			//$conn = $this->settings->get_child('connection')->get_value();
+			//$gconn = $this->settings->get_setting( 'enable_breakpoints' )->get_value();
+			//$curl = $this->settings->get_setting( 'sweets' )->get_value();
+			//$this->set_active_page( null );
+			//$bp = $this->settings->get_setting( 'enable_breakpoints' );
+			//$bp->set_value('off');
+			//$save = $bp->save_value();
 			//update_option( 'cloudinary_settings_cache', $config );
 		}
 
