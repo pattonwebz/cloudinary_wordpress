@@ -340,6 +340,11 @@ class Setting {
 		$this->value = $value;
 	}
 
+	/**
+	 * Save the value of a setting.
+	 *
+	 * @return bool
+	 */
 	public function save_value() {
 		if ( $this->has_param( 'options_slug' ) ) {
 			$slug = $this->get_option_slug();
