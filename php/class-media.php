@@ -1890,13 +1890,13 @@ class Media implements Setup, Settings {
 		$setting = new Setting( 'media', $this, $settings );
 		$setting->register_setting( $tabs );
 		// Add Image global settings.
-		$structure              = include $this->plugin->dir_path . 'ui-definitions/settings-media-image.php';
-		$global_transformations = new Setting( 'global_transformations', $this, $setting );
-		$global_transformations->register_setting( $structure );
+		$image_structure = include $this->plugin->dir_path . 'ui-definitions/settings-media-image.php';
+		$global_image    = new Setting( 'global_transformations', $this, $setting );
+		$global_image->register_setting( $image_structure );
 		// Add video global settings.
-		$structure              = include $this->plugin->dir_path . 'ui-definitions/settings-media-video.php';
-		$global_transformations = new Setting( 'global_transformations', $this, $setting );
-		$global_transformations->register_setting( $structure );
+		$video_structure = include $this->plugin->dir_path . 'ui-definitions/settings-media-video.php';
+		$global_video    = new Setting( 'global_video_transformations', $this, $setting );
+		$global_video->register_setting( $video_structure );
 
 		return $setting;
 	}
