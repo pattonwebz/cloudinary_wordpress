@@ -359,12 +359,14 @@ class Setting {
 	protected function load_value() {
 		if ( $this->has_param( 'options_slug' ) ) {
 			$option_slug  = $this->get_option_slug();
-			$option_value = get_option( $option_slug  );
-			var_dump( $option_value );
+			$option_value = get_option( $option_slug );
 			if ( ! empty( $option_value ) ) {
 				$this->set_value( $option_value );
 				// Push
 			}
+		}
+		if ( is_null( $this->value ) && $this->has_param( 'default' ) ) {
+			$this->value = $this->get_param( 'default' );
 		}
 	}
 
@@ -375,12 +377,11 @@ class Setting {
 	 */
 	public function get_value() {
 
-		if ( empty( $this->value ) ) {
+		if ( is_null( $this->value ) ) {
 			$this->load_value();
 		}
 		if ( $this->has_settings() ) {
 			$setting_values = $this->get_setting_values();
-			$setting_slug   = $this->get_slug();
 			if ( ! empty( $setting_values ) ) {
 				$this->value = $setting_values;
 			}
@@ -395,29 +396,24 @@ class Setting {
 	 * @return mixed
 	 */
 	public function get_setting_values() {
-		$values = array();
+		$values = $this->value;
 		if ( $this->has_settings() ) {
 
 			foreach ( $this->get_settings() as $setting ) {
-
-				$value_slug    = $setting->get_slug();
 				$setting_value = $setting->get_value();
-
-				if ( is_null( $setting_value ) ) {
-					continue;
+				$value_slug    = $setting->get_value_slug();
+				if ( is_string( $setting_value ) || is_null( $setting_value ) ) {
+					$value_slug = $setting->get_slug();
+				} elseif ( isset( $values[ $value_slug ] ) ) {
+					$setting_value = wp_parse_args( $setting_value, $values[ $value_slug ] );
 				}
-				if ( ! is_array( $setting_value ) ) {
-					$setting_value = array( $setting->get_slug() => $setting_value );
-				}
-				if ( empty( $values[ $value_slug ] ) ) {
-					$values[ $value_slug ] = array();
-				}
-				$values[$value_slug] = array_merge( $values[$value_slug],  $setting_value);
+				$values[ $value_slug ] = $setting_value;
 			}
+			$all[] = $values;
 		}
 
 		if ( ! $this->has_parent() && 1 === count( $values ) ) {
-			//	return array_shift( $values );
+			return array_shift( $values );
 		}
 
 		return $values;

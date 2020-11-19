@@ -714,11 +714,11 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	 */
 	protected function register_setting() {
 		$ui_settings    = array(
-			'title'        => __( 'Cloudinary', 'cloudinary' ),
-			'menu_title'   => __( 'Cloudinary', 'cloudinary' ),
-			'version'      => $this->plugin->version,
-			'slug'         => 'cloudinary',
-			'capability'   => 'manage_options',
+			'title'      => __( 'Cloudinary', 'cloudinary' ),
+			'menu_title' => __( 'Cloudinary', 'cloudinary' ),
+			'version'    => $this->plugin->version,
+			'slug'       => 'cloudinary',
+			'capability' => 'manage_options',
 		);
 		$this->settings = new Setting( $this->plugin->slug, $this );
 		$this->settings->register_setting( $ui_settings );
@@ -808,20 +808,9 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	public function get_config() {
 		$this->setup_ui();
 		$config = get_option( 'cloudinary_settings_cache', array() );
-		if ( ! empty( $config ) ) {
-
+		if ( empty( $config ) ) {
 			$config = $this->settings->get_value();
-			var_dump( $config );
-			die;
-			//$this->settings->get_setting( 'sweets' )->set_value('NICE');
-			//$conn = $this->settings->get_child('connection')->get_value();
-			//$gconn = $this->settings->get_setting( 'enable_breakpoints' )->get_value();
-			//$curl = $this->settings->get_setting( 'sweets' )->get_value();
-			//$this->set_active_page( null );
-			//$bp = $this->settings->get_setting( 'enable_breakpoints' );
-			//$bp->set_value('off');
-			//$save = $bp->save_value();
-			//update_option( 'cloudinary_settings_cache', $config );
+			update_option( 'cloudinary_settings_cache', $config );
 		}
 
 		return $config;
