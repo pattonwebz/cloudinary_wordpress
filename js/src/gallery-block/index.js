@@ -97,6 +97,7 @@ registerBlockType( 'cloudinary/gallery', {
 		},
 		thumbnailProps_selectedBorderWidth: { type: 'number', default: 4 },
 		thumbnailProps_mediaSymbolShape: { type: 'string', default: 'round' },
+		indicatorProps_shape: { type: 'string', default: 'round' },
 		selectedImages: { type: 'array', default: [] },
 		container: { type: 'string' },
 	},

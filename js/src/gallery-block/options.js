@@ -133,6 +133,24 @@ export const NAVIGATION_BUTTON_SHAPE = [
 	},
 ];
 
+export const INDICATOR_SHAPE = [
+	{
+		value: 'round',
+		icon: <ShapeRound />,
+		label: __( 'Round', 'cloudinary' ),
+	},
+	{
+		value: 'radius',
+		icon: <ShapeRadius />,
+		label: __( 'Radius', 'cloudinary' ),
+	},
+	{
+		value: 'square',
+		icon: <ShapeSquare />,
+		label: __( 'Square', 'cloudinary' ),
+	},
+];
+
 export const SELECTED_STYLE = [
 	{ label: __( 'All', 'cloudinary' ), value: 'all' },
 	{ label: __( 'Border', 'cloudinary' ), value: 'border' },

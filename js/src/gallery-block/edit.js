@@ -38,6 +38,7 @@ import {
 	CAROUSEL_LOCATION,
 	CAROUSEL_STYLE,
 	FADE_TRANSITIONS,
+	INDICATOR_SHAPE,
 	LAYOUT_OPTIONS,
 	MEDIA_ICON_SHAPE,
 	NAVIGATION,
@@ -273,46 +274,60 @@ const Edit = ( { setAttributes, attributes, className } ) => {
 										) ) }
 									</ButtonGroup>
 								</p>
-								<SelectControl
-									label={ __(
-										'Zoom Viewer Position',
-										'cloudinary'
-									) }
-									value={
-										attributes.zoomProps_viewerPosition
-									}
-									options={ ZOOM_VIEWER_POSITION }
-									onChange={ ( value ) =>
-										setAttributes( {
-											zoomProps_viewerPosition: value,
-										} )
-									}
-								/>
-								<p>{ __( 'Zoom Trigger', 'cloudinary' ) }</p>
-								<p>
-									<ButtonGroup>
-										{ ZOOM_TRIGGER.map( ( item ) => (
-											<Button
-												key={
-													item.value + '-zoom-trigger'
-												}
-												isDefault
-												isPressed={
-													item.value ===
-													attributes.zoomProps_trigger
-												}
-												onClick={ () =>
-													setAttributes( {
-														zoomProps_trigger:
-															item.value,
-													} )
-												}
-											>
-												{ item.label }
-											</Button>
-										) ) }
-									</ButtonGroup>
-								</p>
+								{ attributes.zoomProps_type === 'flyout' && (
+									<SelectControl
+										label={ __(
+											'Zoom Viewer Position',
+											'cloudinary'
+										) }
+										value={
+											attributes.zoomProps_viewerPosition
+										}
+										options={ ZOOM_VIEWER_POSITION }
+										onChange={ ( value ) =>
+											setAttributes( {
+												zoomProps_viewerPosition: value,
+											} )
+										}
+									/>
+								) }
+								{ attributes.zoomProps_type !== 'popup' && (
+									<>
+										<p>
+											{ __(
+												'Zoom Trigger',
+												'cloudinary'
+											) }
+										</p>
+										<p>
+											<ButtonGroup>
+												{ ZOOM_TRIGGER.map(
+													( item ) => (
+														<Button
+															key={
+																item.value +
+																'-zoom-trigger'
+															}
+															isDefault
+															isPressed={
+																item.value ===
+																attributes.zoomProps_trigger
+															}
+															onClick={ () =>
+																setAttributes( {
+																	zoomProps_trigger:
+																		item.value,
+																} )
+															}
+														>
+															{ item.label }
+														</Button>
+													)
+												) }
+											</ButtonGroup>
+										</p>
+									</>
+								) }
 							</>
 						) }
 					</div>
@@ -370,108 +385,151 @@ const Edit = ( { setAttributes, attributes, className } ) => {
 							) ) }
 						</ButtonGroup>
 					</p>
-					<RangeControl
-						label={ __( 'Width', 'cloudinary' ) }
-						value={ attributes.thumbnailProps_width }
-						onChange={ ( newWidth ) =>
-							setAttributes( { thumbnailProps_width: newWidth } )
-						}
-						min={ 5 }
-						max={ 300 }
-					/>
-					<RangeControl
-						label={ __( 'Height', 'cloudinary' ) }
-						value={ attributes.thumbnailProps_height }
-						onChange={ ( newHeight ) =>
-							setAttributes( {
-								thumbnailProps_height: newHeight,
-							} )
-						}
-						min={ 5 }
-						max={ 300 }
-					/>
-					<p>{ __( 'Navigation Button Shape', 'cloudinary' ) }</p>
-					{ NAVIGATION_BUTTON_SHAPE.map( ( item ) => (
-						<Radio
-							key={ item.value + '-navigation-button-shape' }
-							value={ item.value }
-							onChange={ ( value ) =>
-								setAttributes( {
-									thumbnailProps_navigationShape: value,
-								} )
-							}
-							icon={ item.icon }
-							current={
-								attributes.thumbnailProps_navigationShape
-							}
-						>
-							{ item.label }
-						</Radio>
-					) ) }
-					<p>{ __( 'Selected Style', 'cloudinary' ) }</p>
-					<p>
-						<ButtonGroup>
-							{ SELECTED_STYLE.map( ( item ) => (
-								<Button
-									key={ item.value + '-selected-style' }
-									isDefault
-									isPressed={
-										item.value ===
-										attributes.thumbnailProps_selectedStyle
+					{ attributes.carouselStyle === 'thumbnails' && (
+						<>
+							<RangeControl
+								label={ __( 'Width', 'cloudinary' ) }
+								value={ attributes.thumbnailProps_width }
+								onChange={ ( newWidth ) =>
+									setAttributes( {
+										thumbnailProps_width: newWidth,
+									} )
+								}
+								min={ 5 }
+								max={ 300 }
+							/>
+							<RangeControl
+								label={ __( 'Height', 'cloudinary' ) }
+								value={ attributes.thumbnailProps_height }
+								onChange={ ( newHeight ) =>
+									setAttributes( {
+										thumbnailProps_height: newHeight,
+									} )
+								}
+								min={ 5 }
+								max={ 300 }
+							/>
+							<p>
+								{ __(
+									'Navigation Button Shape',
+									'cloudinary'
+								) }
+							</p>
+							{ NAVIGATION_BUTTON_SHAPE.map( ( item ) => (
+								<Radio
+									key={
+										item.value + '-navigation-button-shape'
 									}
-									onClick={ () =>
+									value={ item.value }
+									onChange={ ( value ) =>
 										setAttributes( {
-											thumbnailProps_selectedStyle:
-												item.value,
+											thumbnailProps_navigationShape: value,
 										} )
+									}
+									icon={ item.icon }
+									current={
+										attributes.thumbnailProps_navigationShape
 									}
 								>
 									{ item.label }
-								</Button>
+								</Radio>
 							) ) }
-						</ButtonGroup>
-					</p>
-					<SelectControl
-						label={ __( 'Selected Border Position', 'cloudinary' ) }
-						value={
-							attributes.thumbnailProps_selectedBorderPosition
-						}
-						options={ SELECTED_BORDER_POSITION }
-						onChange={ ( value ) =>
-							setAttributes( {
-								thumbnailProps_selectedBorderPosition: value,
-							} )
-						}
-					/>
-					<RangeControl
-						label={ __( 'Selected Border Width', 'cloudinary' ) }
-						value={ attributes.thumbnailProps_selectedBorderWidth }
-						onChange={ ( newBw ) =>
-							setAttributes( {
-								thumbnailProps_selectedBorderWidth: newBw,
-							} )
-						}
-						min={ 0 }
-						max={ 10 }
-					/>
-					<p>{ __( 'Media Shape Icon', 'cloudinary' ) }</p>
-					{ MEDIA_ICON_SHAPE.map( ( item ) => (
-						<Radio
-							key={ item.value + '-media' }
-							value={ item.value }
-							onChange={ ( value ) =>
-								setAttributes( {
-									thumbnailProps_mediaSymbolShape: value,
-								} )
-							}
-							icon={ item.icon }
-							current={
-								attributes.thumbnailProps_mediaSymbolShape
-							}
-						>
-							{ item.label }
-						</Radio>
-					) ) }
+							<p>{ __( 'Selected Style', 'cloudinary' ) }</p>
+							<p>
+								<ButtonGroup>
+									{ SELECTED_STYLE.map( ( item ) => (
+										<Button
+											key={
+												item.value + '-selected-style'
+											}
+											isDefault
+											isPressed={
+												item.value ===
+												attributes.thumbnailProps_selectedStyle
+											}
+											onClick={ () =>
+												setAttributes( {
+													thumbnailProps_selectedStyle:
+														item.value,
+												} )
+											}
+										>
+											{ item.label }
+										</Button>
+									) ) }
+								</ButtonGroup>
+							</p>
+							<SelectControl
+								label={ __(
+									'Selected Border Position',
+									'cloudinary'
+								) }
+								value={
+									attributes.thumbnailProps_selectedBorderPosition
+								}
+								options={ SELECTED_BORDER_POSITION }
+								onChange={ ( value ) =>
+									setAttributes( {
+										thumbnailProps_selectedBorderPosition: value,
+									} )
+								}
+							/>
+							<RangeControl
+								label={ __(
+									'Selected Border Width',
+									'cloudinary'
+								) }
+								value={
+									attributes.thumbnailProps_selectedBorderWidth
+								}
+								onChange={ ( newBw ) =>
+									setAttributes( {
+										thumbnailProps_selectedBorderWidth: newBw,
+									} )
+								}
+								min={ 0 }
+								max={ 10 }
+							/>
+							<p>{ __( 'Media Shape Icon', 'cloudinary' ) }</p>
+							{ MEDIA_ICON_SHAPE.map( ( item ) => (
+								<Radio
+									key={ item.value + '-media' }
+									value={ item.value }
+									onChange={ ( value ) =>
+										setAttributes( {
+											thumbnailProps_mediaSymbolShape: value,
+										} )
+									}
+									icon={ item.icon }
+									current={
+										attributes.thumbnailProps_mediaSymbolShape
+									}
+								>
+									{ item.label }
+								</Radio>
+							) ) }
+						</>
+					) }
+					{ attributes.carouselStyle === 'indicators' && (
+						<>
+							<p>{ __( 'Indicators Shape', 'cloudinary' ) }</p>
+							{ INDICATOR_SHAPE.map( ( item ) => (
+								<Radio
+									key={ item.value + '-indicator' }
+									value={ item.value }
+									onChange={ ( value ) =>
+										setAttributes( {
+											indicatorProps_shape: value,
+										} )
+									}
+									icon={ item.icon }
+									current={ attributes.indicatorProps_shape }
+								>
+									{ item.label }
+								</Radio>
+							) ) }
+						</>
+					) }
 				</PanelBody>
 			</InspectorControls>
 		</>
