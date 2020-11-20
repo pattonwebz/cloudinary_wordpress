@@ -504,6 +504,10 @@ class Media implements Setup {
 						'crop'   => $cropped ? 'fill' : 'scale',
 					);
 					if ( $cropped ) {
+						// Special thumbnail size.
+						if ( 'thumbnail' === $size_name ) {
+							$wp_size['crop'] = 'thumb';
+						}
 						$wp_size['gravity'] = 'auto';
 					}
 
