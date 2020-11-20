@@ -196,7 +196,7 @@ class Download_Sync {
 		require_once ABSPATH . 'wp-admin/includes/media.php';
 		if ( empty( $source ) ) {
 			$cloudinary_id = $this->media->get_cloudinary_id( $attachment_id );
-			$source        = $this->media->cloudinary_url( $attachment_id, array(), array(), $cloudinary_id );
+			$source        = $this->media->cloudinary_url( $attachment_id, array(), array(), $cloudinary_id, false, false );
 		}
 		$file_name = basename( $source );
 		try {
@@ -295,7 +295,7 @@ class Download_Sync {
 			$cloudinary_id = $this->plugin->components['media']->get_cloudinary_id( $attachment_id );
 			// Make sure all sizes have the transformations on for previewing.
 			foreach ( $attachment['sizes'] as $name => &$size ) {
-				$size['url'] = $this->plugin->components['media']->cloudinary_url( $attachment_id, $name, $transformations, $cloudinary_id );
+				$size['url'] = $this->plugin->components['media']->cloudinary_url( $attachment_id, $name, $transformations, $cloudinary_id, false, false );
 			}
 		}
 		// Prepare response.

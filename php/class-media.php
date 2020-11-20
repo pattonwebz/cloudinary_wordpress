@@ -728,16 +728,23 @@ class Media implements Setup {
 	/**
 	 * Generate a Cloudinary URL based on attachment ID and required size.
 	 *
-	 * @param int          $attachment_id             The id of the attachment.
-	 * @param array|string $size                      The wp size to set for the URL.
-	 * @param array        $transformations           Set of transformations to apply to this url.
-	 * @param string       $cloudinary_id             Optional forced cloudinary ID.
+	 * @param int          $attachment_id The id of the attachment.
+	 * @param array|string $size The wp size to set for the URL.
+	 * @param array        $transformations Set of transformations to apply to this url.
+	 * @param string       $cloudinary_id Optional forced cloudinary ID.
 	 * @param bool         $overwrite_transformations Flag url is a breakpoint URL to stop re-applying default transformations.
+	 * @param bool         $apply_default_transformations Whether default transformations should be added to this url or not.
 	 *
 	 * @return string The converted URL.
 	 */
-	public function cloudinary_url( $attachment_id, $size = array(), $transformations = array(), $cloudinary_id = null, $overwrite_transformations = false ) {
-
+	public function cloudinary_url(
+			$attachment_id,
+			$size = array(),
+			$transformations = array(),
+			$cloudinary_id = null,
+			$overwrite_transformations = false,
+			$apply_default_transformations = true
+	) {
 		if ( ! ( $cloudinary_id ) ) {
 			$cloudinary_id = $this->cloudinary_id( $attachment_id );
 			if ( ! $cloudinary_id ) {
@@ -769,8 +776,9 @@ class Media implements Setup {
 		 * @return array
 		 */
 		$pre_args['transformation'] = apply_filters( 'cloudinary_transformations', $transformations, $attachment_id );
+
 		// Defaults are only to be added on front, main images ( not breakpoints, since these are adapted down), and videos.
-		if ( false === $overwrite_transformations && ! is_admin() ) {
+		if ( true === $apply_default_transformations && false === $overwrite_transformations && ! is_admin() ) {
 			$pre_args['transformation'] = $this->apply_default_transformations( $pre_args['transformation'], $resource_type );
 		}
 
