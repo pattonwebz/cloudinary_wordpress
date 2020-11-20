@@ -1,1 +1,0 @@
-{"version":3,"sources":["webpack:///./css/src/video.scss"],"names":[],"mappings":"AAIE;EACC,eAAe","file":"../css/video.css","sourcesContent":[".cld {\n\n\t&-video {\n\n\t\t&-player {\n\t\t\tmax-width: 100%;\n\t\t}\n\t}\n}\n\n"],"sourceRoot":""}
