@@ -175,8 +175,10 @@ class Plugin {
 			 *
 			 * @var  Component\Settings $component
 			 */
-			$this->config[ $slug ] = $component->register_settings( $this->settings );
+			$component->register_settings( $this->settings );
 		}
+		$this->settings->load_value();
+		$this->config = $this->settings->get_value();
 	}
 
 	/**

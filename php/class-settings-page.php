@@ -730,9 +730,10 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	 * Setup the UI.
 	 */
 	protected function setup_ui() {
-		$ui_structure = $this->plugin->settings->get_params_recursive();
-		$this->ui     = apply_filters( 'cloudinary_settings_ui_definition', $ui_structure, $this );
-		$this->pages  = $this->plugin->settings->get_setting_slugs();
+		$this->settings = $this->plugin->settings;
+		$ui_structure   = $this->plugin->settings->get_params_recursive();
+		$this->ui       = apply_filters( 'cloudinary_settings_ui_definition', $ui_structure, $this );
+		$this->pages    = $this->plugin->settings->get_setting_slugs();
 	}
 
 	/**
