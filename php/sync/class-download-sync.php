@@ -293,10 +293,17 @@ class Download_Sync {
 		if ( 'image' === $attachment['type'] ) {
 			// Get the cloudinary_id from public_id not Media::cloudinary_id().
 			$cloudinary_id = $this->plugin->components['media']->get_cloudinary_id( $attachment_id );
+
+			// don't apply the default transformations here.
+			add_filter( 'cloudinary_apply_default_transformations', '__return_false' );
+
 			// Make sure all sizes have the transformations on for previewing.
 			foreach ( $attachment['sizes'] as $name => &$size ) {
-				$size['url'] = $this->plugin->components['media']->cloudinary_url( $attachment_id, $name, $transformations, $cloudinary_id, false, false );
+				$size['url'] = $this->plugin->components['media']->cloudinary_url( $attachment_id, $name, $transformations, $cloudinary_id, false );
 			}
+
+			// start applying default transformations again.
+			remove_filter( 'cloudinary_apply_default_transformations', '__return_false' );
 		}
 		// Prepare response.
 		$response = array(

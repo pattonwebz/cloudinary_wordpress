@@ -182,10 +182,14 @@ class Storage implements Notice {
 
 		// Get the previous state of the attachment.
 		$previous_state = $this->media->get_post_meta( $attachment_id, Sync::META_KEYS['storage'], true );
+
+		// don't apply the default transformations here.
+		add_filter( 'cloudinary_apply_default_transformations', '__return_false' );
+
 		switch ( $this->settings['offload'] ) {
 			case 'cld':
 				$this->remove_local_assets( $attachment_id );
-				update_post_meta( $attachment_id, '_wp_attached_file', $this->media->cloudinary_url( $attachment_id, array(), array(), null, false, false ) );
+				update_post_meta( $attachment_id, '_wp_attached_file', $this->media->cloudinary_url( $attachment_id, array(), array(), null, false ) );
 				break;
 			case 'dual_low':
 				$transformations = $this->media->get_transformation_from_meta( $attachment_id );
@@ -194,17 +198,20 @@ class Storage implements Notice {
 					// Add low quality transformations.
 					$transformations[] = array( 'quality' => 'auto:low' );
 				}
-				$url = $this->media->cloudinary_url( $attachment_id, '', $transformations, null, false, false );
+				$url = $this->media->cloudinary_url( $attachment_id, '', $transformations, null, false );
 				break;
 			case 'dual_full':
 				$exists = get_attached_file( $attachment_id );
 				if ( ! empty( $previous_state ) && ! file_exists( $exists ) ) {
 					// Only do this is it's changing a state.
 					$transformations = $this->media->get_transformation_from_meta( $attachment_id );
-					$url             = $this->media->cloudinary_url( $attachment_id, '', $transformations, null, false, false );
+					$url             = $this->media->cloudinary_url( $attachment_id, '', $transformations, null, false );
 				}
 				break;
 		}
+
+		// start applying default transformations again.
+		remove_filter( 'cloudinary_apply_default_transformations', '__return_false' );
 
 		// If we have a URL, it means we have a new source to pull from.
 		if ( ! empty( $url ) ) {

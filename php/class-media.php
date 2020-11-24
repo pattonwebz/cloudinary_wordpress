@@ -161,7 +161,6 @@ class Media implements Setup {
 	 */
 	public function get_convertible_extensions() {
 
-
 		// Add preferred formats in future.
 		$base_types = array(
 			'psd'  => 'jpg',
@@ -733,18 +732,10 @@ class Media implements Setup {
 	 * @param array        $transformations Set of transformations to apply to this url.
 	 * @param string       $cloudinary_id Optional forced cloudinary ID.
 	 * @param bool         $overwrite_transformations Flag url is a breakpoint URL to stop re-applying default transformations.
-	 * @param bool         $apply_default_transformations Whether default transformations should be added to this url or not.
 	 *
 	 * @return string The converted URL.
 	 */
-	public function cloudinary_url(
-			$attachment_id,
-			$size = array(),
-			$transformations = array(),
-			$cloudinary_id = null,
-			$overwrite_transformations = false,
-			$apply_default_transformations = true
-	) {
+	public function cloudinary_url( $attachment_id, $size = array(), $transformations = array(), $cloudinary_id = null, $overwrite_transformations = false ) {
 		if ( ! ( $cloudinary_id ) ) {
 			$cloudinary_id = $this->cloudinary_id( $attachment_id );
 			if ( ! $cloudinary_id ) {
@@ -775,7 +766,8 @@ class Media implements Setup {
 		 *
 		 * @return array
 		 */
-		$pre_args['transformation'] = apply_filters( 'cloudinary_transformations', $transformations, $attachment_id );
+		$pre_args['transformation']    = apply_filters( 'cloudinary_transformations', $transformations, $attachment_id );
+		$apply_default_transformations = apply_filters( 'cloudinary_apply_default_transformations', true );
 
 		// Defaults are only to be added on front, main images ( not breakpoints, since these are adapted down), and videos.
 		if ( true === $apply_default_transformations && false === $overwrite_transformations && ! is_admin() ) {
@@ -1338,7 +1330,6 @@ class Media implements Setup {
 	public function down_sync_asset() {
 		$nonce = filter_input( INPUT_POST, 'nonce', FILTER_SANITIZE_STRING );
 		if ( wp_verify_nonce( $nonce, 'wp_rest' ) ) {
-
 
 			$asset = $this->get_asset_payload();
 			// Set a base array for pulling an asset if needed.
