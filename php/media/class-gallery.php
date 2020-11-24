@@ -33,6 +33,31 @@ class Gallery {
 	const GALLERY_LIBRARY_URL = 'https://product-gallery.cloudinary.com/all.js';
 
 	/**
+	 * The default config in case no settings are saved.
+	 *
+	 * @var array
+	 */
+	public static $default_config = array(
+		'enable_gallery'                    => 'on',
+		'primary_color'                     => '#606060',
+		'on_primary_color'                  => '#55009b',
+		'active_color'                      => '#0f6363',
+		'on_active_color'                   => '#aaaaaa',
+		'aspect_ratio'                      => '1:1',
+		'zoom_trigger'                      => 'click',
+		'zoom_type'                         => 'popup',
+		'zoom_viewer_position'              => 'bottom',
+		'carousel_location'                 => 'top',
+		'carousel_offset'                   => 5,
+		'carousel_style'                    => 'thumbnails',
+		'carousel_thumbnail_width'          => 64,
+		'carousel_thumbnail_height'         => 64,
+		'carousel_button_shape'             => 'radius',
+		'carousel_thumbnail_selected_style' => 'gradient',
+		'custom_settings'                   => array(),
+	);
+
+	/**
 	 * Holds instance of the Media class.
 	 *
 	 * @var Media
@@ -64,7 +89,7 @@ class Gallery {
 		if ( isset( $media->plugin->config['settings']['gallery'] ) && count( $media->plugin->config['settings']['gallery'] ) ) {
 			$this->original_config = $media->plugin->config['settings']['gallery'];
 		} else {
-			$this->original_config = $this->default_config();
+			$this->original_config = self::$default_config;
 		}
 
 		if ( $this->gallery_enabled() ) {
@@ -139,34 +164,6 @@ class Gallery {
 		}
 
 		return $input;
-	}
-
-	/**
-	 * Sensible defaults if settings haven't been saved.
-	 *
-	 * @return array
-	 */
-	protected function default_config() {
-		return array(
-			'primaryColor'                   => '#606060',
-			'onPrimaryColor'                 => '#55009b',
-			'activeColor'                    => '#0f6363',
-			'onActiveColor'                  => '#aaaaaa',
-			'aspectRatio'                    => '1:1',
-			'zoomTrigger'                    => 'click',
-			'zoomType'                       => 'popup',
-			'zoomViewerPosition'             => 'bottom',
-			'carouselLocation'               => 'top',
-			'carouselOffset'                 => 5,
-			'carouselStyle'                  => 'thumbnails',
-			'carouselThumbnailWidth'         => 64,
-			'carouselThumbnailHeight'        => 64,
-			'carouselButtonShape'            => 'radius',
-			'carouselThumbnailSelectedStyle' => 'gradient',
-			'cloudName'                      => $this->media->plugin->components['connect']->get_cloud_name(),
-			'container'                      => '.woocommerce-product-gallery',
-			'mediaAssets'                    => array(),
-		);
 	}
 
 	/**
