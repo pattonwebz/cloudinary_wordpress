@@ -289,7 +289,7 @@ class Connect implements Config, Setup, Notice, Settings {
 		if ( 4 > count( $valid ) ) {
 			$result['type']    = 'invalid_url';
 			$result['message'] = sprintf(
-				// translators: Placeholder refers to the expected URL format.
+			// translators: Placeholder refers to the expected URL format.
 				__( 'Incorrect Format. Expecting: %s', 'cloudinary' ),
 				'<code>cloudinary://API_KEY:API_SECRET@CLOUD_NAME</code>'
 			);
@@ -470,18 +470,17 @@ class Connect implements Config, Setup, Notice, Settings {
 	 */
 	public function register_settings( $settings ) {
 		$tabs = array(
-			'page_title' => __( 'Cloudinary Connection', 'cloudinary' ),
-			'menu_title' => __( 'Connect', 'cloudinary' ),
-			'slug'       => 'cld_connect',
+			'page_title'   => __( 'Cloudinary Connection', 'cloudinary' ),
+			'menu_title'   => __( 'Connect', 'cloudinary' ),
 		);
 
-		$setting = new Setting( 'connection', $this, $settings );
+		$setting = new Setting( 'connect', $this, $settings );
 		$setting->register_setting( $tabs );
 
 		// Add connect settings.
 		$structure    = include $this->plugin->dir_path . 'ui-definitions/settings-connect.php';
-		$global_image = new Setting( 'connect', $this, $setting );
-		$global_image->register_setting( $structure );
+		$connection = new Setting( 'connect', $this, $setting );
+		$connection->register_setting( $structure );
 
 		return $setting;
 	}
@@ -492,10 +491,9 @@ class Connect implements Config, Setup, Notice, Settings {
 	 * @since  0.1
 	 */
 	public function setup() {
-		// Get the cloudinary url from plugin config.
-		$config = $this->plugin->config['settings']['connect'];
-		if ( ! empty( $config['cloudinary_url'] ) ) {
-			$this->config_from_url( $config['cloudinary_url'] );
+		$settings = $this->plugin->settings->find_setting( 'cloudinary_url' );
+		if ( $settings->has_value() ) {
+			$this->config_from_url( $settings->get_value() );
 			$this->api = new Connect\Api( $this, $this->plugin->version );
 			$this->usage_stats();
 			$this->setup_status_cron();
@@ -641,7 +639,7 @@ class Connect implements Config, Setup, Notice, Settings {
 					continue;
 				}
 				// translators: Placeholders are URLS and percentage values.
-				$message = sprintf(
+				$message         = sprintf(
 				/* translators: %1$s quota size, %2$s amount in percent, %3$s link URL, %4$s link anchor text. */
 					__(
 						'<span class="dashicons dashicons-cloudinary"></span> You are %2$s of the way through your monthly quota for %1$s on your Cloudinary account. If you exceed your quota, the Cloudinary plugin will be deactivated until your next billing cycle and your media assets will be served from your WordPress Media Library. You may wish to <a href="%3$s" target="_blank">%4$s</a> and increase your quota to ensure you maintain full functionality.',

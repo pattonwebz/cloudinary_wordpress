@@ -63,20 +63,20 @@ class Global_Transformations {
 	 */
 	public function __construct( \Cloudinary\Media $media ) {
 		$this->media            = $media;
-		$settings               = $this->media->plugin->components['settings']->get_ui();
-		$this->globals['image'] = $this->media->plugin->config['settings']['global_transformations'];
-		$this->globals['video'] = $this->media->plugin->config['settings']['global_video_transformations'];
+		$settings               = $this->media->plugin->settings;
+		$this->globals['image'] = $settings->find_setting( 'global_transformations' )->get_value();
+		$this->globals['video'] = $settings->find_setting( 'global_video_transformations' )->get_value();
 		$image_fields           = array_filter(
-			$settings['pages']['global_transformation']['tabs']['global_transformations']['fields'],
+			$settings->find_setting( 'global_transformations' )->get_settings(),
 			function ( $field ) {
-				return ! empty( $field['contextual'] );
+				return $field->has_param( 'contextual' );
 			}
 		);
 
 		$video_fields = array_filter(
-			$settings['pages']['global_transformation']['tabs']['global_video_transformations']['fields'],
+			$settings->find_setting( 'global_video_transformations' )->get_settings(),
 			function ( $field ) {
-				return ! empty( $field['contextual'] );
+				return $field->has_param( 'contextual' );
 			}
 		);
 
@@ -402,14 +402,15 @@ class Global_Transformations {
 			}
 		}
 		$out[] = '</ul>';
-		
+
 		// Get apply Type.
 		if ( ! empty( $terms ) ) {
 			$type  = get_post_meta( $post->ID, self::META_APPLY_KEY . '_terms', true );
 			$out[] = '<label class="cld-tax-order-list-type"><input ' . checked( 'overwrite', $type, false ) . ' type="checkbox" value="overwrite" name="cld_apply_type" />' . __( 'Overwrite taxonomy', 'cloudinary' ) . '</label>';
 		}
-		
+
 		$out[] = '</div>';
+
 		return implode( $out );
 	}
 

@@ -1309,14 +1309,14 @@ class Media implements Setup, Settings {
 		// Check for transformations.
 		$transformations = $this->get_transformations_from_string( $asset['url'] );
 		if ( ! empty( $transformations ) ) {
-			$asset['sync_key']       .= wp_json_encode( $transformations );
+			$asset['sync_key']        .= wp_json_encode( $transformations );
 			$asset['transformations'] = $transformations;
 		}
 
 		// Check Format.
 		$url_format = pathinfo( $asset['url'], PATHINFO_EXTENSION );
 		if ( strtolower( $url_format ) !== strtolower( $asset['format'] ) ) {
-			$asset['format']    = $url_format;
+			$asset['format']   = $url_format;
 			$asset['sync_key'] .= $url_format;
 		}
 
@@ -1883,7 +1883,6 @@ class Media implements Setup, Settings {
 		$tabs = array(
 			'page_title'      => __( 'Global Transformations Settings', 'cloudinary' ),
 			'menu_title'      => __( 'Global Transformations', 'cloudinary' ),
-			'slug'            => 'cld_global_transformation',
 			'requires_config' => true,
 		);
 
@@ -1909,7 +1908,7 @@ class Media implements Setup, Settings {
 
 			$this->base_url          = $this->plugin->components['connect']->api->cloudinary_url();
 			$this->credentials       = $this->plugin->components['connect']->get_credentials();
-			$this->cloudinary_folder = $this->plugin->config['settings']['sync_media']['cloudinary_folder'] ? $this->plugin->config['settings']['sync_media']['cloudinary_folder'] : '';
+			$this->cloudinary_folder = $this->plugin->settings->find_setting('cloudinary_folder')->get_value();
 			$this->sync              = $this->plugin->components['sync'];
 
 			// Internal components.

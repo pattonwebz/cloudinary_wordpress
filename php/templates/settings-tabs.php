@@ -6,18 +6,18 @@
  */
 
 $current_page = $this->get_page();
-if ( empty( $current_page['tabs'] ) ) {
+if ( ! $current_page->has_settings() ) {
 	return;
 }
-$nav_tabs    = $current_page['tabs'];
+$nav_tabs    = $current_page->get_settings();
 $config      = $this->plugin->config;
 $connect     = $this->plugin->components['connect'];
 $active_tabs = array_filter(
 	$nav_tabs,
 	function ( $tab ) use ( $config, $connect ) {
 		// If this tab has "require_config" set, ensure we're fully connected to cloudinary.
-		if ( ! empty( $tab['requires_config'] ) && 
-			( empty( $config['connect'] ) || empty( $connect ) || empty( $connect->is_connected() ) ) 
+		if ( $tab->has_param('requires_config' ) &&
+			( empty( $config['connect'] ) || empty( $connect ) || empty( $connect->is_connected() ) )
 		) {
 			return false;
 		}

@@ -7,6 +7,8 @@
 
 namespace Cloudinary\Settings;
 
+use Cloudinary\UI\Component;
+
 /**
  * Class Setting.
  *
@@ -52,6 +54,11 @@ class Setting {
 	 * @var mixed
 	 */
 	protected $value = null;
+
+	/**
+	 * @var Component
+	 */
+	protected $component;
 
 	/**
 	 * Setting constructor.
@@ -280,11 +287,12 @@ class Setting {
 	public function register_setting( $params ) {
 		$owner   = get_class( $this->owner );
 		$default = array(
-			'title'       => $owner,
+			'title'       => null,
 			'description' => null,
 			'slug'        => strtolower( $owner ),
 			'assets'      => array(),
 			'fields'      => array(),
+			'type'        => 'component',
 		);
 		$params  = wp_parse_args( $params, $default );
 		foreach ( $params as $param => $value ) {
@@ -294,7 +302,12 @@ class Setting {
 				$this->set_param( $param, $value );
 			}
 		}
+		$this->setup_component();
 
+	}
+
+	protected function setup_component() {
+		$this->component = Component::init( $this );
 	}
 
 	/**
@@ -307,6 +320,24 @@ class Setting {
 			$setting = new Setting( $setting, $this->owner, $this );
 			$setting->register_setting( $structure );
 		}
+	}
+
+	/**
+	 * Get the settings Component.
+	 *
+	 * @return \Cloudinary\UI\Component
+	 */
+	public function get_component() {
+		return $this->component;
+	}
+
+	/**
+	 * Render the settings Component.
+	 *
+	 * @return string
+	 */
+	public function render_component() {
+		return $this->get_component()->render();
 	}
 
 	/**
@@ -324,19 +355,18 @@ class Setting {
 	 * @return string
 	 */
 	public function get_option_slug() {
-		$option_slugs = array(
-			$this->get_param( 'options_slug' ),
-		);
-		if ( $this->has_parent() ) {
-			$option_slugs[] = $this->parent->get_option_slug();
-		} else {
-			$option_slugs[] = $this->get_slug(); // The root setting always prefixes settings slug.
+		$option_slug = null;
+		if ( $this->has_param( 'options_slug' ) ) {
+			return $this->get_param( 'options_slug' );
+		} elseif ( $this->has_parent() ) {
+			$option_slug = $this->get_parent()->get_option_slug();
 		}
 
-		$option_slugs = array_filter( $option_slugs );
-		$option_slugs = array_reverse( $option_slugs );
+		if ( is_null( $option_slug ) && $this->has_parent() ) {
+			$option_slug = $this->get_root_setting()->get_slug() . '_' . $this->get_slug();
+		}
 
-		return implode( '_', $option_slugs );
+		return $option_slug;
 	}
 
 	/**
@@ -345,9 +375,15 @@ class Setting {
 	 * @return Setting
 	 */
 	public function get_option_parent() {
-		$option_parent = $this;
-		if ( ! $this->has_param( 'options_slug' ) && $this->has_parent() ) {
-			$option_parent = $this->get_parent();
+		$option_parent = null;
+		if ( $this->has_param( 'options_slug' ) ) {
+			return $this;
+		} elseif ( $this->has_parent() ) {
+			$option_parent = $this->get_parent()->get_option_parent();
+		}
+
+		if ( is_null( $option_parent ) && $this->has_parent() ) {
+			//$option_parent = $this;
 		}
 
 		return $option_parent;
@@ -359,23 +395,13 @@ class Setting {
 	 * @param mixed $value The value to set.
 	 */
 	public function set_value( $value ) {
-		if ( is_array( $value ) && $this->has_parent() ) {
+		if ( is_array( $value ) ) {
 			// Attempt to match array keys to settings settings.
 			foreach ( $value as $key => $val ) {
-				if ( $this->has_setting( $key ) ) {
-					$this->get_setting( $key )->set_value( $val );
-				}
+				$this->find_setting( $key )->set_value( $val );
 			}
 		}
 		$this->value = $value;
-		if ( $this->has_parent() ) {
-			$parent = $this->get_root_setting();
-			if ( $parent->has_value() ) {
-				// Only rebuild if parent has been set.
-				$root = $parent->get_option_values( true );
-				$parent->set_value( $root );
-			}
-		}
 	}
 
 	/**
@@ -400,25 +426,28 @@ class Setting {
 	 * Load settings value.
 	 */
 	public function load_value() {
-		if ( $this->has_param( 'options_slug' ) ) {
-			$option_slug  = $this->get_option_slug();
+		static $configured_options = array();
+		$option_slug = $this->get_option_slug();
+		if ( ! empty( $configured_options[ $option_slug ] ) ) {
+			return;
+		}
+		if ( ! is_null( $option_slug ) ) {
 			$option_value = get_option( $option_slug );
 			if ( ! empty( $option_value ) ) {
 				$this->set_value( $option_value );
 				// Push
 			}
+			$configured_options[ $option_slug ] = true;
 		}
 		if ( is_null( $this->value ) && $this->has_param( 'default' ) ) {
 			$this->value = $this->get_param( 'default' );
 		}
 		if ( $this->has_settings() ) {
 			foreach ( $this->get_settings() as $setting ) {
-				$setting->load_value();
+				if ( ! $setting->has_value() ) {
+					$setting->load_value();
+				}
 			}
-		}
-		if ( ! $this->has_parent() ) {
-			$root        = $this->get_option_values();
-			$this->value = $root;
 		}
 	}
 
@@ -441,12 +470,7 @@ class Setting {
 	public function get_value( $rebuild = false ) {
 
 		if ( true === $rebuild || is_null( $this->value ) && $this->has_settings() ) {
-			if ( $this->has_param( 'options_slug' ) || ! $this->has_parent() ) {
-				$value = $this->get_option_values();
-			} else {
-				$value = $this->get_setting_values( $rebuild );
-			}
-			$this->value = $value;
+			$this->value = $this->get_setting_values( $rebuild );
 		}
 
 		return $this->value;
@@ -473,35 +497,6 @@ class Setting {
 	}
 
 	/**
-	 * Get the value of a setting.
-	 *
-	 * @param bool $rebuild Flag to rebuild sub settings.
-	 *
-	 * @return mixed
-	 */
-	public function get_option_values( $rebuild = false ) {
-		$values = $this->value;
-		if ( $this->has_settings() ) {
-			if ( is_null( $values ) ) {
-				$values = array();
-			}
-			foreach ( $this->get_settings() as $setting ) {
-				$setting_value = $setting->get_value( $rebuild );
-				$value_parent  = $setting->get_option_parent( $rebuild );
-				$value_slug    = $value_parent->get_slug();
-				if ( is_string( $setting_value ) || is_null( $setting_value ) ) {
-					$value_slug = $setting->get_slug();
-				} elseif ( isset( $values[ $value_slug ] ) ) {
-					$setting_value = wp_parse_args( $setting_value, $values[ $value_slug ] );
-				}
-				$values[ $value_slug ] = $setting_value;
-			}
-		}
-
-		return $values;
-	}
-
-	/**
 	 * Add a setting setting.
 	 *
 	 * @param Setting|string $setting The setting object or slug of a setting to add.
@@ -512,7 +507,7 @@ class Setting {
 		if ( is_string( $setting ) ) {
 			// Create a dynamic setting.
 			$new_setting = new Setting( $setting, $this, $this );
-			if ( ! $this->has_param( 'options_slug' ) ) {
+			if ( ! $this->has_param( 'options_slug' ) && $this->has_parent() ) {
 				$this->set_param( 'options_slug', $this->get_slug() );
 			}
 			$args = array(

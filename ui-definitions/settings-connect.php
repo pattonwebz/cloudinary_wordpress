@@ -6,16 +6,17 @@
  */
 
 $struct = array(
-	'title'       => __( 'Connect', 'cloudinary' ),
-	'description' => __( 'Connect your Cloudinary account to WordPress', 'cloudinary' ),
-	'hide_button' => true,
-	'options_slug'   => 'connect',
-	'classes'     => array(
+	'title'        => __( 'Connect', 'cloudinary' ),
+	'description'  => __( 'Connect your Cloudinary account to WordPress', 'cloudinary' ),
+	'hide_button'  => true,
+	'options_slug' => 'cloudinary_connect',
+	'classes'      => array(
 		'connect',
 	),
-	'settings'      => array(
+	'settings'     => array(
 		'cloudinary_url' => array(
 			'label'       => __( 'Environment variable URL', 'cloudinary' ),
+			'type'        => 'text',
 			'placeholder' => 'cloudinary://API_KEY:API_SECRET@CLOUD_NAME',
 			'required'    => true,
 			'suffix'      => '<button type="submit" class="button button-primary"><span class="dashicons dashicons-admin-plugins"></span> ' . __( 'Save connection', 'cloudinary' ) . '</button>',

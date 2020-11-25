@@ -89,19 +89,19 @@ class Storage implements Notice {
 	/**
 	 * Disable the cloudinary_url input if media is offloaded and warn the user to sync items.
 	 *
-	 * @param array  $field The field settings.
-	 * @param string $slug  The settings slug.
+	 * @param \Cloudinary\Settings\Setting $field The field settings.
+	 * @param string                       $slug  The settings slug.
 	 *
-	 * @return array
+	 * @return \Cloudinary\Settings\Setting
 	 */
 	public function maybe_disable_connect( $field, $slug ) {
 
-		if ( 'connect' === $slug && 'cloudinary_url' === $field['slug'] ) {
-			$field['description'] = __( 'Please ensure all media is fully synced before changing the environment variable URL.', 'cloudinary' );
+		if ( 'connect' === $slug && 'cloudinary_url' === $field->get_slug() ) {
+			$field->set_param( 'description', __( 'Please ensure all media is fully synced before changing the environment variable URL.', 'cloudinary' ) );
 			if ( 'dual_full' !== $this->settings['offload'] ) {
-				$field['suffix']      = null;
-				$field['description'] = sprintf(
-					// translators: Placeholders are <a> tags.
+				$field->set_param( 'suffix', null );
+				$description = sprintf(
+				// translators: Placeholders are <a> tags.
 					__( 'You can’t currently change your environment variable as your storage setting is set to "Cloudinary only". Update your %1$s storage settings %2$s and sync your assets to WordPress storage to enable this setting.', 'cloudinary' ),
 					sprintf(
 						'<a href="%s">',
@@ -109,7 +109,8 @@ class Storage implements Notice {
 					),
 					'</a>'
 				);
-				$field['disabled'] = true;
+				$field->set_param( 'description', $description );
+				$field->set_param( 'disabled', true );
 			}
 		}
 
@@ -280,7 +281,7 @@ class Storage implements Notice {
 
 				$notices[] = array(
 					'message'     => sprintf(
-						// translators: Placeholders are <a> tags.
+					// translators: Placeholders are <a> tags.
 						__( 'You have reached one or more of your quota limits. Your Cloudinary media will soon stop being delivered. Your current storage setting is "Cloudinary only" and this will therefore result in broken links to media assets. To prevent any issues upgrade your account or change your %1$s storage settings.%2$s', 'cloudinary' ),
 						'<a href="' . esc_url( admin_url( 'admin.php?page=cld_sync_media' ) ) . '">',
 						'</a>'

@@ -159,10 +159,10 @@ class Plugin {
 	 */
 	public function setup_settings() {
 		$core_setting   = array(
-			'title'      => __( 'Cloudinary', 'cloudinary' ),
+			'page_title' => __( 'Cloudinary', 'cloudinary' ),
 			'menu_title' => __( 'Cloudinary', 'cloudinary' ),
 			'version'    => $this->version,
-			'slug'       => 'cloudinary',
+			'menu_slug'  => 'cloudinary',
 			'capability' => 'manage_options',
 		);
 		$this->settings = new Setting( $this->slug, $this );
@@ -178,7 +178,6 @@ class Plugin {
 			$component->register_settings( $this->settings );
 		}
 		$this->settings->load_value();
-		$this->config = $this->settings->get_value();
 	}
 
 	/**

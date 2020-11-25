@@ -11,11 +11,11 @@ $struct = array(
 	'description'    => __( 'Define the global (default) transformations to be applied to all image assets. These transformations can be overridden by transformations you apply to individual assets.', 'cloudinary' ),
 	'success_notice' => __( 'Global Image Settings have been updated.', 'cloudinary' ),
 	'slug'           => 'global_transformation',
-	'options_slug'   => 'global_transformations',
+	'options_slug'   => $settings->get_root_setting()->get_slug() . '_global_transformations',
 	'classes'        => array(
 		'connect',
 	),
-	'settings'         => array(
+	'settings'       => array(
 		'responsive_header'  => array(
 			'type'  => 'heading',
 			'label' => __( 'Responsive Image Settings', 'cloudinary' ),
@@ -153,9 +153,7 @@ $struct = array(
 			'label'      => __( 'Preview', 'cloudinary' ),
 			'contextual' => true, // Flags the field to be used in a contextual basis. i.e. taxonomies.
 			'context'    => 'image',
-			'type'       => function () {
-				\Cloudinary\get_plugin_instance()->components['media']->global_transformations->load_preview();
-			},
+			'type'       => 'image_preview',
 		),
 	),
 );
