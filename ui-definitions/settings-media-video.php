@@ -29,7 +29,7 @@ $struct = array(
 			'cld-player',
 		),
 	),
-	'settings'            => array(
+	'settings'          => array(
 		'video_player'        => array(
 			'label'       => __( 'Video player', 'cloudinary' ),
 			'description' => __( 'Which video player to use on all videos.', 'cloudinary' ),
@@ -63,7 +63,7 @@ $struct = array(
 				'video_player' => 'cld',
 			),
 			'description' => sprintf(
-				// translators: Placeholders are <a> tags.
+			// translators: Placeholders are <a> tags.
 				__( 'Please note that when choosing "always", the video will autoplay without sound (muted). This is a built-in browser feature and applies to all major browsers.%1$sRead more about muted autoplay%2$s', 'cloudinary' ),
 				'<br><a href="https://developers.google.com/web/updates/2016/07/autoplay" target="_blank">',
 				'</a>'
@@ -103,7 +103,7 @@ $struct = array(
 		'video_freeform'      => array(
 			'label'             => __( 'Video transformations', 'cloudinary' ),
 			'description'       => sprintf(
-				// translators: Placeholders are <a> tags.
+			// translators: Placeholders are <a> tags.
 				__( 'The set of transformations to apply to all video assets, as a URL transformation string. %1$sVideo transformation reference%2$s.%3$s<span class="settings-alert settings-alert-info"><strong>Note</strong>: When updating transformations, all relevant assets will have new transformations applied; This may cause an increase in your Cloudinary usage.</span>', 'cloudinary' ),
 				'<br><a href="https://cloudinary.com/documentation/video_transformation_reference" target="_blank">',
 				'</a>',
