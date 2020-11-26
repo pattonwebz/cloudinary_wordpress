@@ -158,17 +158,19 @@ class Plugin {
 	 * Setup settings.
 	 */
 	public function setup_settings() {
-		$core_setting   = array(
+		$params         = array(
+			'version'    => $this->version,
 			'page_title' => __( 'Cloudinary', 'cloudinary' ),
 			'menu_title' => __( 'Cloudinary', 'cloudinary' ),
-			'version'    => $this->version,
-			'menu_slug'  => 'cloudinary',
 			'capability' => 'manage_options',
+			'icon'       => 'dashicons-cloudinary',
+			'header'     => array(
+				'title'   => 'asdasdasd',
+				'content' => 'HEADER!',
+			),
 		);
-		$this->settings = new Setting( $this->slug, $this );
-		$this->settings->register_setting( $core_setting );
-
-		$components = array_filter( $this->components, array( $this, 'is_setting_component' ) );
+		$this->settings = \Cloudinary\Settings::create_setting( $this->slug, $params );
+		$components     = array_filter( $this->components, array( $this, 'is_setting_component' ) );
 		foreach ( $components as $slug => $component ) {
 			/**
 			 * Component that implements Component\\Cloudinary\Component\Settings.
@@ -177,7 +179,8 @@ class Plugin {
 			 */
 			$component->register_settings( $this->settings );
 		}
-		$this->settings->load_value();
+		// Init settings.
+		\Cloudinary\Settings::init_setting( $this->slug );
 	}
 
 	/**

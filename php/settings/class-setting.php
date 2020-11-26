@@ -38,13 +38,6 @@ class Setting {
 	protected $settings = array();
 
 	/**
-	 * The plugin component that created the setting.
-	 *
-	 * @var \Cloudinary\Media|\Cloudinary\Sync|\Cloudinary\Settings_Page|\Cloudinary\REST_API|\Cloudinary\Connect
-	 */
-	protected $owner;
-
-	/**
 	 * Setting slug.
 	 *
 	 * @var string
@@ -68,20 +61,14 @@ class Setting {
 	/**
 	 * Setting constructor.
 	 *
-	 * @param string       $slug   The setting slug.
-	 * @param self::owner  $owner  The plugin component that created the setting.
-	 * @param Setting|null $parent The parent setting for this setting.
+	 * @param string $slug   The setting slug.
+	 * @param array  $params The setting params.
 	 *
 	 * @return $this
 	 */
-	public function __construct( $slug, $owner, $parent = null ) {
-		$this->owner  = $owner;
-		$this->slug   = $slug;
-		$this->parent = $parent;
-		// Connect setting to parent.
-		if ( $parent instanceof Setting ) {
-			$parent->add_setting( $this );
-		}
+	public function __construct( $slug, $params = array() ) {
+		$this->slug = $slug;
+		$this->register_setting( $params );
 
 		return $this;
 	}
@@ -123,7 +110,7 @@ class Setting {
 	 * @param string $param   The param to get.
 	 * @param mixed  $default The default value for this param is a value is not found.
 	 *
-	 * @return mixed
+	 * @return string|array|bool|Setting
 	 */
 	public function get_param( $param, $default = null ) {
 		return isset( $this->params[ $param ] ) ? $this->params[ $param ] : $default;
@@ -287,26 +274,35 @@ class Setting {
 	 *
 	 * @param array $params The setting params.
 	 */
-	public function register_setting( $params ) {
-		$owner   = get_class( $this->owner );
-		$default = array(
-			'title'       => null,
-			'description' => null,
-			'slug'        => strtolower( $owner ),
-			'assets'      => array(),
-			'fields'      => array(),
-			'type'        => 'component',
-		);
-		$params  = wp_parse_args( $params, $default );
-		foreach ( $params as $param => $value ) {
-			if ( 'settings' === $param ) {
-				$this->register_setting_settings( $value );
-			} else {
-				$this->set_param( $param, $value );
-			}
-		}
-		$this->setup_component();
+	protected function register_setting( array $params ) {
 
+		foreach ( $params as $param => $value ) {
+
+			if ( 'settings' === $param ) {
+				// Auto register child settings.
+				$this->add_child_settings( $value );
+				continue;
+			}
+
+			$this->set_param( $param, $value );
+		}
+	}
+
+	/**
+	 * Get a specific attribute from the setting.
+	 *
+	 * @param string $attribute_point The attribute point to get.
+	 *
+	 * @return mixed
+	 */
+	public function get_attributes( $attribute_point ) {
+		$return     = array();
+		$attributes = $this->get_param( 'attributes', array() );
+		if ( isset( $attributes[ $attribute_point ] ) ) {
+			$return = $attributes[ $attribute_point ];
+		}
+
+		return $return;
 	}
 
 	/**
@@ -321,10 +317,9 @@ class Setting {
 	 *
 	 * @param array $settings The array of sub settings.
 	 */
-	protected function register_setting_settings( $settings ) {
-		foreach ( $settings as $setting => $structure ) {
-			$setting = new Setting( $setting, $this->owner, $this );
-			$setting->register_setting( $structure );
+	protected function add_child_settings( $settings ) {
+		foreach ( $settings as $setting => $params ) {
+			$this->add_setting( $setting, $params );
 		}
 	}
 
@@ -334,6 +329,10 @@ class Setting {
 	 * @return \Cloudinary\UI\Component
 	 */
 	public function get_component() {
+		if ( ! isset( $this->component ) ) {
+			$this->setup_component();
+		}
+
 		return $this->component;
 	}
 
@@ -360,12 +359,12 @@ class Setting {
 	 *
 	 * @return string
 	 */
-	public function get_option_slug() {
+	public function get_option_group() {
 		$option_slug = null;
-		if ( $this->has_param( 'options_slug' ) ) {
-			return $this->get_param( 'options_slug' );
+		if ( $this->has_param( 'option_group' ) ) {
+			return $this->get_param( 'option_group' );
 		} elseif ( $this->has_parent() ) {
-			$option_slug = $this->get_parent()->get_option_slug();
+			$option_slug = $this->get_parent()->get_option_group();
 		}
 
 		if ( is_null( $option_slug ) && $this->has_parent() && ! $this->get_parent()->has_parent() ) {
@@ -397,10 +396,10 @@ class Setting {
 	 * @return bool
 	 */
 	public function save_value() {
-		if ( $this->has_param( 'options_slug' ) ) {
-			$slug = $this->get_option_slug();
+		if ( $this->has_param( 'option_group' ) ) {
+			$slug = $this->get_option_group();
 
-			return update_option( $slug, $this->value );
+			return update_option( $slug, $this->get_value() );
 		} elseif ( $this->has_parent() ) {
 			return $this->get_parent()->save_value();
 		}
@@ -415,7 +414,7 @@ class Setting {
 		// Keep track of loaded options as to prevent looping.
 		static $configured_options = array();
 
-		$option_slug = $this->get_option_slug();
+		$option_slug = $this->get_option_group();
 		if ( ! empty( $configured_options[ $option_slug ] ) ) {
 			return;
 		}
@@ -487,28 +486,19 @@ class Setting {
 	/**
 	 * Add a setting setting.
 	 *
-	 * @param Setting|string $setting The setting object or slug of a setting to add.
+	 * @param string $slug   The setting slag to add.
+	 * @param array  $params Settings params.
 	 *
 	 * @return Setting
 	 */
-	public function add_setting( $setting ) {
-		if ( is_string( $setting ) ) {
-			// Create a dynamic setting.
-			$new_setting = new Setting( $setting, $this, $this );
-			if ( ! $this->has_param( 'options_slug' ) && $this->has_parent() ) {
-				$this->set_param( 'options_slug', $this->get_slug() );
-			}
-			$args = array(
-				'slug' => $setting,
-			);
-			$new_setting->register_setting( $args );
-			$new_setting->set_value( null ); // Set value to null.
+	public function add_setting( $slug, $params = array() ) {
 
-			return $new_setting;
-		}
-		$this->settings[ $setting->get_slug() ] = $setting;
+		$new_setting = new Setting( $slug, $params );
+		$new_setting->set_value( null ); // Set value to null.
+		$new_setting->parent     = $this;
+		$this->settings[ $slug ] = $new_setting;
 
-		return $setting;
+		return $new_setting;
 	}
 
 	/**
