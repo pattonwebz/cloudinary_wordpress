@@ -25,7 +25,7 @@ class Number extends UI\Component {
 	protected function content() {
 		$atts          = $this->get_attributes( 'content' );
 		$atts['type']  = 'number';
-		$atts['name']  = $this->setting->get_option_group() . '[' . $this->setting->get_slug() . ']';
+		$atts['name']  = $this->setting->get_option_name() . '[' . $this->setting->get_slug() . ']';
 		$atts['value'] = $this->setting->get_value();
 		if ( $this->setting->has_param( 'required' ) ) {
 			$atts['required'] = 'required';

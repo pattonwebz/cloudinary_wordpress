@@ -359,12 +359,12 @@ class Setting {
 	 *
 	 * @return string
 	 */
-	public function get_option_group() {
+	public function get_option_name() {
 		$option_slug = null;
-		if ( $this->has_param( 'option_group' ) ) {
-			return $this->get_param( 'option_group' );
+		if ( $this->has_param( 'option_name' ) ) {
+			return $this->get_param( 'option_name' );
 		} elseif ( $this->has_parent() ) {
-			$option_slug = $this->get_parent()->get_option_group();
+			$option_slug = $this->get_parent()->get_option_name();
 		}
 
 		if ( is_null( $option_slug ) && $this->has_parent() && ! $this->get_parent()->has_parent() ) {
@@ -396,8 +396,8 @@ class Setting {
 	 * @return bool
 	 */
 	public function save_value() {
-		if ( $this->has_param( 'option_group' ) ) {
-			$slug = $this->get_option_group();
+		if ( $this->has_param( 'option_name' ) ) {
+			$slug = $this->get_option_name();
 
 			return update_option( $slug, $this->get_value() );
 		} elseif ( $this->has_parent() ) {
@@ -414,7 +414,7 @@ class Setting {
 		// Keep track of loaded options as to prevent looping.
 		static $configured_options = array();
 
-		$option_slug = $this->get_option_group();
+		$option_slug = $this->get_option_name();
 		if ( ! empty( $configured_options[ $option_slug ] ) ) {
 			return;
 		}

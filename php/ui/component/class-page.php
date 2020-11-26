@@ -22,16 +22,13 @@ class Page extends Panel {
 	protected function content() {
 
 		// Get the options setting input field.
-		$option_group  = $this->setting->get_option_group();
-		$atts          = $this->get_attributes( 'content' );
-		$atts['type']  = 'hidden';
-		$atts['value'] = $option_group;
+		$option_name  = $this->setting->get_option_name();
 
 		// Set the attributes for the field.
 		$option = array(
 			'type'  => 'hidden',
 			'name'  => 'option_page',
-			'value' => $option_group,
+			'value' => $option_name,
 		);
 		// Set the attributes for the field action.
 		$action = array(
@@ -40,10 +37,9 @@ class Page extends Panel {
 			'value' => 'update',
 		);
 		$html   = array(
-			'<input ' . $this->build_attributes( $atts ) . ' />',
 			'<input ' . $this->build_attributes( $option ) . ' />',
 			'<input ' . $this->build_attributes( $action ) . ' />',
-			wp_nonce_field( $option_group . '-options', '_wpnonce', true, false ),
+			wp_nonce_field( $option_name . '-options', '_wpnonce', true, false ),
 		);
 
 		return self::compile_html( $html );
@@ -55,7 +51,7 @@ class Page extends Panel {
 	 * @return string
 	 */
 	protected function start_wrapper() {
-		settings_errors( $this->setting->get_option_group() );
+		settings_errors( $this->setting->get_option_name() );
 		$form_atts = array(
 			'method'     => 'post',
 			'action'     => 'options.php',

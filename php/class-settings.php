@@ -30,7 +30,7 @@ class Settings {
 	/**
 	 * List of Pages.
 	 *
-	 * @var array
+	 * @var Setting[]
 	 */
 	protected $pages = array();
 
@@ -61,7 +61,7 @@ class Settings {
 		foreach ( $this->settings->get_settings() as $setting ) {
 			// Setup the main page.
 			$page_handle                 = add_menu_page( $setting->get_param( 'page_title' ), $setting->get_param( 'menu_title' ), $setting->get_param( 'capability' ), $setting->get_slug(), $render_function, $setting->get_param( 'icon' ) );
-			$this->pages[ $page_handle ] = $setting->get_slug();
+			$this->pages[ $page_handle ] = $setting;
 			$setting->set_param( 'page_handle', $page_handle );
 			// Setup the Child pages.
 			foreach ( $setting->get_settings() as $sub_setting ) {
@@ -71,8 +71,8 @@ class Settings {
 				$sub_setting->set_param( 'header', $setting->get_param( 'header' ) );
 				$sub_setting->set_param( 'footer', $setting->get_param( 'footer' ) );
 				$capability                  = $sub_setting->get_param( 'cabability', $setting->get_param( 'capability' ) );
-				$page_handle                 = add_submenu_page( $setting->get_slug(), $sub_setting->get_param( 'page_title' ), $sub_setting->get_param( 'menu_title' ), $capability, $sub_setting->get_slug(), $render_function, $sub_setting->get_param( 'position' ) );
-				$this->pages[ $page_handle ] = $sub_setting->get_slug();
+				$page_handle                 = add_submenu_page( $setting->get_slug(), $sub_setting->get_param( 'page_title', $setting->get_param( 'page_title' ) ), $sub_setting->get_param( 'menu_title', $setting->get_param( 'menu_title' ) ), $capability, $sub_setting->get_slug(), $render_function, $sub_setting->get_param( 'position' ) );
+				$this->pages[ $page_handle ] = $sub_setting;
 				$sub_setting->set_param( 'page_handle', $page_handle );
 			}
 		}
@@ -95,13 +95,8 @@ class Settings {
 	public function get_active_page() {
 		$screen = \get_current_screen();
 		$page   = null;
-		if ( $screen instanceof \WP_Screen ) {
-			$base = $screen->parent_base;
-			$page = $this->settings->get_setting( $base );
-			$slug = $this->pages[ $screen->id ];
-			if ( $page->has_setting( $slug ) ) {
-				$page = $page->get_setting( $slug );
-			}
+		if ( $screen instanceof \WP_Screen && isset( $this->pages[ $screen->id ] ) ) {
+			$page = $this->pages[ $screen->id ];
 		}
 
 		return $page;
@@ -148,13 +143,12 @@ class Settings {
 			$settings = self::$instance->settings->get_setting( $slug );
 			// Setup sections fore each sub root level settings.
 			foreach ( $settings->get_settings() as $setting ) {
-
-				$option_group = $settings->get_slug() . '_' . $setting->get_slug();
-				$setting->set_param( 'option_group', $option_group );
+				$option_name = $settings->get_slug() . '_' . $setting->get_slug();
+				$setting->set_param( 'option_name', $option_name );
 				$args = array(
 					'type' => 'array',
 				);
-				register_setting( $settings->get_slug(), $option_group, $args );
+				register_setting( $option_name, $option_name, $args );
 			}
 			$settings->load_value();
 		}

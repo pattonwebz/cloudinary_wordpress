@@ -158,14 +158,38 @@ class Plugin {
 	 * Setup settings.
 	 */
 	public function setup_settings() {
+		$slug           = $this->slug . '_temp'; // @todo use the real slug when ready to implement.
 		$params         = array(
 			'version'    => $this->version,
-			'page_title' => __( 'Cloudinary', 'cloudinary' ),
-			'menu_title' => __( 'Cloudinary Example', 'cloudinary' ),
+			'page_title' => __( 'Testing Settings' ),
+			'menu_title' => __( 'Testing Settings' ),
 			'capability' => 'manage_options',
 			'icon'       => 'dashicons-cloudinary',
+			'settings'   => array(
+				$slug => array(
+					'page_title' => __( 'Example Settings' ),
+					'menu_title' => __( 'Example', 'cloudinary' ),
+					'type'       => 'page',
+					'settings'   => array(
+						'name' => array(
+							'type'    => 'text',
+							'default' => 'enter your name',
+						),
+					),
+				),
+				'connect' => array(
+					'page_title' => __( 'More' ),
+					'menu_title' => 'More',
+					'type'       => 'page',
+					'settings'   => array(
+						'name' => array(
+							'type'    => 'text',
+							'default' => 'enter your name',
+						),
+					),
+				),
+			),
 		);
-		$slug           = $this->slug . '_temp'; // @todo use the real slug when ready to implement.
 		$this->settings = \Cloudinary\Settings::create_setting( $slug, $params );
 		$components     = array_filter( $this->components, array( $this, 'is_setting_component' ) );
 		foreach ( $components as $slug => $component ) {
