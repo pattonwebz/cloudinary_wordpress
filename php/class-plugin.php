@@ -161,15 +161,12 @@ class Plugin {
 		$params         = array(
 			'version'    => $this->version,
 			'page_title' => __( 'Cloudinary', 'cloudinary' ),
-			'menu_title' => __( 'Cloudinary', 'cloudinary' ),
+			'menu_title' => __( 'Cloudinary Example', 'cloudinary' ),
 			'capability' => 'manage_options',
 			'icon'       => 'dashicons-cloudinary',
-			'header'     => array(
-				'title'   => 'asdasdasd',
-				'content' => 'HEADER!',
-			),
 		);
-		$this->settings = \Cloudinary\Settings::create_setting( $this->slug, $params );
+		$slug           = $this->slug . '_temp'; // @todo use the real slug when ready to implement.
+		$this->settings = \Cloudinary\Settings::create_setting( $slug, $params );
 		$components     = array_filter( $this->components, array( $this, 'is_setting_component' ) );
 		foreach ( $components as $slug => $component ) {
 			/**
@@ -180,7 +177,7 @@ class Plugin {
 			$component->register_settings( $this->settings );
 		}
 		// Init settings.
-		\Cloudinary\Settings::init_setting( $this->slug );
+		\Cloudinary\Settings::init_setting( $slug );
 	}
 
 	/**

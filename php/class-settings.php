@@ -60,7 +60,6 @@ class Settings {
 		$render_function = array( $this, 'render' );
 		foreach ( $this->settings->get_settings() as $setting ) {
 			// Setup the main page.
-
 			$page_handle                 = add_menu_page( $setting->get_param( 'page_title' ), $setting->get_param( 'menu_title' ), $setting->get_param( 'capability' ), $setting->get_slug(), $render_function, $setting->get_param( 'icon' ) );
 			$this->pages[ $page_handle ] = $setting->get_slug();
 			$setting->set_param( 'page_handle', $page_handle );
@@ -145,7 +144,7 @@ class Settings {
 	 * @param string $slug The setting slug to initialise.
 	 */
 	public static function init_setting( $slug ) {
-		if ( ! is_null( self::$instance ) ) {
+		if ( ! is_null( self::$instance ) && self::$instance->settings->has_setting( $slug ) ) {
 			$settings = self::$instance->settings->get_setting( $slug );
 			// Setup sections fore each sub root level settings.
 			foreach ( $settings->get_settings() as $setting ) {
