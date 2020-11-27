@@ -59,18 +59,52 @@ class Setting {
 	protected $component;
 
 	/**
+	 * Holds a list of dynamic setting params.
+	 *
+	 * @var array
+	 */
+	protected $setting_params;
+
+	/**
 	 * Setting constructor.
 	 *
-	 * @param string $slug   The setting slug.
-	 * @param array  $params The setting params.
+	 * @param string       $slug   The setting slug.
+	 * @param array        $params The setting params.
+	 * @param null|Setting $parent $the parent setting.
 	 *
 	 * @return $this
 	 */
-	public function __construct( $slug, $params = array() ) {
-		$this->slug = $slug;
-		$this->register_setting( $params );
+	public function __construct( $slug, $params = array(), $parent = null ) {
+		$this->slug           = $slug;
+		$this->parent         = $parent;
+		$this->setting_params = $this->get_settings_params();
+		$this->setup_setting( $params );
 
 		return $this;
+	}
+
+	/**
+	 * Get the settings parameter and callback list.
+	 *
+	 * @return array
+	 */
+	protected function get_settings_params() {
+		$default_setting_params = array(
+			'components' => array( $this, 'add_child_settings' ),
+			'settings'   => array( $this, 'add_child_settings' ),
+			'pages'      => array( $this, 'add_child_pages' ),
+			'tabs'       => array( $this, 'add_tab_pages' ),
+		);
+		/**
+		 * Filters the list of params that indicate a child setting to allow registering dynamically.
+		 *
+		 * @param array $setting_params The array of params.
+		 *
+		 * @return array
+		 */
+		$setting_params = apply_filters( 'get_setting_params', $default_setting_params, $this );
+
+		return $setting_params;
 	}
 
 	/**
@@ -274,17 +308,150 @@ class Setting {
 	 *
 	 * @param array $params The setting params.
 	 */
-	protected function register_setting( array $params ) {
-
+	public function setup_setting( array $params ) {
+		$has_dynamic = false;
 		foreach ( $params as $param => $value ) {
-
-			if ( 'settings' === $param ) {
-				// Auto register child settings.
-				$this->add_child_settings( $value );
+			if ( $this->is_setting_param( $param ) ) {
+				$has_dynamic = true;
 				continue;
 			}
-
+			// Set params.
 			$this->set_param( $param, $value );
+		}
+
+		// Register dynamics if any are found.
+		if ( $has_dynamic ) {
+			$this->register_dynamic_settings( $params );
+		}
+	}
+
+	/**
+	 * Register the setting with WordPress.
+	 */
+	protected function register_setting() {
+		$option_group = $this->get_option_name();
+		if ( ! is_null( $option_group ) && ! $this->has_settings() && ! $this->get_parent()->has_param( 'setting_registered' ) ) {
+			$args = array(
+				'type'              => 'array',
+				'description'       => $this->get_param( 'description' ),
+				'sanitize_callback' => array( $this, 'prepare_sanitizer' ),
+				'show_in_rest'      => false,
+			);
+			register_setting( $option_group, $option_group, $args );
+			add_filter( 'pre_update_site_option_' . $option_group, array( $this, 'set_notices' ), 10, 3 );
+			add_filter( 'pre_update_option_' . $option_group, array( $this, 'set_notices' ), 10, 3 );
+			$this->get_parent()->set_param( 'setting_registered', true );
+		}
+	}
+
+	/**
+	 * Prepare the setting option group to be sanitized by each component.
+	 *
+	 * @param array $data Array of values to sanitize.
+	 *
+	 * @return array
+	 */
+	public function prepare_sanitizer( $data ) {
+		$slug = $this->get_slug();
+		if ( isset( $data[ $slug ] ) ) {
+			$data[ $slug ] = $this->get_component()->sanitize_value( $data[ $slug ] );
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Set notices on successful update of settings.
+	 *
+	 * @param mixed  $value        The new Value.
+	 * @param mixed  $old_value    The old value.
+	 * @param string $setting_slug The setting key.
+	 *
+	 * @return mixed
+	 */
+	public function set_notices( $value, $old_value, $setting_slug ) {
+
+		if ( $value !== $old_value ) {
+			if ( is_wp_error( $value ) ) {
+				add_settings_error( $setting_slug, 'setting_notice', $value->get_error_message(), 'error' );
+
+				return $old_value;
+			} else {
+				$setting = $this->get_root_setting()->find_setting( $setting_slug );
+				$notice  = $setting->get_param( 'success_notice', __( 'Settings updated successfully' ) );
+				add_settings_error( $setting_slug, 'setting_notice', $notice, 'updated' );
+			}
+		}
+
+		return $value;
+	}
+
+	/**
+	 * Register dynamic settings from params.
+	 *
+	 * @param array $params Array of params to create dynamic settings from.
+	 */
+	protected function register_dynamic_settings( $params ) {
+		foreach ( $params as $param => $value ) {
+			if ( $this->is_setting_param( $param ) ) {
+				$callback = $this->get_setting_param_callback( $param );
+				$callable = is_callable( $callback );
+				if ( $callable ) {
+					call_user_func( $callback, $value );
+				}
+			}
+		}
+	}
+
+	/**
+	 * Get a callback to handle a dynamic child setting creation.
+	 *
+	 * @param string $param Param name to get callback for.
+	 *
+	 * @return string
+	 */
+	protected function get_setting_param_callback( $param ) {
+		return $this->is_setting_param( $param ) ? $this->setting_params[ $param ] : '__return_null()';
+	}
+
+	/**
+	 * Checks if a param is a dynamic child setting array.s
+	 *
+	 * @param string $param Param to check for.
+	 *
+	 * @return bool
+	 */
+	protected function is_setting_param( $param ) {
+		return isset( $this->setting_params[ $param ] );
+	}
+
+	/**
+	 * Create child tabs.
+	 *
+	 * @param array $tab_pages Array of tabs to create.
+	 */
+	public function add_tab_pages( $tab_pages ) {
+
+		$this->set_param( 'has_tabs', true );
+		foreach ( $tab_pages as $tab_page => $params ) {
+			$params['option_name'] = $this->build_option_name( $tab_page );
+			$this->add_setting( $tab_page, $params );
+		}
+
+
+	}
+
+	/**
+	 * Create child pages on this setting.
+	 *
+	 * @param array $pages Page setting params.
+	 */
+	public function add_child_pages( $pages ) {
+
+		foreach ( $pages as $slug => $params ) {
+			$params['option_name'] = $this->build_option_name( $slug );
+			$params['type']        = 'page';
+			$this->add_setting( $slug, $params );
 		}
 	}
 
@@ -306,19 +473,31 @@ class Setting {
 	}
 
 	/**
-	 * Setup the settings render component.
+	 * Setup the settings component.
 	 */
-	protected function setup_component() {
+	public function setup_component() {
 		$this->component = Component::init( $this );
+		if ( $this->has_settings() ) {
+			foreach ( $this->get_settings() as $setting ) {
+				$setting->setup_component();
+			}
+		}
+		// Register WordPress Settings.
+		$this->register_setting();
 	}
 
 	/**
 	 * Register sub settings.
 	 *
-	 * @param array $settings The array of sub settings.
+	 * @param array       $settings The array of sub settings.
+	 * @param null|string $type     Forced type of the child settings.
 	 */
-	protected function add_child_settings( $settings ) {
+	public function add_child_settings( $settings, $type = null ) {
 		foreach ( $settings as $setting => $params ) {
+			if ( ! is_null( $type ) ) {
+				$params['option_name'] = $this->build_option_name( $setting );
+				$params['type']        = $type;
+			}
 			$this->add_setting( $setting, $params );
 		}
 	}
@@ -329,7 +508,7 @@ class Setting {
 	 * @return \Cloudinary\UI\Component
 	 */
 	public function get_component() {
-		if ( ! isset( $this->component ) ) {
+		if ( is_null( $this->component ) ) {
 			$this->setup_component();
 		}
 
@@ -376,6 +555,23 @@ class Setting {
 	}
 
 	/**
+	 * Build a new option name.
+	 *
+	 * @param string $slug The slug to build for.
+	 *
+	 * @return string
+	 */
+	protected function build_option_name( $slug ) {
+		$option_path = array(
+			$this->get_option_name(),
+			$slug,
+		);
+		$option_path = array_unique( $option_path );
+
+		return implode( '_', array_filter( $option_path ) );
+	}
+
+	/**
 	 * Set the settings value.
 	 *
 	 * @param mixed $value The value to set.
@@ -412,28 +608,17 @@ class Setting {
 	 */
 	public function load_value() {
 		// Keep track of loaded options as to prevent looping.
-		static $configured_options = array();
-
-		$option_slug = $this->get_option_name();
-		if ( ! empty( $configured_options[ $option_slug ] ) ) {
+		if ( $this->has_param( 'loaded' ) ) {
 			return;
 		}
-		if ( ! is_null( $option_slug ) ) {
-			$option_value = get_option( $option_slug );
-			if ( ! empty( $option_value ) ) {
+		foreach ( $this->get_settings() as $setting ) {
+			$setting->load_value();
+		}
+		if ( $this->has_param( 'option_name' ) ) {
+			$option_value = get_option( $this->get_param( 'option_name' ), $this->get_param( 'default' ) );
+			if ( ! is_null( $option_value ) ) {
 				// Push value to child settings.
 				$this->set_value( $option_value );
-			}
-			$configured_options[ $option_slug ] = true;
-		}
-		if ( is_null( $this->value ) && $this->has_param( 'default' ) ) {
-			$this->value = $this->get_param( 'default' );
-		}
-		if ( $this->has_settings() ) {
-			foreach ( $this->get_settings() as $setting ) {
-				if ( ! $setting->has_value() ) {
-					$setting->load_value();
-				}
 			}
 		}
 	}
@@ -493,9 +678,8 @@ class Setting {
 	 */
 	public function add_setting( $slug, $params = array() ) {
 
-		$new_setting = new Setting( $slug, $params );
+		$new_setting = new Setting( $slug, $params, $this );
 		$new_setting->set_value( null ); // Set value to null.
-		$new_setting->parent     = $this;
 		$this->settings[ $slug ] = $new_setting;
 
 		return $new_setting;
@@ -508,7 +692,7 @@ class Setting {
 	 */
 	public function get_root_setting() {
 		$parent = $this;
-		if ( $this->has_parent() ) {
+		if ( $this->has_parent() && $this->get_parent()->has_parent() ) {
 			$parent = $this->get_parent()->get_root_setting();
 		}
 

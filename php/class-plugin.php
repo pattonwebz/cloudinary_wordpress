@@ -165,23 +165,63 @@ class Plugin {
 			'menu_title' => __( 'Testing Settings' ),
 			'capability' => 'manage_options',
 			'icon'       => 'dashicons-cloudinary',
-			'settings'   => array(
-				$slug => array(
+			'pages'      => array(
+				$slug     => array(
 					'page_title' => __( 'Example Settings' ),
 					'menu_title' => __( 'Example', 'cloudinary' ),
-					'type'       => 'page',
-					'settings'   => array(
-						'name' => array(
-							'type'    => 'text',
-							'default' => 'enter your name',
+					'tabs'       => array(
+						'first_tab'  => array(
+							'title'      => 'First',
+							'components' => array(
+								'name_panel' => array(
+									'type'     => 'panel',
+									'settings' => array(
+										'name'   => array(
+											'type'    => 'text',
+											'title'   => 'Name',
+											'tooltip' => 'ask',
+											'default' => 'enter your name',
+										),
+										'color'  => array(
+											'type'    => 'text',
+											'title'   => 'Color',
+											'default' => 'enter your name',
+										),
+										'age'    => array(
+											'title'   => 'Age',
+											'type'    => 'text',
+											'default' => 'enter your name',
+										),
+										'submit' => array(
+											'type'    => 'submit',
+											'default' => 'Send',
+										),
+									),
+								),
+							),
+						),
+						'second_tab' => array(
+							'title'      => 'Second',
+							'components' => array(
+								'name_panel' => array(
+									'type'     => 'panel',
+									'settings' => array(
+										'name' => array(
+											'type'    => 'text',
+											'default' => 'enter your name',
+										),
+									),
+								),
+							),
 						),
 					),
 				),
 				'connect' => array(
-					'page_title' => __( 'More' ),
-					'menu_title' => 'More',
-					'type'       => 'page',
-					'settings'   => array(
+					'page_title'     => __( 'More' ),
+					'menu_title'     => 'More',
+					'type'           => 'page',
+					'success_notice' => 'Updated as requested.',
+					'settings'       => array(
 						'name' => array(
 							'type'    => 'text',
 							'default' => 'enter your name',

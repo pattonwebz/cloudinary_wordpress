@@ -318,3 +318,33 @@
 		resize: none;
 	}
 }
+
+
+/** New UI */
+.settings{
+	&-ui{
+		&-component{
+			&-tabs{
+				border-bottom: 1px solid #ddd;
+				&-tab{
+					display: inline-block;
+					padding: 12px 10px;
+					text-decoration: none;
+					min-width: 80px;
+					text-align: center;
+					&.active{
+						background-color: #72777c;
+						color: #fff;
+					}
+				}
+			}
+
+		}
+		&-text{
+			padding: 0 0 8px;
+			input{
+				margin-bottom: 20px;
+			}
+		}
+	}
+}

@@ -35,11 +35,18 @@ class Settings {
 	protected $pages = array();
 
 	/**
-	 * Holds the active page.
+	 * Holds the current Page.
 	 *
-	 * @var string
+	 * @var Setting
 	 */
-	protected $active_page;
+	protected $current_page;
+
+	/**
+	 * Holds the current tab.
+	 *
+	 * @var Setting
+	 */
+	protected $current_tab;
 
 	/**
 	 * Holds the primary slug.
@@ -82,9 +89,7 @@ class Settings {
 	 * Render a page.
 	 */
 	public function render() {
-
-		$page = $this->get_active_page();
-		echo $page->get_component()->render(); // phpcs:ignore
+		echo $this->get_active_page()->get_component()->render(); // phpcs:ignore
 	}
 
 	/**
@@ -129,6 +134,7 @@ class Settings {
 		if ( is_null( self::$instance ) ) {
 			self::$instance = new self();
 		}
+		$params['option_name'] = ''; // Root option.
 
 		return self::$instance->register_setting( $slug, $params );
 	}
@@ -140,18 +146,11 @@ class Settings {
 	 */
 	public static function init_setting( $slug ) {
 		if ( ! is_null( self::$instance ) && self::$instance->settings->has_setting( $slug ) ) {
-			$settings = self::$instance->settings->get_setting( $slug );
-			// Setup sections fore each sub root level settings.
-			foreach ( $settings->get_settings() as $setting ) {
-				$option_name = $settings->get_slug() . '_' . $setting->get_slug();
-				$setting->set_param( 'option_name', $option_name );
-				$args = array(
-					'type' => 'array',
-				);
-				register_setting( $option_name, $option_name, $args );
-			}
+			$self     = self::$instance;
+			$settings = $self->settings->get_setting( $slug );
+			$settings->set_param( 'option_name', $settings->get_slug() );
+			$settings->setup_component();
 			$settings->load_value();
 		}
 	}
-
 }
