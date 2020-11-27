@@ -1,6 +1,6 @@
 <?php
 /**
- * Abstract UI Component.
+ * Panel UI Component.
  *
  * @package Cloudinary
  */

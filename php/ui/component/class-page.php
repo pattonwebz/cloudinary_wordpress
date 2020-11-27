@@ -1,6 +1,6 @@
 <?php
 /**
- * Abstract UI Component.
+ * Page UI Component.
  *
  * @package Cloudinary
  */
@@ -8,7 +8,7 @@
 namespace Cloudinary\UI\Component;
 
 /**
- * Class Component
+ * Page Class Component
  *
  * @package Cloudinary\UI
  */

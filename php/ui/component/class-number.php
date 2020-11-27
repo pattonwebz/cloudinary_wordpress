@@ -1,6 +1,6 @@
 <?php
 /**
- * Abstract UI Component.
+ * Number Field UI Component.
  *
  * @package Cloudinary
  */
@@ -10,7 +10,7 @@ namespace Cloudinary\UI\Component;
 use Cloudinary\UI;
 
 /**
- * Class Component
+ * Class Number Component
  *
  * @package Cloudinary\UI
  */

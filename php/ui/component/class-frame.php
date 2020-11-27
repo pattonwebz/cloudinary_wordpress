@@ -1,6 +1,6 @@
 <?php
 /**
- * Abstract UI Component.
+ * Frame UI Component.
  *
  * @package Cloudinary
  */
@@ -23,13 +23,7 @@ class Frame extends Component {
 	 * @return string
 	 */
 	public function render() {
-		$html = array();
-		// Do settings.
-		if ( $this->setting->has_settings() ) {
-			$html[] = $this->settings();
-		}
-
-		return self::compile_html( $html );
+		return $this->settings();
 	}
 
 
