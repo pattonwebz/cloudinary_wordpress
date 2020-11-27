@@ -14,6 +14,50 @@ namespace Cloudinary\UI\Component;
  */
 class Page extends Panel {
 
+
+	/**
+	 * Create the start of the tabs wrapper.
+	 *
+	 * @return string
+	 */
+	protected function start_tabs() {
+		$atts = array(
+			'class' => array(
+				'settings-ui-component',
+				'settings-ui-component-tabs',
+			),
+		);
+
+		return '<nav ' . $this->build_attributes( $atts ) . ' >';
+	}
+
+	/**
+	 * Render the tabs index.
+	 */
+	protected function tab_bar() {
+		$html[] = $this->start_tabs();
+		$active = $this->get_active_setting();
+		$url    = admin_url( 'admin.php?page=' . $this->setting->get_parent()->get_slug() );
+		foreach ( $this->setting->get_settings() as $setting ) {
+			$url       = add_query_arg( array( 'tab' => $setting->get_slug() ), $url );
+			$link_atts = array(
+				'href'  => $url,
+				'class' => array(
+					'settings-ui-component-tabs-tab',
+				),
+			);
+			if ( $active === $setting ) {
+				$link_atts['class'][] = 'active';
+			}
+			$html[] = '<a ' . $this->build_attributes( $link_atts ) . ' >';
+			$html[] = $setting->get_param( 'title', 'asdasd' );
+			$html[] = '</a>';
+		}
+		$html[] = $this->end_tabs();
+
+		return self::compile_html( $html );
+	}
+
 	/**
 	 * Creates the Content/Input HTML.
 	 *
@@ -21,9 +65,9 @@ class Page extends Panel {
 	 */
 	protected function content() {
 
-		// Get the options setting input field.
-		$option_name  = $this->setting->get_option_name();
 
+		$option_name = $this->get_option_name();
+		settings_errors( $option_name );
 		// Set the attributes for the field.
 		$option = array(
 			'type'  => 'hidden',
@@ -42,7 +86,26 @@ class Page extends Panel {
 			wp_nonce_field( $option_name . '-options', '_wpnonce', true, false ),
 		);
 
+		if ( $this->setting->has_param( 'has_tabs' ) && 1 < $this->setting->get_setting_slugs() ) {
+			$html[] = $this->tab_bar();
+		}
+
 		return self::compile_html( $html );
+	}
+
+	/**
+	 * Get the option name for this component.
+	 *
+	 * @return string
+	 */
+	protected function get_option_name() {
+		// Get the options setting input field.
+		$option_name = $this->setting->get_option_name();
+		if ( $this->setting->has_param( 'has_tabs' ) ) {
+			$option_name = $this->get_active_setting()->get_option_name();
+		}
+
+		return $option_name;
 	}
 
 	/**
@@ -51,7 +114,7 @@ class Page extends Panel {
 	 * @return string
 	 */
 	protected function start_wrapper() {
-		settings_errors( $this->setting->get_option_name() );
+
 		$form_atts = array(
 			'method'     => 'post',
 			'action'     => 'options.php',
@@ -59,7 +122,7 @@ class Page extends Panel {
 			'class'      => 'render-trigger',
 		);
 		$html      = array(
-			'<div ' . $this->build_attributes( array( 'class' => 'wrap' ) ) . '>',
+			'<div ' . $this->build_attributes( $this->get_attributes( 'wrapper' ) ) . '>',
 			'<h1>' . $this->setting->get_param( 'page_title' ) . '</h1>',
 			'<form ' . $this->build_attributes( $form_atts ) . ' >',
 		);
@@ -81,5 +144,26 @@ class Page extends Panel {
 		return self::compile_html( $html );
 	}
 
+	/**
+	 * Create the end of the tabs wrapper.
+	 *
+	 * @return string
+	 */
+	protected function end_tabs() {
+		return '</nav>';
+	}
+
+	/**
+	 * Render the settings of the active tab.
+	 *
+	 * @return string
+	 */
+	protected function settings() {
+		if ( $this->setting->has_param( 'has_tabs' ) ) {
+			return $this->get_active_setting()->render_component();
+		}
+
+		return parent::settings();
+	}
 }
 

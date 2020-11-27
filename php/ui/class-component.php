@@ -45,31 +45,38 @@ class Component {
 	 * Gets the UI Component's default attributes.
 	 */
 	private function setup_attributes() {
+		$type_class = 'settings-ui-' . $this->setting->get_param( 'type', 'component' );
 		$attributes = array(
 			'wrapper'         => array(
 				'class' => array(
+					'wrap',
 					'settings-ui-component',
-					'settings-ui-component-' . $this->setting->get_param( 'type', 'component' ),
+					'settings-ui-' . $type_class,
+					$type_class,
 				),
 			),
 			'icon'            => array(
 				'class' => array(
 					'settings-ui-component-icon',
+					$type_class,
 				),
 			),
 			'icon_image'      => array(
 				'class' => array(
 					'settings-ui-component-icon-image',
+					$type_class,
 				),
 			),
 			'heading_wrapper' => array(
 				'class' => array(
 					'settings-ui-component-heading',
+					$type_class,
 				),
 			),
 			'heading'         => array(
 				'class' => array(
 					'settings-ui-component-heading-title',
+					$type_class,
 				),
 			),
 			'tooltip'         => array(
@@ -77,6 +84,7 @@ class Component {
 					'settings-ui-component-tooltip',
 					'dashicons',
 					'dashicons-editor-help',
+					$type_class,
 				),
 			),
 			'toggle_up'       => array(
@@ -84,6 +92,7 @@ class Component {
 					'settings-ui-component-collapsible',
 					'dashicons',
 					'dashicons-arrow-up-alt2',
+					$type_class,
 				),
 			),
 			'toggle_down'     => array(
@@ -91,38 +100,44 @@ class Component {
 					'settings-ui-component-collapsible',
 					'dashicons',
 					'dashicons-arrow-down-alt2',
+					$type_class,
 				),
 			),
 			'content_wrapper' => array(
 				'class' => array(
 					'settings-ui-component-content',
+					$type_class,
 				),
 			),
 			'content'         => array(
 				'class' => array(
 					'settings-ui-component-content',
+					$type_class,
 				),
 			),
 			'settings'        => array(
 				'class' => array(
 					'settings-ui-component-settings',
+					$type_class,
 				),
 			),
 			'prefix'          => array(
 				'class' => array(
 					'settings-ui-component-prefix',
+					$type_class,
 				),
-				'value' => $this->setting->get_value(),
 			),
 			'suffix'          => array(
 				'class' => array(
 					'settings-ui-component-suffix',
+					$type_class,
 				),
 			),
 			'description'     => array(
 				'class' => array(
 					'settings-ui-component-description',
-					'description',
+					$type_class,
+
 				),
 			),
 		);
@@ -245,7 +260,8 @@ class Component {
 		if ( $this->setting->has_param( 'icon' ) ) {
 			$html[] = $this->get_icon();
 		}
-		$html[] = '<h4 ' . $this->build_attributes( $this->get_attributes( 'heading' ) ) . ' />';
+		$html[] = '<h4 ' . $this->build_attributes( $this->get_attributes( 'heading' ) ) . ' >';
+		$html[] = $this->setting->get_param( 'title' );
 		if ( $this->setting->has_param( 'tooltip' ) ) {
 			$html[] = $this->tooltip();
 		}
@@ -260,10 +276,10 @@ class Component {
 	 * @return string
 	 */
 	protected function tooltip() {
-		$atts              = $this->get_attributes( 'tooltip' );
-		$atts['data-text'] = $this->setting->get_param( 'tooltip' );
+		$atts          = $this->get_attributes( 'tooltip' );
+		$atts['title'] = $this->setting->get_param( 'tooltip' );
 
-		return '<span' . $this->build_attributes( $atts ) . ' />';
+		return '<span ' . $this->build_attributes( $atts ) . ' />';
 	}
 
 	/**
@@ -423,7 +439,7 @@ class Component {
 	}
 
 	/**
-	 * Init the component
+	 * Init the component.
 	 *
 	 * @param Settings\Setting $setting The setting object.
 	 *
@@ -432,20 +448,33 @@ class Component {
 	public static function init( $setting ) {
 
 		$caller = get_called_class();
+		$type   = $setting->get_param( 'type' );
 		// Check what type this component needs to be.
-		if ( ! $setting->has_param( 'type' ) ) {
+		if ( is_null( $type ) ) {
 			$setting->set_param( 'type', 'component' );
-		} elseif ( is_callable( $setting->get_param( 'type' ) ) ) {
+		} elseif ( is_callable( $type ) ) {
 			$setting->set_param( 'callback', $setting->get_param( 'type' ) );
 			$setting->set_param( 'type', 'custom' );
 		}
-
-		// Check that this type of component exists.
-		if ( is_callable( array( $caller . '\\' . $setting->get_param( 'type' ), 'init' ) ) ) {
+		// Final check if type is callable component.
+		if ( self::is_component_type( $type ) ) {
 			$caller = $caller . '\\' . $setting->get_param( 'type' );
 		}
 
 		return new $caller( $setting );
+	}
 
+	/**
+	 * Check if the type is a component.
+	 *
+	 * @param string $type The type to check.
+	 *
+	 * @return bool
+	 */
+	public static function is_component_type( $type ) {
+		$caller = get_called_class();
+
+		// Check that this type of component exists.
+		return is_callable( array( $caller . '\\' . $type, 'init' ) );
 	}
 }
