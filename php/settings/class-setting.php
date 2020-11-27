@@ -292,8 +292,10 @@ class Setting {
 	 */
 	public function setup_setting( array $params ) {
 		$dynamic_params = array_filter( $params, array( $this, 'is_setting_param' ), ARRAY_FILTER_USE_KEY );
-		$params         = array_diff( $params, $dynamic_params );
 		foreach ( $params as $param => $value ) {
+			if ( $this->is_setting_param( $param ) ) {
+				continue;
+			}
 			// Set params.
 			$this->set_param( $param, $value );
 		}
