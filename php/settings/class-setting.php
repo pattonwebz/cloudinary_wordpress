@@ -160,24 +160,6 @@ class Setting {
 	}
 
 	/**
-	 * Get the params recursive.
-	 *
-	 * @return array
-	 */
-	public function get_params_recursive() {
-		$params = $this->get_params();
-		if ( $this->has_settings() ) {
-			$setting_slugs = $this->get_setting_slugs();
-			foreach ( $setting_slugs as $setting_slug ) {
-				$setting                             = $this->get_setting( $setting_slug );
-				$params['settings'][ $setting_slug ] = $setting->get_params_recursive();
-			}
-		}
-
-		return $params;
-	}
-
-	/**
 	 * Check if setting has a parent.
 	 *
 	 * @return bool
@@ -309,20 +291,15 @@ class Setting {
 	 * @param array $params The setting params.
 	 */
 	public function setup_setting( array $params ) {
-		$has_dynamic = false;
+		$dynamic_params = array_filter( $params, array( $this, 'is_setting_param' ), ARRAY_FILTER_USE_KEY );
+		$params         = array_diff( $params, $dynamic_params );
 		foreach ( $params as $param => $value ) {
-			if ( $this->is_setting_param( $param ) ) {
-				$has_dynamic = true;
-				continue;
-			}
 			// Set params.
 			$this->set_param( $param, $value );
 		}
 
-		// Register dynamics if any are found.
-		if ( $has_dynamic ) {
-			$this->register_dynamic_settings( $params );
-		}
+		// Register dynamics.
+		$this->register_dynamic_settings( $dynamic_params );
 	}
 
 	/**
@@ -393,12 +370,10 @@ class Setting {
 	 */
 	protected function register_dynamic_settings( $params ) {
 		foreach ( $params as $param => $value ) {
-			if ( $this->is_setting_param( $param ) ) {
-				$callback = $this->get_setting_param_callback( $param );
-				$callable = is_callable( $callback );
-				if ( $callable ) {
-					call_user_func( $callback, $value );
-				}
+			$callback = $this->get_setting_param_callback( $param );
+			$callable = is_callable( $callback );
+			if ( $callable ) {
+				call_user_func( $callback, $value );
 			}
 		}
 	}
