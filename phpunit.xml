@@ -1,5 +1,5 @@
 <phpunit
-	bootstrap="tests/bootstrap.php"
+	bootstrap="./tests/bootstrap.php"
 	backupGlobals="false"
 	colors="true"
 	convertErrorsToExceptions="true"
@@ -8,7 +8,7 @@
 	>
 
 	<testsuites>
-		<testsuite name="Cloudinary">
+		<testsuite name="cloudinary">
 			<directory suffix=".php">./tests/phpunit/</directory>
 		</testsuite>
 	</testsuites>
@@ -16,7 +16,7 @@
 	<filter>
 		<whitelist processUncoveredFilesFromWhitelist="false">
 			<directory suffix=".php">./php</directory>
-			<file>foo-bar.php</file>
+			<file>cloudinary.php</file>
 			<file>instance.php</file>
 		</whitelist>
 	</filter>
