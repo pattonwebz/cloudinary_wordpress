@@ -53,7 +53,6 @@ class Test_Plugin extends \WP_UnitTestCase {
 	public function test_init() {
 		$plugin = get_plugin_instance();
 		$plugin->init();
-
 		$this->assertInternalType( 'array', $plugin->config );
 		$this->assertArrayHasKey( 'settings', $plugin->config );
 	}
@@ -64,7 +63,7 @@ class Test_Plugin extends \WP_UnitTestCase {
 	 * @see Plugin::locate_plugin()
 	 */
 	public function test_locate_plugin() {
-		$location   = $this->plugin->locate_plugin();
+		$location = $this->plugin->locate_plugin();
 		$this->assertEquals( 'cloudinary', $location['dir_basename'] );
 		$this->assertContains( 'plugins/cloudinary', $location['dir_path'] );
 		$this->assertContains( 'plugins/cloudinary', $location['dir_url'] );
