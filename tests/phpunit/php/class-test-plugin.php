@@ -65,8 +65,7 @@ class Test_Plugin extends \WP_UnitTestCase {
 	 */
 	public function test_locate_plugin() {
 		$location   = $this->plugin->locate_plugin();
-		$actual_dir = basename( dirname( dirname( __DIR__ ) ) );
-		$this->assertEquals( $actual_dir, $location['dir_basename'] );
+		$this->assertEquals( 'cloudinary', $location['dir_basename'] );
 		$this->assertContains( 'plugins/cloudinary', $location['dir_path'] );
 		$this->assertContains( 'plugins/cloudinary', $location['dir_url'] );
 	}
