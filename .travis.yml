@@ -31,7 +31,7 @@ after_script:
   - source "$DEV_LIB_PATH/travis.after_script.sh"
 
 jobs:
-
+  fast_finish: true
   include:
 
     - stage: lint
@@ -49,11 +49,6 @@ jobs:
     - name: PHP unit tests (7.4, WordPress trunk)
       php: "7.4"
       env: WP_VERSION=trunk DEV_LIB_ONLY=phpunit
-      script:
-        - npm run env:start
-        - npm run wp -- wp core install --title=WordPress --admin_user=admin --admin_password=password --admin_email=admin@example.com --skip-email --url=http://localhost:8088 --quiet
-        - npm run wp -- wp plugin activate cloudinary
-        - npm run test
 
 notifications:
   email: false
