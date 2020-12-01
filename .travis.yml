@@ -17,9 +17,6 @@ before_install:
 
 install:
   - npm install
-  - export DEV_LIB_PATH=vendor/xwp/wp-dev-lib/scripts
-  - export DIFF_HEAD=HEAD
-  - source "$DEV_LIB_PATH/travis.install.sh"
 
 before_script:
   - phpenv config-rm xdebug.ini || echo "xdebug.ini does not exist."
@@ -46,11 +43,21 @@ jobs:
         - npm run build
 
     - stage: test
-    - name: PHP unit tests (7.4, WordPress latest, with code coverage)
+    - name: PHP unit tests (5.6, WordPress trunk)
+      php: "5.6"
+      env: WP_VERSION=trunk DEV_LIB_ONLY=phpunit
+      install:
+        - export DEV_LIB_PATH=vendor/xwp/wp-dev-lib/scripts
+        - export DIFF_HEAD=HEAD
+        - source "$DEV_LIB_PATH/travis.install.sh"
+        -
+    - name: PHP unit tests (7.4, WordPress trunk)
       php: "7.4"
-      env: WP_VERSION=latest DEV_LIB_ONLY=phpunit,coverage
-      before_script:
-        - echo "Running PHP unit tests with code coverage ..."
+      env: WP_VERSION=trunk DEV_LIB_ONLY=phpunit
+      install:
+        - export DEV_LIB_PATH=vendor/xwp/wp-dev-lib/scripts
+        - export DIFF_HEAD=HEAD
+        - source "$DEV_LIB_PATH/travis.install.sh"
 
 notifications:
   email: false
