@@ -18,15 +18,6 @@ before_install:
 install:
   - npm install
 
-before_script:
-  - phpenv config-rm xdebug.ini || echo "xdebug.ini does not exist."
-
-script:
-  - source "$DEV_LIB_PATH/travis.script.sh"
-
-after_script:
-  - source "$DEV_LIB_PATH/travis.after_script.sh"
-
 jobs:
   fast_finish: true
   include:
@@ -46,15 +37,29 @@ jobs:
     - name: PHP unit tests (5.6, WordPress trunk)
       php: "5.6"
       env: WP_VERSION=trunk DEV_LIB_ONLY=phpunit
+      before_script:
+        - phpenv config-rm xdebug.ini || echo "xdebug.ini does not exist."
+      script:
+        - source "$DEV_LIB_PATH/travis.script.sh"
+      after_script:
+        - source "$DEV_LIB_PATH/travis.after_script.sh"
       install:
+        - npm install
         - export DEV_LIB_PATH=vendor/xwp/wp-dev-lib/scripts
         - export DIFF_HEAD=HEAD
         - source "$DEV_LIB_PATH/travis.install.sh"
-        -
+
     - name: PHP unit tests (7.4, WordPress trunk)
       php: "7.4"
       env: WP_VERSION=trunk DEV_LIB_ONLY=phpunit
+      before_script:
+        - phpenv config-rm xdebug.ini || echo "xdebug.ini does not exist."
+      script:
+        - source "$DEV_LIB_PATH/travis.script.sh"
+      after_script:
+        - source "$DEV_LIB_PATH/travis.after_script.sh"
       install:
+        - npm install
         - export DEV_LIB_PATH=vendor/xwp/wp-dev-lib/scripts
         - export DIFF_HEAD=HEAD
         - source "$DEV_LIB_PATH/travis.install.sh"
