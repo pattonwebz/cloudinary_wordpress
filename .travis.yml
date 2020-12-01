@@ -46,9 +46,11 @@ jobs:
         - npm run build
 
     - stage: test
-    - name: PHP unit tests (7.4, WordPress trunk)
+    - name: PHP unit tests (7.4, WordPress latest, with code coverage)
       php: "7.4"
-      env: WP_VERSION=trunk DEV_LIB_ONLY=phpunit
+      env: WP_VERSION=latest DEV_LIB_ONLY=phpunit,coverage
+      before_script:
+        - echo "Running PHP unit tests with code coverage ..."
 
 notifications:
   email: false
@@ -56,4 +58,8 @@ notifications:
 cache:
   npm: true
   directories:
-    - "$HOME/.composer/cache"
+    - $HOME/.composer/cache
+    - $HOME/.jest-cache
+    - $HOME/.npm
+    - $HOME/.nvm/.cache
+    - $HOME/phpunit-bin
