@@ -1,6 +1,6 @@
 <?php
 /**
- * Base UI Component.
+ * Abstract UI Component.
  *
  * @package Cloudinary
  */
@@ -14,7 +14,7 @@ use Cloudinary\Settings;
  *
  * @package Cloudinary\UI
  */
-class Component {
+abstract class Component {
 
 	/**
 	 * Holds the parent setting for this component.
@@ -450,18 +450,20 @@ class Component {
 		$caller = get_called_class();
 		$type   = $setting->get_param( 'type' );
 		// Check what type this component needs to be.
-		if ( is_null( $type ) ) {
-			$setting->set_param( 'type', 'component' );
-		} elseif ( is_callable( $type ) ) {
+		if ( is_callable( $type ) ) {
 			$setting->set_param( 'callback', $setting->get_param( 'type' ) );
 			$setting->set_param( 'type', 'custom' );
 		}
+		// Set Caller.
+		$component = $caller . '\\' . $setting->get_param( 'type' );
 		// Final check if type is callable component.
-		if ( self::is_component_type( $type ) ) {
-			$caller = $caller . '\\' . $setting->get_param( 'type' );
+		if ( ! self::is_component_type( $type ) ) {
+			// Set to a default HTML component if not found.
+			$component = $caller . '\\html';
+			$setting->set_param( 'type', 'html' );
 		}
 
-		return new $caller( $setting );
+		return new $component( $setting );
 	}
 
 	/**
