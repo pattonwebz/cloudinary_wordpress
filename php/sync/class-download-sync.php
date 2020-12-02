@@ -196,7 +196,7 @@ class Download_Sync {
 		require_once ABSPATH . 'wp-admin/includes/media.php';
 		if ( empty( $source ) ) {
 			$cloudinary_id = $this->media->get_cloudinary_id( $attachment_id );
-			$source        = $this->media->cloudinary_url( $attachment_id, array(), array(), $cloudinary_id, false, false );
+			$source        = $this->media->cloudinary_url( $attachment_id, array(), array(), $cloudinary_id, false );
 		}
 		$file_name = basename( $source );
 		try {
@@ -299,7 +299,7 @@ class Download_Sync {
 
 			// Make sure all sizes have the transformations on for previewing.
 			foreach ( $attachment['sizes'] as $name => &$size ) {
-				$size['url'] = $this->plugin->components['media']->cloudinary_url( $attachment_id, $name, $transformations, $cloudinary_id, false );
+				$size['url'] = $this->plugin->components['media']->cloudinary_url( $attachment_id, $name, $transformations, $cloudinary_id );
 			}
 
 			// start applying default transformations again.
