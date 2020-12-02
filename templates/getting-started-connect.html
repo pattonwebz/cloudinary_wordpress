@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/stylesheet.css">
+  <link rel="stylesheet" href="css/utils.css">
+</head>
+<body>
+  <div class="cld-settings">
+    <header class="cld-settings__header">
+      <img src="images/logo.svg" alt="Cloudinary's logo" width="150px" />
+      <p style="margin-left: 1rem; font-size: 0.75rem;"><a href="#">Need help?</a></p>
+    </header>
+    <ul class="cld-tabs" role="tablist">
+      <li 
+        class="cld-tabs__tab" 
+        role="tab" 
+        aria-selected="false" 
+        aria-controls="about-tab"
+        id="about"
+      >
+        <a href="#">About</a>
+      </li>  
+      <li 
+        class="cld-tabs__tab cld-tabs__tab--active" 
+        role="tab" 
+        aria-selected="true" 
+        aria-controls="connect-tab"
+        id="connect"
+      >
+        <a href="#">Connect</a>
+      </li>  
+    </ul>
+
+    <main class="cld-settings__container" tabindex="0" role="tabpanel" id="connect-tab" aria-labelledby="connect">
+      <section class="cld-box">
+        <h2>
+          Connect to Cloudinary 
+          <img src="images/circle.svg" height="16px" class="inline" title="PLEASE REPLACE WITH WP GLYPHICON">
+        </h2>
+        <p class="mt-0.5">You need to connect your Cloudinary account to WordPress by adding your unique connection string. See below for where to find this.</p>
+
+        <form class="cld-input-group mt-1">
+          <label class="cld-input-group__label" for="connection_string">Connection String</label>
+          <div class="cld-input-group__input-box">
+            <input type="text" name="connection_string" id="connection_string" class="cld-input-group__input" />
+          </div>
+          <button type="submit" class="btn btn-primary cld-input-group__submit">Connect</button>
+        </form>
+      </section>
+      <section class="cld-box mt-1" aria-expanded="true">
+        <div class="cld-box__header  cld-box__header--split">
+          <h2>Where to find my connection string?</h2>
+          <button type="button" aria-label="Collapse this section" title="PLEASE REPLACE WITH WP GLYPHICON">
+            &#x25B2;
+          </button>
+        </div>
+        <p class="mt-1">
+          After creating your Cloudinary account:
+
+          <ol class="mt-1">
+            <li><span>Open your Cloudinary Dashboard</span></li>
+            <li><span>At the top of the dashboard you will find the Account Details section</span></li>
+            <li><span>Copy the API Environment variable</span></li>
+          </ol>
+        </p>
+        <img src="images/connection-string.png" alt="Where the connection string can be found on the cloudinary.com console." class="w-full" />
+      </section>
+    </main>
+
+    <footer class="cld-settings__footer">
+      <p>Thanks for using Cloudinary, please take a minute to rate our plugin.</p>
+    </footer>
+  </div>
+</body>
+</html>

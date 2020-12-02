@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/stylesheet.css">
+  <link rel="stylesheet" href="css/utils.css">
+</head>
+<body>
+  <div class="cld-settings">
+    <header class="cld-settings__header">
+      <img src="images/logo.svg" alt="Cloudinary's logo" width="150px" />
+      <p style="margin-left: 1rem; font-size: 0.75rem;"><a href="#">Need help?</a></p>
+    </header>
+    <ul class="cld-tabs" role="tablist">
+      <li 
+        class="cld-tabs__tab" 
+        role="tab" 
+        aria-selected="false" 
+        aria-controls="sync-tab"
+        id="sync"
+      >
+        <a href="#">Sync</a>
+      </li>  
+      <li 
+        class="cld-tabs__tab cld-tabs__tab--active" 
+        role="tab" 
+        aria-selected="true" 
+        aria-controls="media-display-tab"
+        id="media-display"
+      >
+        <a href="#">Media Display</a>
+      </li>
+      <li 
+        class="cld-tabs__tab" 
+        role="tab" 
+        aria-selected="false" 
+        aria-controls="gallery-tab"
+        id="gallery"
+      >
+        <a href="#">Product Gallery</a>
+      </li>  
+    </ul>
+
+    <main class="cld-settings__container" tabindex="0" role="tabpanel" id="media-display-tab" aria-labelledby="media-display">
+      <section class="cld-box cld-box--horizontal mt-1">
+        <div class="cld-box--horizontal__left">
+          <img src="images/transformation.svg" alt="Transformations icon" />
+          <div class="cld-box--horizontal__left__text">
+            <h2>Transformations</h2>
+            <p class="cld-box--horizontal__left__p">
+              Cloudinary allows you to easily transform your images on-the-fly to any required format, style and dimension, and also optimizes images for minimal file size alongside high visual quality for an improved user experience and minimal bandwidth. You can do all of this by implementing dynamic image transformation and delivery URLs.
+            </p>
+          </div>
+        </div>
+        <a href="#" class="btn btn-secondary block">See Examples</a>
+      </section>
+      <form class="cld-box p-0 mt-1">
+        <header class="cld-box__header cld-box__header--divided p-1.5">
+          <img src="images/image.svg" alt="Image icon" />
+          <h2 class="ml-1">Image - Global Settings</h2>
+        </header>
+        <div class="cld-2-columns">
+          <section class="cld-2-columns__left">
+            <div class="cld-input-group">
+              <label class="cld-input-group__label cld-input-group__label--with-info" for="optimize_images">
+                <span>Image Optimization</span>
+                <img src="images/circle.svg" height="16px" class="ml-0.5" title="PLEASE REPLACE WITH WP GLYPHICON">
+              </label>
+              <div class="cld-toggle">
+                <label class="cld-toggle__input mt-0.5">
+                  <input type="checkbox" name="optimize_images" id="optimize_images" />
+                  <span class="cld-toggle__input__slider"></span>
+                </label>
+                <label class="cld-toggle__label" for="optimize_images">Optimize Images in my site</label>
+              </div>
+            </div>
+
+            <hr>
+
+            <h3>
+              Advanced Optimizations
+              <button type="button" aria-label="Collapse this section" title="PLEASE REPLACE WITH WP GLYPHICON">
+                &#x25B2;
+              </button>
+            </h3>
+
+            <div class="mt-2">
+              <div class="cld-input-group">
+                <label class="cld-input-group__label cld-input-group__label--with-info" for="image_format">
+                  <span>Image Format</span>
+                  <img src="images/circle.svg" height="16px" class="ml-0.5 inline" title="PLEASE REPLACE WITH WP GLYPHICON">
+                </label>
+                <div class="cld-select">
+                  <select name="image_format" id="image_format" class="cld-select__input">
+                    <option>Option 1</option>
+                    <option>Option 2</option>
+                    <option>Option 3</option>
+                  </select>
+                  <div class="cld-select__arrow">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                  </div>
+                </div>
+              </div>
+              <div class="cld-input-group mt-1">
+                <label class="cld-input-group__label cld-input-group__label--with-info" for="image_quality">
+                  <span>Image Quality</span>
+                  <img src="images/circle.svg" height="16px" class="ml-0.5" title="PLEASE REPLACE WITH WP GLYPHICON">
+                </label>
+                <div class="cld-select">
+                  <select name="image_quality" id="image_quality" class="cld-select__input">
+                    <option>Option 1</option>
+                    <option>Option 2</option>
+                    <option>Option 3</option>
+                  </select>
+                  <div class="cld-select__arrow">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                  </div>
+                </div>
+              </div>
+
+              <hr>
+
+              <div class="cld-input-group">
+                <label class="cld-input-group__label cld-input-group__label--with-info" for="image_breakpoints">
+                  Image Breakpoints
+                </label>
+                <div class="cld-toggle">
+                  <label class="cld-toggle__input mt-0.5">
+                    <input type="checkbox" name="image_breakpoints" id="image_breakpoints" />
+                    <span class="cld-toggle__input__slider"></span>
+                  </label>
+                  <label class="cld-toggle__label" for="image_breakpoints">Enable responsive images</label>
+                </div>
+                <div class="cld-input-group mt-2">
+                  <label class="cld-input-group__label cld-input-group__label--with-info" for="max_breakpoints">
+                    <span>Max Breakpoints</span>
+                    <img src="images/circle.svg" height="16px" class="ml-0.5 inline" title="PLEASE REPLACE WITH WP GLYPHICON">
+                  </label>
+                  <div class="cld-input-group__input-box">
+                    <input type="number" name="max_breakpoints" id="max_breakpoints" class="cld-input-group__input cld-input-group__input--small" />
+                    <p class="whitespace-nowrap ml-0.5">Valid values: 3 – 200</p>
+                  </div>
+                </div>
+                <div class="cld-input-group mt-1">
+                  <label class="cld-input-group__label cld-input-group__label--with-info" for="max_breakpoints">
+                    <span>Byte Step</span>
+                    <img src="images/circle.svg" height="16px" class="ml-0.5 inline" title="PLEASE REPLACE WITH WP GLYPHICON">
+                  </label>
+                  <div class="cld-input-group__input-box">
+                    <input type="number" name="max_breakpoints" id="max_breakpoints" class="cld-input-group__input cld-input-group__input--small" />
+                    <p class="whitespace-nowrap ml-0.5">bytes</p>
+                  </div>
+                </div>
+                <div class="cld-input-group mt-1">
+                  <label class="cld-input-group__label cld-input-group__label--with-info" for="max_breakpoints">
+                    <span>Image Width Limit</span>
+                    <img src="images/circle.svg" height="16px" class="ml-0.5 inline" title="PLEASE REPLACE WITH WP GLYPHICON">
+                  </label>
+                  <div class="cld-input-group__input-box">
+                    <p class="whitespace-nowrap mr-0.5">Max</p>
+                    <input type="number" name="max_breakpoints" id="max_breakpoints" class="cld-input-group__input cld-input-group__input--small" />
+                    <p class="whitespace-nowrap ml-0.5">px</p>
+                  </div>
+                  <div class="cld-input-group__input-box">
+                    <p class="whitespace-nowrap mr-0.5">Min</p>
+                    <input type="number" name="max_breakpoints" id="max_breakpoints" class="cld-input-group__input cld-input-group__input--small" />
+                    <p class="whitespace-nowrap ml-0.5">px</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <hr>
+
+            <div class="cld-input-group mt-1">
+              <label class="cld-input-group__label cld-input-group__label--with-info" for="custom_transformations">
+                <span>Custom Transformations</span>
+                <img src="images/circle.svg" height="16px" class="ml-0.5 inline" title="PLEASE REPLACE WITH WP GLYPHICON">
+              </label>
+              <div class="cld-input-group__input-box">
+                <input type="text" name="custom_transformations" id="custom_transformations" placeholder="w_50,r_max" class="cld-input-group__input" />
+              </div>
+            </div>
+          </section>
+          <section class="cld-2-columns__right">
+            <div class="cld-2-columns__right__box">
+              <h3>Preview</h3>
+              <img src="images/sample.webp" class="w-full mt-0.5" alt="Preview image" />
+              <div class="cld-2-columns__right__transformations">
+                <span>../image/upload/</span><span style="color: var(--accent-color)">f_auto,q_auto</span><span>/sample.jpg</span>
+              </div>
+            </div>
+          </section>
+        </div>
+        <footer class="cld-box__footer cld-box__footer--divided p-1.5">
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </footer>
+      </form>
+      
+      <form class="cld-box p-0 mt-1">
+        <header class="cld-box__header cld-box__header--divided p-1.5">
+          <img src="images/video.svg" alt="Video icon" />
+          <h2 class="ml-1">Video - Global Settings</h2>
+        </header>
+        <div class="cld-2-columns">
+          <section class="cld-2-columns__left">
+            <div class="cld-input-group">
+              <label class="cld-input-group__label cld-input-group__label--with-info" for="video_player">
+                <span>Video Player</span>
+                <img src="images/circle.svg" height="16px" class="ml-0.5 inline" title="PLEASE REPLACE WITH WP GLYPHICON">
+              </label>
+              <div class="cld-select">
+                <select name="video_player" id="video_player" class="cld-select__input">
+                  <option>Option 1</option>
+                  <option>Option 2</option>
+                  <option>Option 3</option>
+                </select>
+                <div class="cld-select__arrow">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                </div>
+              </div>
+            </div>
+            <div class="cld-input-group mt-1">
+              <label class="cld-input-group__label cld-input-group__label--with-info" for="limit_bitrate">
+                <span>Bitrate</span>
+                <img src="images/circle.svg" height="16px" class="ml-0.5" title="PLEASE REPLACE WITH WP GLYPHICON">
+              </label>
+              <div class="cld-toggle">
+                <label class="cld-toggle__input mt-0.5">
+                  <input type="checkbox" name="limit_bitrate" id="limit_bitrate" />
+                  <span class="cld-toggle__input__slider"></span>
+                </label>
+                <label class="cld-toggle__label" for="limit_bitrate">Limit Bitrate</label>
+              </div>
+            </div>
+
+            <hr>
+
+            <div class="cld-input-group mt-1">
+              <label class="cld-input-group__label cld-input-group__label--with-info" for="optimize_videos">
+                <span>Video Optimization</span>
+                <img src="images/circle.svg" height="16px" class="ml-0.5" title="PLEASE REPLACE WITH WP GLYPHICON">
+              </label>
+              <div class="cld-toggle">
+                <label class="cld-toggle__input mt-0.5">
+                  <input type="checkbox" name="optimize_videos" id="optimize_videos" />
+                  <span class="cld-toggle__input__slider"></span>
+                </label>
+                <label class="cld-toggle__label" for="optimize_videos">Optimize Videos in my site</label>
+              </div>
+            </div>
+
+            <hr>
+
+            <h3>
+              Advanced Optimizations
+              <button type="button" aria-label="Collapse this section" title="PLEASE REPLACE WITH WP GLYPHICON">
+                &#x25B2;
+              </button>
+            </h3>
+
+            <div class="mt-2">
+              <div class="cld-input-group">
+                <label class="cld-input-group__label cld-input-group__label--with-info" for="video_format">
+                  <span>Video Format</span>
+                  <img src="images/circle.svg" height="16px" class="ml-0.5 inline" title="PLEASE REPLACE WITH WP GLYPHICON">
+                </label>
+                <div class="cld-select">
+                  <select name="video_format" id="video_format" class="cld-select__input">
+                    <option>Option 1</option>
+                    <option>Option 2</option>
+                    <option>Option 3</option>
+                  </select>
+                  <div class="cld-select__arrow">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                  </div>
+                </div>
+              </div>
+              <div class="cld-input-group mt-1">
+                <label class="cld-input-group__label cld-input-group__label--with-info" for="video_quality">
+                  <span>Video Quality</span>
+                  <img src="images/circle.svg" height="16px" class="ml-0.5" title="PLEASE REPLACE WITH WP GLYPHICON">
+                </label>
+                <div class="cld-select">
+                  <select name="video_quality" id="video_quality" class="cld-select__input">
+                    <option>Option 1</option>
+                    <option>Option 2</option>
+                    <option>Option 3</option>
+                  </select>
+                  <div class="cld-select__arrow">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <hr>
+
+            <div class="cld-input-group mt-1">
+              <label class="cld-input-group__label cld-input-group__label--with-info" for="custom_transformations_video">
+                <span>Custom Transformations</span>
+                <img src="images/circle.svg" height="16px" class="ml-0.5 inline" title="PLEASE REPLACE WITH WP GLYPHICON">
+              </label>
+              <div class="cld-input-group__input-box">
+                <input type="text" name="custom_transformations_video" id="custom_transformations_video" placeholder="w_50,r_max" class="cld-input-group__input" />
+              </div>
+            </div>
+          </section>
+          <section class="cld-2-columns__right">
+            <div class="cld-2-columns__right__box">
+              <h3>Preview</h3>
+              <img src="images/sample.webp" class="w-full mt-0.5" alt="Preview image" />
+              <div class="cld-2-columns__right__transformations">
+                <span>../video/upload/</span><span style="color: var(--accent-color)">f_auto,q_auto</span><span>/sample.mp4</span>
+              </div>
+            </div>
+          </section>
+        </div>
+        <footer class="cld-box__footer cld-box__footer--divided p-1.5">
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </footer>
+      </form>
+    </main>
+
+    <footer class="cld-settings__footer">
+      <p>Thanks for using Cloudinary, please take a minute to rate our plugin.</p>
+    </footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@200;400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/stylesheet.css">
+  <link rel="stylesheet" href="css/utils.css">
+</head>
+<body>
+  <div class="cld-settings">
+    <header class="cld-settings__header">
+      <img src="images/logo.svg" alt="Cloudinary's logo" width="150px" />
+      <p style="margin-left: 1rem; font-size: 0.75rem;"><a href="#">Need help?</a></p>
+    </header>
+    <main class="cld-settings__container">
+      <section class="cld-box">
+        <h2>Your Current Plan</h2>
+        <div class="cld-box cld-box--inner" style="margin: 1em 0; background-color: rgba(220,220,220,0.2);">
+          <h1 style="color: var(--accent-color);">Free Plan</h1>
+          <div class="mt-0.75">
+            <h4>25 Monthly Credits</h4>
+            <p class="mt-0.75">
+              1 Credit =
+              <ul>
+                <li><span>1,000 Transformations OR</span></li>
+                <li><span>1 GB Storage OR</span></li>
+                <li><span>1 GB Bandwidth</span></li>
+              </ul>
+            </p>
+          </div>
+        </div>
+        <a href="#" class="btn btn-primary mt-0.5 inline-block">Upgrade Plan</a>
+      </section>
+      <section class="cld-box mt-1">
+        <h2>Your Plan Status</h2>
+        <div class="cld-stat-boxes">
+          <div class="cld-stat-boxes__box w-1/3">
+            <img src="images/cloud.svg" class="cld-stat-boxes__box__icon">
+            <h3 class="cld-stat-boxes__box__title">Storage</h3>
+            <div>
+              <span class="cld-stat-boxes__box__amount">1TB</span>
+              <span class="cld-stat-boxes__box__percent">11.72%</span>
+            </div>
+          </div>
+          <div class="cld-stat-boxes__box w-1/3">
+            <img src="images/transformation.svg" class="cld-stat-boxes__box__icon">
+            <h3 class="cld-stat-boxes__box__title">Storage</h3>
+            <div>
+              <span class="cld-stat-boxes__box__amount">1TB</span>
+              <span class="cld-stat-boxes__box__percent">11.72%</span>
+            </div>
+          </div>
+          <div class="cld-stat-boxes__box w-1/3">
+            <img src="images/bandwidth.svg" class="cld-stat-boxes__box__icon">
+            <h3 class="cld-stat-boxes__box__title">Storage</h3>
+            <div>
+              <span class="cld-stat-boxes__box__amount">1TB</span>
+              <span class="cld-stat-boxes__box__percent">11.72%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="mt-1">
+        <section class="cld-box" style="display: inline-block; width: auto;">
+          <h2>Your Media Sync Status</h2>
+          <div class="cld-stat-boxes">
+            <div class="cld-stat-boxes__box">
+              <img src="images/upload.svg" class="cld-stat-boxes__box__icon">
+              <h3 class="cld-stat-boxes__box__title">Media assets are synced to Cloudinary</h3>
+              <div>
+                <span class="cld-stat-boxes__box__amount">100 of 100</span>
+              </div>
+            </div>
+          </div>
+          <div class="cld-notice cld-notice--success">
+            All assets are synced
+          </div>
+        </section>
+      </section>
+    </main>
+    <footer class="cld-settings__footer">
+      <p>Thanks for using Cloudinary, please take a minute to rate our plugin.</p>
+    </footer>
+  </div>
+</body>
+</html>

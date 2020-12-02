@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/stylesheet.css">
+  <link rel="stylesheet" href="css/utils.css">
+</head>
+<body>
+  <div class="cld-settings">
+    <header class="cld-settings__header">
+      <img src="images/logo.svg" alt="Cloudinary's logo" width="150px" />
+      <p style="margin-left: 1rem; font-size: 0.75rem;"><a href="#">Need help?</a></p>
+    </header>
+    <ul class="cld-tabs" role="tablist">
+      <li 
+        class="cld-tabs__tab cld-tabs__tab--active" 
+        role="tab" 
+        aria-selected="true" 
+        aria-controls="sync-tab"
+        id="sync"
+      >
+        <a href="#">Sync</a>
+      </li>  
+      <li 
+        class="cld-tabs__tab" 
+        role="tab" 
+        aria-selected="false" 
+        aria-controls="media-display-tab"
+        id="media-display"
+      >
+        <a href="#">Media Display</a>
+      </li>
+      <li 
+        class="cld-tabs__tab" 
+        role="tab" 
+        aria-selected="false" 
+        aria-controls="gallery-tab"
+        id="gallery"
+      >
+        <a href="#">Product Gallery</a>
+      </li>  
+    </ul>
+
+    <main class="cld-settings__container" tabindex="0" role="tabpanel" id="sync-tab" aria-labelledby="sync">
+      <form class="cld-box p-0">
+        <header class="cld-box__header cld-box__header--divided p-1.5">
+          <h2>Sync Settings</h2>
+        </header>
+        <div class="p-1.5">
+          <label>Sync Method</label>
+          <div class="cld-radio-group">
+            <input class="cld-radio-group__input" type="radio" name="sync_method" id="sync_method_auto" checked />
+            <label class="cld-radio-group__label" for="sync_method_auto">Auto Sync</label>
+          </div>
+          <div class="cld-radio-group">
+            <input class="cld-radio-group__input" type="radio" name="sync_method" id="sync_method_manual" />
+            <label class="cld-radio-group__label" for="sync_method_manual">Manual Sync</label>
+          </div>
+
+          <div class="my-2">
+            <p>Bulk sync all your WordPress assets to Cloudinary</p>
+            <button type="button" class="btn btn-secondary mt-0.5">Sync Now</button>
+          </div>
+
+          <div class="cld-input-group">
+            <label class="cld-input-group__label cld-input-group__label--with-info" for="folder_path">
+              <span>Cloudinary Folder Path</span>
+              <img src="images/circle.svg" height="16px" class="ml-0.5 inline" title="PLEASE REPLACE WITH WP GLYPHICON">
+            </label>
+            <div class="cld-input-group__input-box">
+              <input type="text" name="folder_path" id="folder_path" placeholder="e.g.: wordpress_assets/" class="cld-input-group__input" />
+            </div>
+          </div>
+          <div class="cld-input-group mt-1">
+            <label class="cld-input-group__label cld-input-group__label--with-info" for="storage">
+              <span>Storage</span>
+              <img src="images/circle.svg" height="16px" class="ml-0.5 inline" title="PLEASE REPLACE WITH WP GLYPHICON">
+            </label>
+            <div class="cld-select">
+              <select name="storage" id="storage" class="cld-select__input">
+                <option>Option 1</option>
+                <option>Option 2</option>
+                <option>Option 3</option>
+              </select>
+              <div class="cld-select__arrow">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="cld-box__footer cld-box__footer--divided p-1.5">
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </footer>
+      </form>
+    </main>
+
+    <footer class="cld-settings__footer">
+      <p>Thanks for using Cloudinary, please take a minute to rate our plugin.</p>
+    </footer>
+  </div>
+</body>
+</html>
