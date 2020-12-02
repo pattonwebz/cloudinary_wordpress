@@ -92,9 +92,7 @@ class Gallery {
 			$this->original_config = self::$default_config;
 		}
 
-		if ( $this->gallery_enabled() ) {
-			$this->setup_hooks();
-		}
+		$this->setup_hooks();
 	}
 
 	/**

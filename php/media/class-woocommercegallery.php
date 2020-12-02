@@ -28,7 +28,7 @@ class WooCommerceGallery {
 	public function __construct( Gallery $gallery ) {
 		$this->gallery = $gallery;
 
-		if ( $this->woocommerce_active() ) {
+		if ( $this->woocommerce_active() && $this->gallery->gallery_enabled() ) {
 			$this->setup_hooks();
 		}
 	}
