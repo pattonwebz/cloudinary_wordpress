@@ -383,7 +383,7 @@ class Setting {
 	 * @return string
 	 */
 	protected function get_setting_param_callback( $param ) {
-		return $this->is_setting_param( $param ) ? $this->setting_params[ $param ] : '__return_null()';
+		return $this->is_setting_param( $param ) ? $this->setting_params[ $param ] : '__return_null';
 	}
 
 	/**
