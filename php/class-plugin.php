@@ -10,14 +10,16 @@ namespace Cloudinary;
 use Cloudinary\Component\Assets;
 use Cloudinary\Component\Config;
 use Cloudinary\Component\Notice;
+use Cloudinary\Component\Settings;
 use Cloudinary\Component\Setup;
+use Cloudinary\Settings\Setting;
 use Cloudinary\Sync\Storage;
 use Cloudinary\Deactivation;
 
 /**
  * Main plugin bootstrap file.
  */
-class Plugin {
+final class Plugin {
 
 	/**
 	 * Holds the components of the plugin
@@ -33,6 +35,13 @@ class Plugin {
 	 * @var array
 	 */
 	public $config = array();
+
+	/**
+	 * The core Settings object.
+	 *
+	 * @var Setting
+	 */
+	public $settings;
 
 	/**
 	 * Plugin slug.
@@ -146,9 +155,38 @@ class Plugin {
 	}
 
 	/**
+	 * Setup settings.
+	 */
+	public function setup_settings() {
+		$components = array_filter( $this->components, array( $this, 'is_setting_component' ) );
+		if ( ! empty( $components ) ) {
+			$slug           = $this->slug;
+			$params         = array(
+				'version'    => $this->version,
+				'page_title' => __( 'Cloudinary', 'cloudinary' ),
+				'menu_title' => __( 'Cloudinary', 'cloudinary' ),
+				'capability' => 'manage_options',
+				'icon'       => 'dashicons-cloudinary',
+			);
+			$this->settings = \Cloudinary\Settings::create_setting( $slug, $params );
+			foreach ( $components as $slug => $component ) {
+				/**
+				 * Component that implements Component\\Cloudinary\Component\Settings.
+				 *
+				 * @var  Component\Settings $component
+				 */
+				$component->register_settings( $this->settings );
+			}
+			// Init settings.
+			\Cloudinary\Settings::init_setting( $slug );
+		}
+	}
+
+	/**
 	 * Register Hooks for the plugin.
 	 */
 	public function set_config() {
+		$this->setup_settings();
 		$components = array_filter( $this->components, array( $this, 'is_config_component' ) );
 
 		foreach ( $components as $slug => $component ) {
@@ -289,13 +327,26 @@ class Plugin {
 	}
 
 	/**
+	 * Check if component is a settings implementing component.
+	 *
+	 * @since  0.1
+	 *
+	 * @param object $component The component to check.
+	 *
+	 * @return bool If the component implements Setting.
+	 */
+	private function is_setting_component( $component ) {
+		return $component instanceof Settings;
+	}
+
+	/**
 	 * Check if component is a notice implementing component.
 	 *
 	 * @since  0.1
 	 *
 	 * @param object $component The component to check.
 	 *
-	 * @return bool If the component implements Config.
+	 * @return bool If the component implements Notice.
 	 */
 	private function is_notice_component( $component ) {
 		return $component instanceof Notice;
