@@ -340,7 +340,7 @@ abstract class Component {
 		$image_atts['src'] = $icon;
 		$html              = array();
 		$html[]            = '<span ' . $this->build_attributes( $this->get_attributes( 'icon' ) ) . ' >';
-		$html[]            = '<img ' . $this->build_attributes( $this->get_attributes( 'icon_image' ) ) . ' />';
+		$html[]            = '<img ' . $this->build_attributes( $image_atts ) . ' />';
 		$html[]            = '</span>';
 
 		return self::compile_html( $html );
@@ -449,18 +449,19 @@ abstract class Component {
 
 		$caller = get_called_class();
 		$type   = $setting->get_param( 'type' );
-		// Check what type this component needs to be.
-		if ( is_callable( $type ) ) {
-			$setting->set_param( 'callback', $setting->get_param( 'type' ) );
-			$setting->set_param( 'type', 'custom' );
-		}
 		// Set Caller.
-		$component = $caller . '\\' . $setting->get_param( 'type' );
+		$component = "{$caller}\\{$type}";
 		// Final check if type is callable component.
-		if ( ! self::is_component_type( $type ) ) {
+		if ( ! is_string( $type ) || ! self::is_component_type( $type ) ) {
 			// Set to a default HTML component if not found.
-			$component = $caller . '\\html';
-			$setting->set_param( 'type', 'html' );
+			$type = 'html';
+			// Check what type this component needs to be.
+			if ( is_callable( $type ) ) {
+				$setting->set_param( 'callback', $type );
+				$setting->set_param( 'type', 'custom' );
+				$type = 'custom';
+			}
+			$component = "{$caller}\\{$type}";
 		}
 
 		return new $component( $setting );

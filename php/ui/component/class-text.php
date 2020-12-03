@@ -7,14 +7,14 @@
 
 namespace Cloudinary\UI\Component;
 
-use Cloudinary\UI;
+use Cloudinary\UI\Component;
 
 /**
  * Class Component
  *
  * @package Cloudinary\UI
  */
-class Text extends UI\Component {
+class Text extends Component {
 
 
 	/**
