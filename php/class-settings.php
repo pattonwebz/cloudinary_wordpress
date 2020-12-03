@@ -72,8 +72,8 @@ class Settings {
 				if ( 'page' !== $sub_setting->get_param( 'type' ) ) {
 					continue;
 				}
-				$sub_setting->set_param( 'header', $setting->get_param( 'header' ) );
-				$sub_setting->set_param( 'footer', $setting->get_param( 'footer' ) );
+				$sub_setting->set_param( 'page_header', $setting->get_param( 'page_header' ) );
+				$sub_setting->set_param( 'page_footer', $setting->get_param( 'page_footer' ) );
 				$capability                  = $sub_setting->get_param( 'capability', $setting->get_param( 'capability' ) );
 				$page_handle                 = add_submenu_page( $setting->get_slug(), $sub_setting->get_param( 'page_title', $setting->get_param( 'page_title' ) ), $sub_setting->get_param( 'menu_title', $setting->get_param( 'menu_title' ) ), $capability, $sub_setting->get_slug(), $render_function, $sub_setting->get_param( 'position' ) );
 				$this->pages[ $page_handle ] = $sub_setting;
@@ -86,7 +86,11 @@ class Settings {
 	 * Render a page.
 	 */
 	public function render() {
-		echo $this->get_active_page()->get_component()->render(); // phpcs:ignore
+		$setting = $this->get_active_page();
+		if ( $setting->has_param( 'page_footer' ) ) {
+			add_action( 'in_admin_footer', array( $this, 'bind_footer') );
+		}
+		echo $setting->get_component()->render(); // phpcs:ignore
 	}
 
 	/**
@@ -102,6 +106,16 @@ class Settings {
 		}
 
 		return $page;
+	}
+
+	public function bind_footer() {
+		ob_start();
+		add_action( 'admin_footer', array( $this, 'render_footer' ) );
+	}
+
+	public function render_footer() {
+		ob_get_clean();
+		echo $this->get_active_page()->get_param( 'page_footer' )->get_component()->render();
 	}
 
 	/**

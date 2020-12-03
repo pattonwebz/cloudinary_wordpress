@@ -160,71 +160,80 @@ final class Plugin {
 	public function setup_settings() {
 		$slug           = $this->slug . '_temp'; // @todo use the real slug when ready to implement.
 		$params         = array(
-			'version'    => $this->version,
-			'page_title' => __( 'Testing Settings' ),
-			'menu_title' => __( 'Testing Settings' ),
-			'capability' => 'manage_options',
-			'icon'       => 'dashicons-cloudinary',
-			'pages'      => array(
-				$slug     => array(
+			'version'     => $this->version,
+			'page_title'  => __( 'Testing Settings' ),
+			'menu_title'  => __( 'Testing Settings' ),
+			'capability'  => 'manage_options',
+			'icon'        => 'dashicons-cloudinary',
+			'page_header' => array(
+				'content' => '<img src="' . $this->dir_url . '/css/logo.svg" alt="' . esc_attr( "Cloudinary's logo", 'cloudinary' ) . '" width="150px"><p style="margin-left: 1rem; font-size: 0.75rem;"><a href="#">Need help?</a></p>',
+			),
+			'page_footer' => array(
+				'content' => __( 'Thanks for using Cloudinary, please take a minute to rate our plugin.', 'cloudinary' ),
+			),
+			'pages'       => array(
+				$slug   => array(
 					'page_title' => __( 'Example Settings' ),
 					'menu_title' => __( 'Example', 'cloudinary' ),
-					'tabs'       => array(
-						'first_tab'  => array(
-							'title'      => 'First',
-							'components' => array(
-								'name_panel' => array(
-									'type'     => 'panel',
-									'settings' => array(
-										'name'   => array(
-											'type'    => 'text',
-											'title'   => 'Name',
-											'tooltip' => 'ask',
-											'default' => 'enter your name',
-										),
-										'color'  => array(
-											'type'    => 'text',
-											'title'   => 'Color',
-											'default' => 'enter your name',
-										),
-										'age'    => array(
-											'title'   => 'Age',
-											'type'    => 'text',
-											'default' => 'enter your name',
-										),
-										'submit' => array(
-											'type'    => 'submit',
-											'default' => 'Send',
-										),
-									),
+					array(
+						'type' => 'panel',
+						array(
+							'type'       => 'plan',
+							'title'      => __( 'Your Current Plan', 'cloudinary' ),
+							'attributes' => array(
+								'wrapper' => array(
+									'style' => 'margin: 1em 0; background-color: rgba(220,220,220,0.2);',
 								),
 							),
-						),
-						'second_tab' => array(
-							'title'      => 'Second',
-							'components' => array(
-								'name_panel' => array(
-									'type'     => 'panel',
-									'settings' => array(
-										'name' => array(
-											'type'    => 'text',
-											'default' => 'enter your name',
-										),
+							array(
+								'type'       => 'link',
+								'url'        => '#',
+								'content'    => __( 'Upgrade Plan', 'cloudinary' ),
+								'attributes' => array(
+									'content' => array(
+										'class' => 'btn btn-primary mt-0.5 inline-block',
 									),
 								),
 							),
 						),
 					),
+					array(
+						'type'       => 'panel',
+						'title'      => __( 'Your Plan Status', 'cloudinary' ),
+						'attributes' => array(
+							'wrapper' => array(
+								'class' => 'mt-1',
+							),
+						),
+					),
 				),
-				'connect' => array(
-					'page_title'     => __( 'More' ),
-					'menu_title'     => 'More',
-					'type'           => 'page',
-					'success_notice' => 'Updated as requested.',
-					'settings'       => array(
-						'name' => array(
-							'type'    => 'text',
-							'default' => 'enter your name',
+				'media' => array(
+					'menu_title' => __( 'Media', 'cloudinary' ),
+					'tabs'       => array(
+						'sync'    => array(
+							'menu_title' => __( 'Sync', 'cloudinary' ),
+							array(
+								'title' => __( 'Image - Global Settings', 'cloudinary' ),
+								'icon'  => $this->dir_url . '/css/image.svg',
+								'type'  => 'panel',
+								'submit' => array(
+									'text' => __( 'Save Changes', 'cloudinary' ),
+								),
+								array(
+									'type'     => 'columns',
+									'count'    => 2,
+									'settings' => array(
+										'image_optimize' => array(
+											'type'   => 'toggle',
+											'title'  => __( 'Image Optimization', 'cloudinary' ),
+											'label' => __( 'Optimize Images in my site', 'cloudinary' ),
+										),
+									),
+								),
+							),
+						),
+						'display' => array(
+							'menu_title' => __( 'Media Display', 'cloudinary' ),
 						),
 					),
 				),

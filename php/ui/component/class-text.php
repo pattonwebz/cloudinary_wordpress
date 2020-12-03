@@ -17,6 +17,14 @@ use Cloudinary\UI;
 class Text extends UI\Component {
 
 
+	public function __construct( $setting ) {
+		parent::__construct( $setting );
+
+		$this->attributes['heading_wrapper']['class'] = array(
+			'cld-input-group__label',
+		);
+	}
+
 	/**
 	 * Creates the Content/Input HTML.
 	 *
@@ -26,6 +34,7 @@ class Text extends UI\Component {
 		$atts            = $this->get_attributes( 'content' );
 		$atts['type']    = 'text';
 		$atts['name']    = $this->get_name();
+		$atts['id']      = $this->setting->get_slug();
 		$atts['value']   = $this->setting->get_value();
 		$atts['class'][] = 'regular-text';
 		if ( $this->setting->has_param( 'required' ) ) {
@@ -45,14 +54,35 @@ class Text extends UI\Component {
 		if ( $this->setting->has_param( 'icon' ) ) {
 			$html[] = $this->get_icon();
 		}
-		$html[] = '<strong ' . $this->build_attributes( $this->get_attributes( 'heading' ) ) . ' >';
+		$html[] = '<span ' . $this->build_attributes( $this->get_attributes( 'heading' ) ) . ' >';
 		$html[] = $this->setting->get_param( 'title' );
+		$html[] = '</span>';
 		if ( $this->setting->has_param( 'tooltip' ) ) {
 			$html[] = $this->tooltip();
 		}
-		$html[] = '</strong>';
 
 		return self::compile_html( $html );
+	}
+
+	/**
+	 * Start the component Wrapper.
+	 *
+	 * @return string
+	 */
+	protected function start_heading() {
+		$atts        = $this->get_attributes( 'heading_wrapper' );
+		$atts['for'] = $this->setting->get_slug();
+
+		return '<label ' . $this->build_attributes( $atts ) . ' >';
+	}
+
+	/**
+	 * Create the end of the heading wrapper HTML.
+	 *
+	 * @return string
+	 */
+	protected function end_heading() {
+		return '</label>';
 	}
 
 	/**
@@ -73,5 +103,49 @@ class Text extends UI\Component {
 	 */
 	public function sanitize_value( $value ) {
 		return sanitize_text_field( $value );
+	}
+
+	/**
+	 * Renders the component.
+	 */
+	public function render() {
+
+		$html = array();
+
+
+		// Component heading/title.
+		if ( $this->setting->has_param( 'title' ) ) {
+			$html[] = $this->start_heading();
+			$html[] = $this->heading();
+			$html[] = $this->end_heading();
+		}
+		// Main Component Wrapper.
+		$html[] = $this->start_wrapper();
+
+		// Component content prefix.
+		if ( $this->setting->has_param( 'prefix' ) ) {
+			$html[] = $this->prefix();
+		}
+		// Component Content.
+		if ( $this->setting->has_param( 'content' ) ) {
+			$html[] = $this->content();
+		}
+
+		// Component Suffix.
+		if ( $this->setting->has_param( 'suffix' ) ) {
+			$html[] = $this->suffix();
+		}
+		// Component description.
+		if ( $this->setting->has_param( 'description' ) ) {
+			$html[] = $this->description();
+		}
+		// Do settings.
+		if ( $this->setting->has_settings() ) {
+			$html[] = $this->settings();
+		}
+		// End component wrapper.
+		$html[] = $this->end_wrapper();
+
+		return self::compile_html( $html );
 	}
 }

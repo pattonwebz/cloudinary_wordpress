@@ -45,43 +45,40 @@ abstract class Component {
 	 * Gets the UI Component's default attributes.
 	 */
 	private function setup_attributes() {
-		$type_class = 'settings-ui-' . $this->setting->get_param( 'type', 'component' );
+		$type_class = 'cld-settings__' . $this->setting->get_param( 'type', 'component' );
 		$attributes = array(
 			'wrapper'         => array(
 				'class' => array(
-					'wrap',
-					'settings-ui-component',
-					'settings-ui-' . $type_class,
 					$type_class,
 				),
 			),
 			'icon'            => array(
 				'class' => array(
-					'settings-ui-component-icon',
+					'cld-icon',
 					$type_class,
 				),
 			),
 			'icon_image'      => array(
 				'class' => array(
-					'settings-ui-component-icon-image',
+					'cld-icon-image',
 					$type_class,
 				),
 			),
 			'heading_wrapper' => array(
 				'class' => array(
-					'settings-ui-component-heading',
+					'cld-heading',
 					$type_class,
 				),
 			),
 			'heading'         => array(
 				'class' => array(
-					'settings-ui-component-heading-title',
+					'cld-heading-title',
 					$type_class,
 				),
 			),
 			'tooltip'         => array(
 				'class' => array(
-					'settings-ui-component-tooltip',
+					'cld-tooltip',
 					'dashicons',
 					'dashicons-editor-help',
 					$type_class,
@@ -89,7 +86,7 @@ abstract class Component {
 			),
 			'toggle_up'       => array(
 				'class' => array(
-					'settings-ui-component-collapsible',
+					'cld-collapsible',
 					'dashicons',
 					'dashicons-arrow-up-alt2',
 					$type_class,
@@ -97,7 +94,7 @@ abstract class Component {
 			),
 			'toggle_down'     => array(
 				'class' => array(
-					'settings-ui-component-collapsible',
+					'cld-collapsible',
 					'dashicons',
 					'dashicons-arrow-down-alt2',
 					$type_class,
@@ -105,37 +102,37 @@ abstract class Component {
 			),
 			'content_wrapper' => array(
 				'class' => array(
-					'settings-ui-component-content',
+					'cld-content',
 					$type_class,
 				),
 			),
 			'content'         => array(
 				'class' => array(
-					'settings-ui-component-content',
+					'cld-content',
 					$type_class,
 				),
 			),
 			'settings'        => array(
 				'class' => array(
-					'settings-ui-component-settings',
+					'cld-settings',
 					$type_class,
 				),
 			),
 			'prefix'          => array(
 				'class' => array(
-					'settings-ui-component-prefix',
+					'cld-prefix',
 					$type_class,
 				),
 			),
 			'suffix'          => array(
 				'class' => array(
-					'settings-ui-component-suffix',
+					'cld-suffix',
 					$type_class,
 				),
 			),
 			'description'     => array(
 				'class' => array(
-					'settings-ui-component-description',
+					'cld-description',
 					$type_class,
 
 				),
@@ -183,6 +180,7 @@ abstract class Component {
 	public function render() {
 
 		$html = array();
+
 		// Main Component Wrapper.
 		$html[] = $this->start_wrapper();
 
@@ -197,7 +195,9 @@ abstract class Component {
 			$html[] = $this->prefix();
 		}
 		// Component Content.
-		$html[] = $this->content();
+		if ( $this->setting->has_param( 'content' ) ) {
+			$html[] = $this->content();
+		}
 
 		// Component Suffix.
 		if ( $this->setting->has_param( 'suffix' ) ) {
@@ -260,12 +260,12 @@ abstract class Component {
 		if ( $this->setting->has_param( 'icon' ) ) {
 			$html[] = $this->get_icon();
 		}
-		$html[] = '<h4 ' . $this->build_attributes( $this->get_attributes( 'heading' ) ) . ' >';
+		$html[] = '<h2 ' . $this->build_attributes( $this->get_attributes( 'heading' ) ) . ' >';
 		$html[] = $this->setting->get_param( 'title' );
 		if ( $this->setting->has_param( 'tooltip' ) ) {
 			$html[] = $this->tooltip();
 		}
-		$html[] = '</h4>';
+		$html[] = '</h2>';
 
 		return self::compile_html( $html );
 	}
@@ -339,9 +339,7 @@ abstract class Component {
 		$image_atts        = $this->get_attributes( 'icon_image' );
 		$image_atts['src'] = $icon;
 		$html              = array();
-		$html[]            = '<span ' . $this->build_attributes( $this->get_attributes( 'icon' ) ) . ' >';
-		$html[]            = '<img ' . $this->build_attributes( $this->get_attributes( 'icon_image' ) ) . ' />';
-		$html[]            = '</span>';
+		$html[]            = '<img ' . $this->build_attributes( $image_atts ) . ' />';
 
 		return self::compile_html( $html );
 	}
@@ -449,18 +447,19 @@ abstract class Component {
 
 		$caller = get_called_class();
 		$type   = $setting->get_param( 'type' );
-		// Check what type this component needs to be.
-		if ( is_callable( $type ) ) {
-			$setting->set_param( 'callback', $setting->get_param( 'type' ) );
-			$setting->set_param( 'type', 'custom' );
-		}
 		// Set Caller.
-		$component = $caller . '\\' . $setting->get_param( 'type' );
+		$component = "{$caller}\\{$type}";
 		// Final check if type is callable component.
-		if ( ! self::is_component_type( $type ) ) {
+		if ( ! is_string( $type ) || ! self::is_component_type( $type ) ) {
 			// Set to a default HTML component if not found.
-			$component = $caller . '\\html';
-			$setting->set_param( 'type', 'html' );
+			$type = 'html';
+			// Check what type this component needs to be.
+			if ( is_callable( $type ) ) {
+				$setting->set_param( 'callback', $type );
+				$setting->set_param( 'type', 'custom' );
+				$type = 'custom';
+			}
+			$component = "{$caller}\\{$type}";
 		}
 
 		return new $component( $setting );

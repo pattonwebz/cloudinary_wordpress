@@ -86,10 +86,12 @@ class Setting {
 	 */
 	protected function get_settings_params() {
 		$default_setting_params = array(
-			'components' => array( $this, 'add_child_settings' ),
-			'settings'   => array( $this, 'add_child_settings' ),
-			'pages'      => array( $this, 'add_child_pages' ),
-			'tabs'       => array( $this, 'add_tab_pages' ),
+			'components'  => array( $this, 'add_child_settings' ),
+			'settings'    => array( $this, 'add_child_settings' ),
+			'pages'       => array( $this, 'add_child_pages' ),
+			'tabs'        => array( $this, 'add_tab_pages' ),
+			'page_header' => array( $this, 'add_header' ),
+			'page_footer' => array( $this, 'add_footer' ),
 		);
 		/**
 		 * Filters the list of params that indicate a child setting to allow registering dynamically.
@@ -289,6 +291,7 @@ class Setting {
 	public function setup_setting( array $params ) {
 		$dynamic_params = array_filter( $params, array( $this, 'is_setting_param' ), ARRAY_FILTER_USE_KEY );
 		foreach ( $params as $param => $value ) {
+
 			if ( $this->is_setting_param( $param ) ) {
 				continue;
 			}
@@ -345,16 +348,19 @@ class Setting {
 	 * @return mixed
 	 */
 	public function set_notices( $value, $old_value, $setting_slug ) {
-
-		if ( $value !== $old_value ) {
-			if ( is_wp_error( $value ) ) {
-				add_settings_error( $setting_slug, 'setting_notice', $value->get_error_message(), 'error' );
-				$value = $old_value;
-			} else {
-				$setting = $this->get_root_setting()->find_setting( $setting_slug );
-				$notice  = $setting->get_param( 'success_notice', __( 'Settings updated successfully', 'cloudinary' ) );
-				add_settings_error( $setting_slug, 'setting_notice', $notice, 'updated' );
+		static $set_errors = array();
+		if ( ! isset( $set_errors[ $setting_slug ] ) ) {
+			if ( $value !== $old_value ) {
+				if ( is_wp_error( $value ) ) {
+					add_settings_error( $setting_slug, 'setting_notice', $value->get_error_message(), 'error' );
+					$value = $old_value;
+				} else {
+					$setting = $this->get_root_setting()->find_setting( $setting_slug );
+					$notice  = $setting->get_param( 'success_notice', __( 'Settings updated successfully', 'cloudinary' ) );
+					add_settings_error( $setting_slug, 'setting_notice', $notice, 'updated' );
+				}
 			}
+			$set_errors[ $setting_slug ] = true;
 		}
 
 		return $value;
@@ -367,6 +373,14 @@ class Setting {
 	 */
 	protected function register_dynamic_settings( $params ) {
 		foreach ( $params as $param => $value ) {
+
+			// Dynamic array based without a key slug.
+			if ( is_int( $param ) && is_array( $value ) ) {
+				$slug = isset( $value['slug'] ) ? $value['slug'] : $this->slug . '_' . $param;
+				$this->add_setting( $slug, $value );
+				continue;
+			}
+
 			$callback = $this->get_setting_param_callback( $param );
 			$callable = is_callable( $callback );
 			if ( $callable ) {
@@ -394,7 +408,7 @@ class Setting {
 	 * @return bool
 	 */
 	protected function is_setting_param( $param ) {
-		return isset( $this->setting_params[ $param ] );
+		return isset( $this->setting_params[ $param ] ) || is_int( $param );
 	}
 
 	/**
@@ -406,11 +420,42 @@ class Setting {
 
 		$this->set_param( 'has_tabs', true );
 		foreach ( $tab_pages as $tab_page => $params ) {
+			$params['type']        = 'frame';
 			$params['option_name'] = $this->build_option_name( $tab_page );
 			$this->add_setting( $tab_page, $params );
 		}
 
+	}
 
+	/**
+	 * Add a page header.
+	 *
+	 * @param array $params The header config.
+	 */
+	public function add_header( $params ) {
+		$this->add_param_setting( 'page_header', $params );
+	}
+
+	/**
+	 * Add a page footer.
+	 *
+	 * @param array $params The footer config.
+	 */
+	public function add_footer( $params ) {
+		$this->add_param_setting( 'page_footer', $params );
+	}
+
+	/**
+	 * Add a setting as a param.
+	 *
+	 * @param string $param  The param slug to add.
+	 * @param array  $params The setting parameters.
+	 */
+	public function add_param_setting( $param, $params ) {
+		$params['type'] = $param;
+		$slug           = $this->get_slug() . '_' . $param;
+		$setting        = new Setting( $slug, $params, $this );
+		$this->set_param( $param, $setting );
 	}
 
 	/**

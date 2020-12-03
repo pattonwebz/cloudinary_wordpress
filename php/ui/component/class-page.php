@@ -14,6 +14,31 @@ namespace Cloudinary\UI\Component;
  */
 class Page extends Panel {
 
+	public function __construct( $setting ) {
+		parent::__construct( $setting );
+		$this->attributes['wrapper']['class'] = 'cld-settings__container';
+	}
+
+	/**
+	 * Renders the component.
+	 */
+	public function render() {
+
+		$html = array(
+			'<div class="cloudinary">',
+		);
+
+		if ( $this->setting->has_param( 'page_header' ) ) {
+			$html[] = $this->setting->get_param( 'page_header' )->get_component()->render();
+		}
+
+		$this->setting->set_param('content', $this->setting->has_settings() );
+		$html[] = parent::render();
+
+		$html[] = '</div>';
+
+		return self::compile_html( $html );
+	}
 
 	/**
 	 * Create the start of the tabs wrapper.
@@ -22,13 +47,11 @@ class Page extends Panel {
 	 */
 	protected function start_tabs() {
 		$atts = array(
-			'class' => array(
-				'settings-ui-component',
-				'settings-ui-component-tabs',
-			),
+			'class' => 'cld-tabs',
+			'role'  => 'tablist',
 		);
 
-		return '<nav ' . $this->build_attributes( $atts ) . ' >';
+		return '<ul ' . $this->build_attributes( $atts ) . ' >';
 	}
 
 	/**
@@ -37,21 +60,30 @@ class Page extends Panel {
 	protected function tab_bar() {
 		$html[] = $this->start_tabs();
 		$active = $this->get_active_setting();
-		$url    = add_query_arg( array( 'page' => $this->setting->get_parent()->get_slug() ), admin_url( 'admin.php' ) );
+		$url    = add_query_arg( array( 'page' => $this->setting->get_slug() ), admin_url( 'admin.php' ) );
 		foreach ( $this->setting->get_settings() as $setting ) {
-			$url       = add_query_arg( array( 'tab' => $setting->get_slug() ), $url );
-			$link_atts = array(
-				'href'  => $url,
-				'class' => array(
-					'settings-ui-component-tabs-tab',
+			$url      = add_query_arg( array( 'tab' => $setting->get_slug() ), $url );
+			$tab_atts = array(
+				'class'         => array(
+					'cld-tabs__tab',
 				),
+				'role'          => 'tab',
+				'aria-selected' => 'false',
+				'aria-controls' => $setting->get_slug() . '-tab',
+				'id'            => $setting->get_slug(),
 			);
 			if ( $active === $setting ) {
-				$link_atts['class'][] = 'active';
+				$tab_atts['class'][]       = 'cld-tabs__tab--active';
+				$tab_atts['aria-selected'] = 'true';
 			}
-			$html[] = '<a ' . $this->build_attributes( $link_atts ) . ' >';
-			$html[] = $setting->get_param( 'title' );
-			$html[] = '</a>';
+			$link_att = array(
+				'href' => $url,
+			);
+			$html[]   = '<li ' . $this->build_attributes( $tab_atts ) . ' >';
+			$html[]   = '<a ' . $this->build_attributes( $link_att ) . ' >';
+			$html[]   = $setting->get_param( 'menu_title' );
+			$html[]   = '</a>';
+			$html[]   = '</li>';
 		}
 		$html[] = $this->end_tabs();
 
@@ -86,9 +118,6 @@ class Page extends Panel {
 			wp_nonce_field( $option_name . '-options', '_wpnonce', true, false ),
 		);
 
-		if ( $this->setting->has_parent() && $this->setting->has_param( 'has_tabs' ) && 1 < $this->setting->get_setting_slugs() ) {
-			$html[] = $this->tab_bar();
-		}
 
 		return self::compile_html( $html );
 	}
@@ -114,6 +143,11 @@ class Page extends Panel {
 	 * @return string
 	 */
 	protected function start_wrapper() {
+		$html = array();
+
+		if ( $this->setting->has_parent() && $this->setting->has_param( 'has_tabs' ) && 1 < $this->setting->get_setting_slugs() ) {
+			$html[] = $this->tab_bar();
+		}
 
 		$form_atts = array(
 			'method'     => 'post',
@@ -121,11 +155,13 @@ class Page extends Panel {
 			'novalidate' => 'novalidate',
 			'class'      => 'render-trigger',
 		);
-		$html      = array(
-			'<div ' . $this->build_attributes( $this->get_attributes( 'wrapper' ) ) . '>',
-			'<h1>' . $this->setting->get_param( 'page_title' ) . '</h1>',
-			'<form ' . $this->build_attributes( $form_atts ) . ' >',
-		);
+
+		$html[] = '<form ' . $this->build_attributes( $form_atts ) . ' >';
+		$html[] = '<div ' . $this->build_attributes( $this->get_attributes( 'wrapper' ) ) . '>';
+		// Don't print out a header if we have a defined page header.
+		if ( ! $this->setting->has_param( 'page_header' ) ) {
+			$html[] = '<h1>' . $this->setting->get_param( 'page_title' ) . '</h1>';
+		}
 
 		return self::compile_html( $html );
 	}
@@ -137,8 +173,8 @@ class Page extends Panel {
 	 */
 	protected function end_wrapper() {
 		$html = array(
-			'</form>',
 			'</div>',
+			'</form>',
 		);
 
 		return self::compile_html( $html );
@@ -150,7 +186,7 @@ class Page extends Panel {
 	 * @return string
 	 */
 	protected function end_tabs() {
-		return '</nav>';
+		return '</ul>';
 	}
 
 	/**
