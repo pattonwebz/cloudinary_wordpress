@@ -16,7 +16,6 @@ use Cloudinary\UI\Component;
  */
 class Frame extends Component {
 
-
 	/**
 	 * Render the content, but only child settings.
 	 *
