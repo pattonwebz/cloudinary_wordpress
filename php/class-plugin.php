@@ -158,90 +158,28 @@ final class Plugin {
 	 * Setup settings.
 	 */
 	public function setup_settings() {
-		$slug           = $this->slug . '_temp'; // @todo use the real slug when ready to implement.
-		$params         = array(
-			'version'    => $this->version,
-			'page_title' => __( 'Testing Settings' ),
-			'menu_title' => __( 'Testing Settings' ),
-			'capability' => 'manage_options',
-			'icon'       => 'dashicons-cloudinary',
-			'pages'      => array(
-				$slug     => array(
-					'page_title' => __( 'Example Settings' ),
-					'menu_title' => __( 'Example', 'cloudinary' ),
-					'tabs'       => array(
-						'first_tab'  => array(
-							'title'      => 'First',
-							'components' => array(
-								'name_panel' => array(
-									'type'     => 'panel',
-									'settings' => array(
-										'name'   => array(
-											'type'    => 'text',
-											'title'   => 'Name',
-											'tooltip' => 'ask',
-											'default' => 'enter your name',
-										),
-										'color'  => array(
-											'type'    => 'text',
-											'title'   => 'Color',
-											'default' => 'enter your name',
-										),
-										'age'    => array(
-											'title'   => 'Age',
-											'type'    => 'text',
-											'default' => 'enter your name',
-										),
-										'submit' => array(
-											'type'    => 'submit',
-											'default' => 'Send',
-										),
-									),
-								),
-							),
-						),
-						'second_tab' => array(
-							'title'      => 'Second',
-							'components' => array(
-								'name_panel' => array(
-									'type'     => 'panel',
-									'settings' => array(
-										'name' => array(
-											'type'    => 'text',
-											'default' => 'enter your name',
-										),
-									),
-								),
-							),
-						),
-					),
-				),
-				'connect' => array(
-					'page_title'     => __( 'More' ),
-					'menu_title'     => 'More',
-					'type'           => 'page',
-					'success_notice' => 'Updated as requested.',
-					'settings'       => array(
-						'name' => array(
-							'type'    => 'text',
-							'default' => 'enter your name',
-						),
-					),
-				),
-			),
-		);
-		$this->settings = \Cloudinary\Settings::create_setting( $slug, $params );
-		$components     = array_filter( $this->components, array( $this, 'is_setting_component' ) );
-		foreach ( $components as $slug => $component ) {
-			/**
-			 * Component that implements Component\\Cloudinary\Component\Settings.
-			 *
-			 * @var  Component\Settings $component
-			 */
-			$component->register_settings( $this->settings );
+		$components = array_filter( $this->components, array( $this, 'is_setting_component' ) );
+		if ( ! empty( $components ) ) {
+			$slug           = $this->slug;
+			$params         = array(
+				'version'    => $this->version,
+				'page_title' => __( 'Cloudinary', 'cloudinary' ),
+				'menu_title' => __( 'Cloudinary', 'cloudinary' ),
+				'capability' => 'manage_options',
+				'icon'       => 'dashicons-cloudinary',
+			);
+			$this->settings = \Cloudinary\Settings::create_setting( $slug, $params );
+			foreach ( $components as $slug => $component ) {
+				/**
+				 * Component that implements Component\\Cloudinary\Component\Settings.
+				 *
+				 * @var  Component\Settings $component
+				 */
+				$component->register_settings( $this->settings );
+			}
+			// Init settings.
+			\Cloudinary\Settings::init_setting( $slug );
 		}
-		// Init settings.
-		\Cloudinary\Settings::init_setting( $slug );
 	}
 
 	/**
