@@ -16,19 +16,31 @@ use Cloudinary\UI\Component;
  */
 class Link extends Component {
 
+	/**
+	 * Holds the components build blueprint.
+	 *
+	 * @var string
+	 */
+	protected $blueprint = 'link_tag';
 
 	/**
-	 * Creates the Link HTML.
+	 * Filter the link parts structure.
 	 *
-	 * @return string
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
 	 */
-	protected function content() {
-		$atts           = $this->get_attributes( 'content' );
-		$atts['href']   = $this->setting->get_param( 'url', '#' );
-		$atts['target'] = $this->setting->get_param( 'target', '_blank' );
-		$content        = $this->setting->get_param( 'content', basename( $atts['href'] ) );
+	protected function link_tag( $struct ) {
 
-		return '<a ' . $this->build_attributes( $atts ) . ' />' . $content . '</a>';
+		$struct['element']              = 'a';
+		$struct['content']              = $this->setting->get_param( 'content' );
+		$struct['attributes']['href']   = $this->setting->get_param( 'url' );
+		$struct['attributes']['target'] = '_blank';
+		$struct['attributes']['class']  = array(
+			'button',
+			'button-primary',
+		);
+
+		return $struct;
 	}
-
 }

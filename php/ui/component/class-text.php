@@ -16,73 +16,33 @@ use Cloudinary\UI\Component;
  */
 class Text extends Component {
 
-
-	public function __construct( $setting ) {
-		parent::__construct( $setting );
-
-		$this->attributes['heading_wrapper']['class'] = array(
-			'cld-input-group__label',
-		);
-	}
+	/**
+	 * Holds the components build blueprint.
+	 *
+	 * @var string
+	 */
+	protected $blueprint = 'icon/|title/|tooltip/|prefix/|input/|suffix/|description/';
 
 	/**
-	 * Creates the Content/Input HTML.
+	 * Filter the link parts structure.
 	 *
-	 * @return string
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
 	 */
-	protected function content() {
-		$atts            = $this->get_attributes( 'content' );
-		$atts['type']    = 'text';
-		$atts['name']    = $this->get_name();
-		$atts['id']      = $this->setting->get_slug();
-		$atts['value']   = $this->setting->get_value();
-		$atts['class'][] = 'regular-text';
+	protected function input( $struct ) {
+
+		$struct['element']               = 'input';
+		$struct['attributes']['type']    = $this->type;
+		$struct['attributes']['name']    = $this->get_name();
+		$struct['attributes']['id']      = $this->setting->get_slug();
+		$struct['attributes']['value']   = $this->setting->get_value();
+		$struct['attributes']['class'][] = 'regular-text';
 		if ( $this->setting->has_param( 'required' ) ) {
-			$atts['required'] = 'required';
+			$struct['attributes']['required'] = 'required';
 		}
 
-		return '<input ' . $this->build_attributes( $atts ) . ' />';
-	}
-
-	/**
-	 * Creates the Header HTML.
-	 *
-	 * @return string
-	 */
-	protected function heading() {
-		$html = array();
-		if ( $this->setting->has_param( 'icon' ) ) {
-			$html[] = $this->get_icon();
-		}
-		$html[] = '<span ' . $this->build_attributes( $this->get_attributes( 'heading' ) ) . ' >';
-		$html[] = $this->setting->get_param( 'title' );
-		$html[] = '</span>';
-		if ( $this->setting->has_param( 'tooltip' ) ) {
-			$html[] = $this->tooltip();
-		}
-
-		return self::compile_html( $html );
-	}
-
-	/**
-	 * Start the component Wrapper.
-	 *
-	 * @return string
-	 */
-	protected function start_heading() {
-		$atts        = $this->get_attributes( 'heading_wrapper' );
-		$atts['for'] = $this->setting->get_slug();
-
-		return '<label ' . $this->build_attributes( $atts ) . ' >';
-	}
-
-	/**
-	 * Create the end of the heading wrapper HTML.
-	 *
-	 * @return string
-	 */
-	protected function end_heading() {
-		return '</label>';
+		return $struct;
 	}
 
 	/**
@@ -103,49 +63,5 @@ class Text extends Component {
 	 */
 	public function sanitize_value( $value ) {
 		return sanitize_text_field( $value );
-	}
-
-	/**
-	 * Renders the component.
-	 */
-	public function render() {
-
-		$html = array();
-
-
-		// Component heading/title.
-		if ( $this->setting->has_param( 'title' ) ) {
-			$html[] = $this->start_heading();
-			$html[] = $this->heading();
-			$html[] = $this->end_heading();
-		}
-		// Main Component Wrapper.
-		$html[] = $this->start_wrapper();
-
-		// Component content prefix.
-		if ( $this->setting->has_param( 'prefix' ) ) {
-			$html[] = $this->prefix();
-		}
-		// Component Content.
-		if ( $this->setting->has_param( 'content' ) ) {
-			$html[] = $this->content();
-		}
-
-		// Component Suffix.
-		if ( $this->setting->has_param( 'suffix' ) ) {
-			$html[] = $this->suffix();
-		}
-		// Component description.
-		if ( $this->setting->has_param( 'description' ) ) {
-			$html[] = $this->description();
-		}
-		// Do settings.
-		if ( $this->setting->has_settings() ) {
-			$html[] = $this->settings();
-		}
-		// End component wrapper.
-		$html[] = $this->end_wrapper();
-
-		return self::compile_html( $html );
 	}
 }

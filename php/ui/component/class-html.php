@@ -10,7 +10,7 @@ namespace Cloudinary\UI\Component;
 use Cloudinary\UI\Component;
 
 /**
- * Frame Component to render components only.
+ * HTML Component to render components only.
  *
  * @package Cloudinary\UI
  */

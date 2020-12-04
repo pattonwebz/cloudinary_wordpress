@@ -16,34 +16,25 @@ use Cloudinary\UI\Component;
  */
 class Page_Header extends Component {
 
+	/**
+	 * Holds the components build blueprint.
+	 *
+	 * @var string
+	 */
+	protected $blueprint = 'wrap';
 
 	/**
-	 * Start the component Wrapper.
+	 * Filter the wrap parts structure.
 	 *
-	 * @return string
-	 */
-	protected function start_wrapper() {
-		$atts = $this->get_attributes( 'wrapper' );
-
-		return '<header ' . $this->build_attributes( $atts ) . ' >';
-	}
-
-	/**
-	 * Creates the Content/Input HTML.
+	 * @param array $struct The array structure.
 	 *
-	 * @return string
+	 * @return array
 	 */
-	protected function content() {
-		return $this->setting->get_param( 'content' );
-	}
+	protected function wrap( $struct ) {
 
-	/**
-	 * Create the end of the wrapper HTML.
-	 *
-	 * @return string
-	 */
-	protected function end_wrapper() {
-		return '</header>';
-	}
+		$struct['element'] = 'header';
+		$struct['content'] = $this->setting->get_param( 'content' );
 
+		return $struct;
+	}
 }
