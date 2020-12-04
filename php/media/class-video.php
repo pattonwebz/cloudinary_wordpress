@@ -395,7 +395,7 @@ class Video {
 		wp_register_style( 'cld-player', 'https://unpkg.com/cloudinary-video-player@' . self::PLAYER_VER . '/dist/cld-video-player.min.css', null, self::PLAYER_VER );
 		wp_register_script( 'cld-core', 'https://unpkg.com/cloudinary-core@' . self::CORE_VER . '/cloudinary-core-shrinkwrap.min.js', null, self::CORE_VER, true );
 		wp_register_script( 'cld-player', 'https://unpkg.com/cloudinary-video-player@' . self::PLAYER_VER . '/dist/cld-video-player.min.js', array( 'cld-core' ), self::PLAYER_VER, true );
-//		wp_enqueue_script( 'cld-video-init', $this->media->plugin->dir_url . 'js/video-init.js', array( 'cld-player' ), $this->media->plugin->version, true );
+		wp_enqueue_script( 'cld-video-init', CLDN_URL . 'js/video-init.js', array( 'cld-player' ), self::CORE_VER, true );
 	}
 
 	/**

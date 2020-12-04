@@ -239,7 +239,7 @@ class Setting {
 	}
 
 	/**
-	 * Get a setting recursively.
+	 * Find a setting.
 	 *
 	 * @param string $slug The setting slug to get.
 	 *
@@ -258,7 +258,7 @@ class Setting {
 	}
 
 	/**
-	 * Recursivly find a setting.
+	 * Recursively find a setting.
 	 *
 	 * @param string $slug The setting slug to get.
 	 *

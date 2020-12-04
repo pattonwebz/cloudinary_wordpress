@@ -17,7 +17,6 @@ $definition = array(
 			'page_title' => __( 'Cloudinary Dashboard', 'cloudinary' ),
 			'menu_title' => __( 'Dashboard', 'cloudinary' ),
 			'slug'       => 'cloudinary',
-			'asset_init' => array( '\Cloudinary\Media\Video', 'register_scripts_styles' ),
 			'tabs'       => array(
 				'dashboard',
 			),
