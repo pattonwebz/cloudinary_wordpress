@@ -35,7 +35,7 @@ class Columns extends Component {
 		return self::compile_html( $html );
 	}
 
-	protected function settings() {
+	protected function ssettings() {
 
 		$columns  = $this->setting->get_param( 'count', 1 );
 		$settings = $this->setting->get_settings();
@@ -62,5 +62,9 @@ class Columns extends Component {
 		}
 
 		return self::compile_html( $html );
+	}
+
+	protected function pre_render() {
+		// TODO: Implement pre_render() method.
 	}
 }

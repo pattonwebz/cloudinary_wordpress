@@ -16,17 +16,16 @@ use Cloudinary\UI\Component;
  */
 class Page_Header extends Component {
 
+	protected $blueprint = 'wrap/';
 
-	/**
-	 * Start the component Wrapper.
-	 *
-	 * @return string
-	 */
-	protected function start_wrapper() {
-		$atts = $this->get_attributes( 'wrapper' );
+	protected function wrap( $stuct ) {
 
-		return '<header ' . $this->build_attributes( $atts ) . ' >';
+		$stuct['element'] = 'header';
+		$stuct['content'] = $this->content();
+
+		return $stuct;
 	}
+
 
 	/**
 	 * Creates the Content/Input HTML.
@@ -35,15 +34,6 @@ class Page_Header extends Component {
 	 */
 	protected function content() {
 		return $this->setting->get_param( 'content' );
-	}
-
-	/**
-	 * Create the end of the wrapper HTML.
-	 *
-	 * @return string
-	 */
-	protected function end_wrapper() {
-		return '</header>';
 	}
 
 }

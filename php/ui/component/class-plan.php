@@ -17,9 +17,32 @@ use Cloudinary\UI\Component;
  */
 class Plan extends Component {
 
-	public function render() {
+	protected $blueprint = 'title/|plan_box|plan_heading/|plan_summary|/plan_summary|/plan_box';
+
+	protected function pre_render() {
 		$connection = get_plugin_instance()->get_component( 'connect' );
-		$this->setting->set_param( 'plan', $connection->get_usage_stat( 'plan' ) );
+		$this->setting->set_param( 'plan_heading', $connection->get_usage_stat( 'plan' ) );
+	}
+
+
+	protected function title( $struct ) {
+
+		$struct['element'] = 'h2';
+
+		return parent::title( $struct );
+	}
+
+
+	protected function plan_box( $struct ) {
+		$struct['element']             = 'div';
+		$struct['attributes']['class'] = array(
+			'cld-panel-inner',
+		);
+
+		return $struct;
+	}
+
+	public function sscontent() {
 
 
 		// Component heading/title.
@@ -38,15 +61,10 @@ class Plan extends Component {
 		// End component wrapper.
 		$html[] = $this->end_wrapper();
 
-		// Do settings.
-		if ( $this->setting->has_settings() ) {
-			$html[] = $this->settings();
-		}
-
 		return self::compile_html( $html );
 	}
 
-	protected function plan_heading() {
+	protected function plan_heading( $struct ) {
 		$html   = array();
 		$atts   = array(
 			'style' => 'color: var(--accent-color);',
@@ -55,7 +73,9 @@ class Plan extends Component {
 		$html[] = $this->setting->get_param( 'plan' );
 		$html[] = '</h2>';
 
-		return self::compile_html( $html );
+		$struct['element'] = 'h2';
+
+		return parent::plan_heading( $struct );
 	}
 
 	/**
@@ -83,36 +103,51 @@ class Plan extends Component {
 		return $attributes;
 	}
 
+	protected function plan_summary( $struct ) {
+
+
+		$summary            = $this->get_part( 'h4' );
+		$summary['content'] = $this->setting->get_param( 'plan_heading', __( '25 Monthly Credits', 'cloudinary' ) );
+
+		$detail            = $this->get_part( 'span' );
+		$detail['content'] = __( '1 Credit =', 'cloudinary' );
+
+
+		$struct['children']['h4']   = $summary;
+		$struct['children']['span'] = $detail;
+		$struct['children']['ul']   = $this->content();
+		$struct['element']          = 'div';
+
+		return $struct;
+	}
+
+	protected function plan_wrap( $struct ) {
+		$struct['element']             = 'div';
+		$struct['attributes']['class'] = array(
+			'cld-panel-inner',
+		);
+
+		return $struct;
+	}
+
 	/**
 	 * Creates the Content/Input HTML.
-	 *
-	 * @return string
 	 */
 	protected function content() {
 
-		// Component heading/title.
-
+		$points = $this->get_part( 'ul' );
 		$items  = array(
 			__( '1,000 Transformations', 'cloudinary' ),
 			__( '1 GB Storage', 'cloudinary' ),
 			__( '1 GB Bandwidth', 'cloudinary' ),
 		);
-		$html   = array();
-		$html[] = '<h4>' . __( '25 Monthly Credits', 'cloudinary' ) . '</h4>';
-		$html[] = '<div ' . $this->build_attributes( $this->get_attributes( 'content' ) ) . '>';
-		$html[] = '<p ' . $this->build_attributes( $this->get_attributes( 'content' ) ) . '>';
-		$html[] = __( '1 Credit =', 'cloudinary' );
-		$html[] = '</p>';
-		$html[] = '<ul>';
+		$li     = $this->get_part( 'li' );
 		foreach ( $items as $item ) {
-			$html[] = '<li>';
-			$html[] = '<span>' . $item . '</span>';
-			$html[] = '</li>';
+			$child                = $li;
+			$child['content']     = $item;
+			$points['children'][] = $child;
 		}
-		$html[] = '</ul>';
-		$html[] = '</div>';
 
-
-		return self::compile_html( $html );
+		return $points;
 	}
 }

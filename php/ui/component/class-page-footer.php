@@ -16,6 +16,9 @@ use Cloudinary\UI\Component;
  */
 class Page_Footer extends Component {
 
+	protected function pre_render() {
+		// TODO: Implement pre_render() method.
+	}
 
 	/**
 	 * Start the component Wrapper.
@@ -33,7 +36,7 @@ class Page_Footer extends Component {
 	 *
 	 * @return string
 	 */
-	protected function content() {
+	protected function scontent() {
 		return $this->setting->get_param( 'content' );
 	}
 

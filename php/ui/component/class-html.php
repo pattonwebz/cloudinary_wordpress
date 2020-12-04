@@ -16,4 +16,15 @@ use Cloudinary\UI\Component;
  */
 class HTML extends Component {
 
+	/**
+	 * Holds the components build blueprint.
+	 *
+	 * @var string
+	 */
+	protected $blueprint = 'wrap|header|icon/|title/|collapse/|/header|body|/body|sections/|/wrap';
+
+	protected function pre_render() {
+
+	}
+
 }

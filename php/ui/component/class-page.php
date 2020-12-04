@@ -14,44 +14,31 @@ namespace Cloudinary\UI\Component;
  */
 class Page extends Panel {
 
-	public function __construct( $setting ) {
-		parent::__construct( $setting );
-		$this->attributes['wrapper']['class'] = 'cld-settings__container';
+	/**
+	 * @var string
+	 */
+	protected $blueprint = 'wrap|header/|form|body|/body|settings/|/form|/wrap';
+
+
+	protected function form( $struct ) {
+		$form_atts            = array(
+			'method'     => 'post',
+			'action'     => 'options.php',
+			'novalidate' => 'novalidate',
+		);
+		$struct['attributes'] = array_merge( $form_atts, $struct['attributes'] );
+		$struct['content']    = $this->content();
+
+		return $struct;
 	}
 
-	/**
-	 * Renders the component.
-	 */
-	public function render() {
-
-		$html = array(
-			'<div class="cloudinary">',
-		);
-
+	protected function header( $struct ) {
 		if ( $this->setting->has_param( 'page_header' ) ) {
-			$html[] = $this->setting->get_param( 'page_header' )->get_component()->render();
+			$struct['element'] = null;
+			$struct['content'] = $this->setting->get_param( 'page_header' )->render_component();
 		}
 
-		$this->setting->set_param('content', $this->setting->has_settings() );
-		$html[] = parent::render();
-
-		$html[] = '</div>';
-
-		return self::compile_html( $html );
-	}
-
-	/**
-	 * Create the start of the tabs wrapper.
-	 *
-	 * @return string
-	 */
-	protected function start_tabs() {
-		$atts = array(
-			'class' => 'cld-tabs',
-			'role'  => 'tablist',
-		);
-
-		return '<ul ' . $this->build_attributes( $atts ) . ' >';
+		return $struct;
 	}
 
 	/**
@@ -194,12 +181,13 @@ class Page extends Panel {
 	 *
 	 * @return string
 	 */
-	protected function settings() {
+	protected function settings( $struct ) {
+
 		if ( $this->setting->has_param( 'has_tabs' ) ) {
-			return $this->get_active_setting()->render_component();
+			$struct['content'] = $this->get_active_setting()->render_component();
 		}
 
-		return parent::settings();
+		return parent::settings( $struct );
 	}
 }
 

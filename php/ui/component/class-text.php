@@ -7,15 +7,19 @@
 
 namespace Cloudinary\UI\Component;
 
-use Cloudinary\UI;
+use Cloudinary\UI\Component;
 
 /**
  * Class Component
  *
  * @package Cloudinary\UI
  */
-class Text extends UI\Component {
+class Text extends Component {
 
+
+	protected function pre_render() {
+		// TODO: Implement pre_render() method.
+	}
 
 	public function __construct( $setting ) {
 		parent::__construct( $setting );

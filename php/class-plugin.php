@@ -164,7 +164,7 @@ final class Plugin {
 			'page_title'  => __( 'Testing Settings' ),
 			'menu_title'  => __( 'Testing Settings' ),
 			'capability'  => 'manage_options',
-			'icon'        => 'dashicons-cloudinary',
+			'icon'        => $this->dir_url . '/css/image.svg',
 			'page_header' => array(
 				'content' => '<img src="' . $this->dir_url . '/css/logo.svg" alt="' . esc_attr( "Cloudinary's logo", 'cloudinary' ) . '" width="150px"><p style="margin-left: 1rem; font-size: 0.75rem;"><a href="#">Need help?</a></p>',
 			),
@@ -178,23 +178,13 @@ final class Plugin {
 					array(
 						'type' => 'panel',
 						array(
-							'type'       => 'plan',
-							'title'      => __( 'Your Current Plan', 'cloudinary' ),
-							'attributes' => array(
-								'wrapper' => array(
-									'style' => 'margin: 1em 0; background-color: rgba(220,220,220,0.2);',
-								),
-							),
-							array(
-								'type'       => 'link',
-								'url'        => '#',
-								'content'    => __( 'Upgrade Plan', 'cloudinary' ),
-								'attributes' => array(
-									'content' => array(
-										'class' => 'btn btn-primary mt-0.5 inline-block',
-									),
-								),
-							),
+							'type'  => 'plan',
+							'title' => __( 'Your Current Plan', 'cloudinary' ),
+						),
+						array(
+							'type'    => 'link',
+							'url'     => '#',
+							'content' => __( 'Upgrade Plan', 'cloudinary' ),
 						),
 					),
 					array(
@@ -213,9 +203,9 @@ final class Plugin {
 						'sync'    => array(
 							'menu_title' => __( 'Sync', 'cloudinary' ),
 							array(
-								'title' => __( 'Image - Global Settings', 'cloudinary' ),
-								'icon'  => $this->dir_url . '/css/image.svg',
-								'type'  => 'panel',
+								'title'  => __( 'Image - Global Settings', 'cloudinary' ),
+								'icon'   => $this->dir_url . '/css/image.svg',
+								'type'   => 'panel',
 								'submit' => array(
 									'text' => __( 'Save Changes', 'cloudinary' ),
 								),
@@ -224,8 +214,8 @@ final class Plugin {
 									'count'    => 2,
 									'settings' => array(
 										'image_optimize' => array(
-											'type'   => 'toggle',
-											'title'  => __( 'Image Optimization', 'cloudinary' ),
+											'type'  => 'toggle',
+											'title' => __( 'Image Optimization', 'cloudinary' ),
 											'label' => __( 'Optimize Images in my site', 'cloudinary' ),
 										),
 									),

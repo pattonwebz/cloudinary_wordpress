@@ -17,19 +17,13 @@ use Cloudinary\Settings\Setting;
  */
 class Panel extends Component {
 
-	public function __construct( $setting ) {
-		parent::__construct( $setting );
-		$this->attributes['wrapper']['class']         = array(
-			'cld-box',
-		);
-		$this->attributes['heading_wrapper']['class'] = array(
-			'cld-box__header',
-			'cld-box__header--divided',
-			'p-1.5',
-		);
-		if ( $this->setting->has_param( 'title' ) ) {
-			$this->attributes['wrapper']['class'][] = 'p-0';
-		}
+	protected $blueprint = 'wrap|header|icon/|title/|collapse/|/header|body|/body|section/|/wrap';
+
+	/**
+	 * Setup component.
+	 */
+	protected function pre_render() {
+
 	}
 
 	/**
@@ -88,10 +82,9 @@ class Panel extends Component {
 		return $this->setting->get_setting( $active_setting );
 	}
 
-	protected function settings() {
+	protected function footer( $struct ) {
 		$html = array();
 
-		$html[] = parent::settings();
 		if ( $this->setting->has_param( 'submit' ) ) {
 			$footer_atts = array(
 				'class' => 'cld-box__footer cld-box__footer--divided p-1.5',
@@ -106,9 +99,18 @@ class Panel extends Component {
 			$html[]      = '</button>';
 			$html[]      = '</footer>';
 
+			$struct['content'] = self::compile_html( $html );
 		}
 
-		return self::compile_html( $html );
+
+		return $struct;
+	}
+
+	protected function section( $struct ) {
+		$struct                        = parent::settings( $struct );
+		$struct['element']             = null;
+
+		return $struct;
 	}
 }
 

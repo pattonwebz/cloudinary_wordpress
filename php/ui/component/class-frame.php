@@ -25,4 +25,8 @@ class Frame extends Component {
 	public function render() {
 		return $this->settings();
 	}
+
+	protected function pre_render() {
+		// TODO: Implement pre_render() method.
+	}
 }
