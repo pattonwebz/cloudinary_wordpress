@@ -7,10 +7,10 @@
 
 namespace Cloudinary\UI;
 
-use Cloudinary\Settings;
+use Cloudinary\Settings\Setting;
 
 /**
- * Class Component
+ * Abstract Component.
  *
  * @package Cloudinary\UI
  */
@@ -18,12 +18,15 @@ abstract class Component {
 
 	/**
 	 * Holds the components type.
+	 *
+	 * @var string
 	 */
+
 	protected $type;
 	/**
 	 * Holds the parent setting for this component.
 	 *
-	 * @var Settings\Setting
+	 * @var Setting
 	 */
 	protected $setting;
 
@@ -58,18 +61,26 @@ abstract class Component {
 	 * Render component for a setting.
 	 * Component constructor.
 	 *
-	 * @param Settings\Setting $setting The parent Setting.
+	 * @param Setting $setting The parent Setting.
 	 */
 	public function __construct( $setting ) {
 		$this->setting = $setting;
 		$class         = strtolower( get_class( $this ) );
-		$class_name    = substr( strrchr( $class, "\\" ), 1 );
+		$class_name    = substr( strrchr( $class, '\\' ), 1 );
 		$this->type    = str_replace( '_', '-', $class_name );
 
 		// Setup the components parts for render.
 		$this->setup_component_parts();
 	}
 
+	/**
+	 * Magic caller to filter component parts dynamically.
+	 *
+	 * @param string $name The part name.
+	 * @param array  $args array of args to pass to the filter.
+	 *
+	 * @return mixed
+	 */
 	public function __call( $name, $args ) {
 		$struct = $args[0];
 		if ( $this->setting->has_param( $name ) ) {
@@ -118,7 +129,7 @@ abstract class Component {
 				),
 			),
 			'tooltip'     => array(
-				'element'    => 'div',
+				'element'    => 'span',
 				'attributes' => array(
 					'class' => array(),
 				),
@@ -171,6 +182,12 @@ abstract class Component {
 		}
 	}
 
+	/**
+	 * Registers a new component part type.
+	 *
+	 * @param string $name   Name for the part type.
+	 * @param array  $struct The array structure for the part type.
+	 */
 	public function register_component_part( $name, $struct ) {
 		$base                       = array(
 			'element'    => 'div',
@@ -196,17 +213,29 @@ abstract class Component {
 	 * Renders the component.
 	 */
 	public function render() {
-		// Setup the component
+
+		// Setup the component.
 		$this->pre_render();
+
+		// Build the blueprint parts list.
 		$blueprint   = $this->setting->get_param( 'blueprint', $this->blueprint );
 		$build_parts = explode( '|', $blueprint );
 
+		// Build the multi-dimensional array.
 		$struct = $this->build_struct( $build_parts );
 		$this->compile_structures( $struct );
 
+		// Output html.
 		return self::compile_html( $this->html );
 	}
 
+	/**
+	 * Build the structures from the build parts.
+	 *
+	 * @param array $parts Array of build parts to build.
+	 *
+	 * @return array
+	 */
 	protected function build_struct( &$parts ) {
 
 		$struct = array();
@@ -233,12 +262,24 @@ abstract class Component {
 
 	}
 
+	/**
+	 * Go through the structures and compile.
+	 *
+	 * @param array $structure The components structures.
+	 */
 	protected function compile_structures( $structure ) {
 		foreach ( $structure as $name => $struct ) {
 			$this->handle_structure( $name, $struct );
 		}
 	}
 
+	/**
+	 * Get a blueprint parts state.
+	 *
+	 * @param string $part The part name.
+	 *
+	 * @return string
+	 */
 	public function get_state( $part ) {
 		$state = 'open';
 		$pos   = strpos( $part, '/' );
@@ -255,12 +296,26 @@ abstract class Component {
 		return $state;
 	}
 
+	/**
+	 * Handles a structure part before rendering.
+	 *
+	 * @param string $name   The name of the part.
+	 * @param array  $struct The parts structure.
+	 */
 	public function handle_structure( $name, $struct ) {
 		if ( $this->has_content( $name, $struct ) ) {
 			$this->compile_part( $struct );
 		}
 	}
 
+	/**
+	 * Recursively check if the current structure has content.
+	 *
+	 * @param string | null $name   The name of the part.
+	 * @param array         $struct The part structure.
+	 *
+	 * @return bool
+	 */
 	public function has_content( $name, $struct = array() ) {
 		$return = ! empty( $struct['content'] ) || $this->setting->has_param( $name );
 		if ( false === $return && ! empty( $struct['children'] ) ) {
@@ -279,13 +334,11 @@ abstract class Component {
 	 * Build a component part.
 	 *
 	 * @param array $struct The component part structure array.
-	 *
-	 * @return string
 	 */
 	public function compile_part( $struct ) {
 		$this->open_tag( $struct );
 		if ( ! $this->is_void_element( $struct['element'] ) ) {
-			$this->build_content( $struct['content'] );
+			$this->add_content( $struct['content'] );
 			if ( ! empty( $struct['children'] ) ) {
 				foreach ( $struct['children'] as $name => $child ) {
 					$this->handle_structure( $name, $child );
@@ -295,19 +348,34 @@ abstract class Component {
 		}
 	}
 
+	/**
+	 * Opens a new tag.
+	 *
+	 * @param array $struct The tag structure.
+	 */
 	protected function open_tag( $struct ) {
 		if ( ! empty( $struct['element'] ) ) {
 			$this->html[] = $this->build_tag( $struct['element'], 'open', $struct['attributes'] );
 		}
 	}
 
+	/**
+	 * Closes an open tag.
+	 *
+	 * @param array $struct The tag structure.
+	 */
 	protected function close_tag( $struct ) {
 		if ( ! empty( $struct['element'] ) ) {
 			$this->html[] = $this->build_tag( $struct['element'], 'close', $struct['attributes'] );
 		}
 	}
 
-	protected function build_content( $content ) {
+	/**
+	 * Adds the content to the html.
+	 *
+	 * @param string $content The content to add.
+	 */
+	protected function add_content( $content ) {
 
 		if ( ! is_string( $content ) && is_callable( $content ) ) {
 			$this->html[] = call_user_func( $content );
@@ -316,6 +384,13 @@ abstract class Component {
 		}
 	}
 
+	/**
+	 * Check if an element type is a void element.s
+	 *
+	 * @param string $element The element to check.
+	 *
+	 * @return bool
+	 */
 	public function is_void_element( $element ) {
 		$void_elements = array(
 			'area',
@@ -337,9 +412,18 @@ abstract class Component {
 		return in_array( strtolower( $element ), $void_elements, true );
 	}
 
+	/**
+	 * Build an HTML tag.
+	 *
+	 * @param string $element    The element to build.
+	 * @param string $state      The element state.
+	 * @param array  $attributes The attributes for the tags.
+	 *
+	 * @return string
+	 */
 	protected function build_tag( $element, $state, $attributes = array() ) {
 
-		$prefix_element = $state === 'close' ? '/' : '';
+		$prefix_element = 'close' === $state ? '/' : '';
 		$tag            = array();
 		$tag[]          = $prefix_element . $element;
 		$tag[]          = self::build_attributes( $attributes );
@@ -351,9 +435,9 @@ abstract class Component {
 	/**
 	 * Get a build part to construct.
 	 *
-	 * @param $part
+	 * @param string $part The part name.
 	 *
-	 * @return array|null
+	 * @return array
 	 */
 	public function get_part( $part ) {
 		$struct = array(
@@ -371,18 +455,11 @@ abstract class Component {
 	}
 
 	/**
-	 * Start the component Wrapper.
+	 * Filter the title parts structure.
 	 *
-	 * @return string
-	 */
-	protected function start_wrapper() {
-		return '<div ' . $this->build_attributes( $this->get_attributes( 'wrapper' ) ) . ' >';
-	}
-
-	/**
-	 * Start the component Wrapper.
+	 * @param array $struct The array structure.
 	 *
-	 * @return string
+	 * @return array
 	 */
 	protected function title( $struct ) {
 		$struct['content'] = $this->setting->get_param( 'title', $this->setting->get_param( 'page_title' ) );
@@ -390,117 +467,29 @@ abstract class Component {
 		return $struct;
 	}
 
-
 	/**
-	 * Creates the Content/Input HTML.
+	 * Filter the tooltip parts structure.
 	 *
-	 * @return string
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
 	 */
-	protected function content() {
-		$html = array(
-			'<div ' . $this->build_attributes( $this->get_attributes( 'content' ) ) . '>',
-			$this->setting->get_param( 'content' ),
-			'</div>',
+	protected function tooltip( $struct ) {
+
+		$struct['attributes']['class'] = array(
+			'dashicons',
+			'dashicons-editor-help',
 		);
+		$struct['attributes']['title'] = $this->setting->get_param( 'tooltip' );
 
-		return self::compile_html( $html );
-	}
-
-	/**
-	 * Creates the Header HTML.
-	 *
-	 * @return string
-	 */
-	protected function dheading() {
-		$html = array();
-		if ( $this->setting->has_param( 'icon' ) ) {
-			$html[] = $this->get_icon();
-		}
-		$html[] = '<h2 ' . $this->build_attributes( $this->get_attributes( 'heading' ) ) . ' >';
-		$html[] = $this->setting->get_param( 'title' );
-		if ( $this->setting->has_param( 'tooltip' ) ) {
-			$html[] = $this->tooltip();
-		}
-		$html[] = '</h2>';
-
-		return self::compile_html( $html );
-	}
-
-	/**
-	 * Create the Tooltip HTML.
-	 *
-	 * @return string
-	 */
-	protected function tooltip() {
-		$atts          = $this->get_attributes( 'tooltip' );
-		$atts['title'] = $this->setting->get_param( 'tooltip' );
-
-		return '<span ' . $this->build_attributes( $atts ) . ' />';
-	}
-
-	/**
-	 * Create the end of the heading wrapper HTML.
-	 *
-	 * @return string
-	 */
-	protected function end_heading() {
-		return '</div>';
-	}
-
-	/**
-	 * Creates a Description HTML.
-	 *
-	 * @return string
-	 */
-	protected function description() {
-		$html   = array();
-		$html[] = '<span ' . $this->build_attributes( $this->get_attributes( 'description' ) ) . ' >';
-		$html[] = $this->setting->get_param( 'description' );
-		$html[] = '</span>';
-
-		return self::compile_html( $html );
-	}
-
-	/**
-	 * Create the end of the wrapper HTML.
-	 *
-	 * @return string
-	 */
-	protected function end_wrapper() {
-		return '</div>';
-	}
-
-	/**
-	 * Create a dashicon HTML.
-	 *
-	 * @param string $icon Dashicon slug.
-	 *
-	 * @return string
-	 */
-	protected function dashicon( $struct ) {
-		$struct['element']               = 'img';
-		$struct['attributes']['class'][] = 'dashicons';
-		$struct['attributes']['class'][] = $this->setting->get_param( 'icon' );
 
 		return $struct;
 	}
 
 	/**
-	 * Create an image based icon HTML.
+	 * Filter the icon parts structure.
 	 *
-	 * @param string $icon Image URL.
-	 *
-	 * @return string
-	 */
-	protected function image_icon( $struct ) {
-		$struct['element']           = 'img';
-		$struct['attributes']['src'] = $this->setting->get_param( 'icon' );
-
-		return $struct;
-	}
-
-	/**
-	 * Create an icon HTML part, based on the type of icon source.
+	 * @param array $struct The array structure.
 	 *
 	 * @return string
 	 */
@@ -516,39 +505,40 @@ abstract class Component {
 	}
 
 	/**
-	 * Create a Prefix HTML part.
+	 * Filter the dashicon parts structure.
 	 *
-	 * @return string
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
 	 */
-	protected function prefix() {
-		$html = array(
-			'<span' . $this->build_attributes( $this->get_attributes( 'prefix' ) ) . ' >',
-			$this->setting->get_param( 'prefix' ),
-			'</span>',
-		);
+	protected function dashicon( $struct ) {
+		$struct['element']               = 'img';
+		$struct['attributes']['class'][] = 'dashicons';
+		$struct['attributes']['class'][] = $this->setting->get_param( 'icon' );
 
-		return self::compile_html( $html );
+		return $struct;
 	}
 
 	/**
-	 * Create a suffix HTML part.
+	 * Filter the image icons parts structure.
 	 *
-	 * @return string
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
 	 */
-	protected function suffix() {
-		$html = array(
-			'<span' . $this->build_attributes( $this->get_attributes( 'suffix' ) ) . ' >',
-			$this->setting->get_param( 'suffix' ),
-			'</span>',
-		);
+	protected function image_icon( $struct ) {
+		$struct['element']           = 'img';
+		$struct['attributes']['src'] = $this->setting->get_param( 'icon' );
 
-		return self::compile_html( $html );
+		return $struct;
 	}
 
 	/**
-	 * Creates the child settings component rendered HTML part.
+	 * Filter the settings parts structure.
 	 *
-	 * @return string
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
 	 */
 	protected function settings( $struct ) {
 		$struct['element'] = '';
@@ -613,7 +603,7 @@ abstract class Component {
 	/**
 	 * Init the component.
 	 *
-	 * @param Settings\Setting $setting The setting object.
+	 * @param Setting $setting The setting object.
 	 *
 	 * @return self
 	 */
