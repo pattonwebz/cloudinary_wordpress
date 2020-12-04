@@ -491,7 +491,7 @@ abstract class Component {
 	 *
 	 * @param array $struct The array structure.
 	 *
-	 * @return string
+	 * @return array
 	 */
 	protected function icon( $struct ) {
 
@@ -644,7 +644,7 @@ abstract class Component {
 	}
 
 	/**
-	 * Setup the component.
+	 * Setup action before rendering.
 	 */
 	protected function pre_render() {
 	}

@@ -17,14 +17,28 @@ use Cloudinary\UI\Component;
  */
 class Plan extends Component {
 
+	/**
+	 * Holds the components build blueprint.
+	 *
+	 * @var string
+	 */
 	protected $blueprint = 'title/|plan_box|plan_heading/|plan_summary|/plan_summary|/plan_box';
 
+	/**
+	 * Setup action before rendering.
+	 */
 	protected function pre_render() {
 		$connection = get_plugin_instance()->get_component( 'connect' );
 		$this->setting->set_param( 'plan_heading', $connection->get_usage_stat( 'plan' ) );
 	}
 
-
+	/**
+	 * Filter the title parts structure.
+	 *
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
+	 */
 	protected function title( $struct ) {
 
 		$struct['element'] = 'h2';
@@ -32,7 +46,13 @@ class Plan extends Component {
 		return parent::title( $struct );
 	}
 
-
+	/**
+	 * Filter the plan box parts structure.
+	 *
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
+	 */
 	protected function plan_box( $struct ) {
 		$struct['element']             = 'div';
 		$struct['attributes']['class'] = array(
@@ -42,28 +62,13 @@ class Plan extends Component {
 		return $struct;
 	}
 
-	public function sscontent() {
-
-
-		// Component heading/title.
-		if ( $this->setting->has_param( 'title' ) ) {
-			$html[] = $this->heading();
-		}
-
-		// Main Component Wrapper.
-		$html[] = $this->start_wrapper();
-
-		$html[] = $this->plan_heading();
-
-		// Component Content.
-		$html[] = $this->content();
-
-		// End component wrapper.
-		$html[] = $this->end_wrapper();
-
-		return self::compile_html( $html );
-	}
-
+	/**
+	 * Filter the plan heading parts structure.
+	 *
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
+	 */
 	protected function plan_heading( $struct ) {
 		$html   = array();
 		$atts   = array(
@@ -79,30 +84,12 @@ class Plan extends Component {
 	}
 
 	/**
-	 * Get a specific set of attributes.
+	 * Filter the plan summary parts structure.
 	 *
-	 * @param string $attribute_point The key of the attribute point to get.
+	 * @param array $struct The array structure.
 	 *
 	 * @return array
 	 */
-	public function get_attributes( $attribute_point ) {
-
-		$attributes = parent::get_attributes( $attribute_point );
-		switch ( $attribute_point ) {
-			case 'wrapper':
-				$attributes['class'] = array(
-					'cld-box',
-					'cld-box--inner',
-				);
-				break;
-			case 'content':
-				$attributes['class'] = 'mt-0.75';
-				break;
-		}
-
-		return $attributes;
-	}
-
 	protected function plan_summary( $struct ) {
 
 
@@ -121,6 +108,13 @@ class Plan extends Component {
 		return $struct;
 	}
 
+	/**
+	 * Filter the plan wrapper parts structure.
+	 *
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
+	 */
 	protected function plan_wrap( $struct ) {
 		$struct['element']             = 'div';
 		$struct['attributes']['class'] = array(
@@ -131,7 +125,9 @@ class Plan extends Component {
 	}
 
 	/**
-	 * Creates the Content/Input HTML.
+	 * Creates the bullet points of the plan.
+	 *
+	 * @return array
 	 */
 	protected function content() {
 

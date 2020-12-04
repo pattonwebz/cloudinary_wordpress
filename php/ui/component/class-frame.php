@@ -16,17 +16,11 @@ use Cloudinary\UI\Component;
  */
 class Frame extends Component {
 
-
 	/**
-	 * Render the content, but only child settings.
+	 * Holds the components build blueprint.
 	 *
-	 * @return string
+	 * @var string
 	 */
-	public function render() {
-		return $this->settings();
-	}
+	protected $blueprint = 'settings';
 
-	protected function pre_render() {
-		// TODO: Implement pre_render() method.
-	}
 }

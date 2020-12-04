@@ -16,11 +16,21 @@ use Cloudinary\UI\Component;
  */
 class Link extends Component {
 
+	/**
+	 * Holds the components build blueprint.
+	 *
+	 * @var string
+	 */
 	protected $blueprint = 'link_tag';
 
-
+	/**
+	 * Filter the link parts structure.
+	 *
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
+	 */
 	protected function link_tag( $struct ) {
-
 
 		$struct['element']              = 'a';
 		$struct['content']              = $this->setting->get_param( 'content' );

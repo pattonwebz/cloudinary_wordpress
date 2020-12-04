@@ -16,19 +16,30 @@ use Cloudinary\UI;
  */
 class Submit extends UI\Component {
 
+	/**
+	 * Holds the components build blueprint.
+	 *
+	 * @var string
+	 */
+	protected $blueprint = 'submit_button';
 
 	/**
-	 * Creates the Content/Input HTML.
+	 * Filter the link parts structure.
 	 *
-	 * @return string
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
 	 */
-	protected function content() {
-		$atts            = $this->get_attributes( 'content' );
-		$atts['type']    = 'submit';
-		$atts['value']   = $this->setting->get_param( 'label', __( 'Submit', 'cloudinary' ) );
-		$atts['class'][] = 'button-primary';
+	protected function submit_button( $struct ) {
 
-		return '<input ' . $this->build_attributes( $atts ) . ' />';
+		$struct['element']             = 'button';
+		$struct['attributes']['type']  = $this->type;
+		$struct['attributes']['value'] = $this->setting->get_param( 'label', __( 'Submit', 'cloudinary' ) );
+		$struct['attributes']['class'] = array(
+			'button',
+			'button-primary',
+		);
+
+		return $struct;
 	}
-
 }

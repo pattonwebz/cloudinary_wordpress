@@ -17,49 +17,12 @@ use Cloudinary\Settings\Setting;
  */
 class Panel extends Component {
 
+	/**
+	 * Holds the components build blueprint.
+	 *
+	 * @var string
+	 */
 	protected $blueprint = 'wrap|header|icon/|title/|collapse/|/header|body|/body|section/|/wrap';
-
-	/**
-	 * Setup component.
-	 */
-	protected function pre_render() {
-
-	}
-
-	/**
-	 * Start the component Wrapper.
-	 *
-	 * @return string
-	 */
-	protected function start_heading() {
-		return '<header ' . $this->build_attributes( $this->get_attributes( 'heading_wrapper' ) ) . ' >';
-	}
-
-	/**
-	 * Creates the Header HTML.
-	 *
-	 * @return string
-	 */
-	protected function heading() {
-		$html        = array();
-		$header_atts = array();
-		if ( $this->setting->has_param( 'icon' ) ) {
-			$html[]                 = $this->get_icon();
-			$header_atts['class'][] = 'ml-1';
-		}
-		$html[] = '<h2 ' . $this->build_attributes( $header_atts ) . ' >';
-		$html[] = $this->setting->get_param( 'title' );
-		if ( $this->setting->has_param( 'tooltip' ) ) {
-			$html[] = $this->tooltip();
-		}
-		$html[] = '</h2>';
-
-		return self::compile_html( $html );
-	}
-
-	protected function end_heading() {
-		return '</header>';
-	}
 
 	/**
 	 * Gets the active child setting.
@@ -82,33 +45,16 @@ class Panel extends Component {
 		return $this->setting->get_setting( $active_setting );
 	}
 
-	protected function footer( $struct ) {
-		$html = array();
-
-		if ( $this->setting->has_param( 'submit' ) ) {
-			$footer_atts = array(
-				'class' => 'cld-box__footer cld-box__footer--divided p-1.5',
-			);
-			$button_atts = array(
-				'type'  => 'submit',
-				'class' => $this->setting->get_param( 'class', 'button button-primary' ),
-			);
-			$html[]      = '<footer ' . $this->build_attributes( $footer_atts ) . ' >';
-			$html[]      = '<button ' . $this->build_attributes( $button_atts ) . ' >';
-			$html[]      = $this->setting->get_param( 'text', __( 'Save Changes', 'cloudinary' ) );
-			$html[]      = '</button>';
-			$html[]      = '</footer>';
-
-			$struct['content'] = self::compile_html( $html );
-		}
-
-
-		return $struct;
-	}
-
+	/**
+	 * Filter the section parts structure.
+	 *
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
+	 */
 	protected function section( $struct ) {
-		$struct                        = parent::settings( $struct );
-		$struct['element']             = null;
+		$struct            = parent::settings( $struct );
+		$struct['element'] = null;
 
 		return $struct;
 	}
