@@ -7,7 +7,6 @@ import cloneDeep from 'lodash/cloneDeep';
 /**
  * Internal dependencies
  */
-import defaults from './defaults.json';
 
 const dot = new Dot( '_' );
 
@@ -27,7 +26,6 @@ const Save = ( { attributes } ) => {
 		configString = JSON.stringify( {
 			cloudName: CLDN.mloptions.cloud_name,
 			mediaAssets: selectedImages,
-			...defaults,
 			...config,
 		} );
 	}

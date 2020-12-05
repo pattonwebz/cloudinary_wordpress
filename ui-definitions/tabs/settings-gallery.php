@@ -29,20 +29,21 @@ $struct = array(
 			'description' => __( 'Set the type of transition that occurs when switching the images in the gallery.', 'cloudinary' ),
 		),
 		'primary_color'                     => array(
-			'label' => __( 'Primary Color', 'cloudinary' ),
-			'type'  => 'color',
+			'label'   => __( 'Primary Color', 'cloudinary' ),
+			'type'    => 'color',
+			'default' => '#000000',
 		),
 		'on_primary_color'                  => array(
-			'label' => __( 'On Primary Color', 'cloudinary' ),
-			'type'  => 'color',
+			'label'   => __( 'On Primary Color', 'cloudinary' ),
+			'type'    => 'color',
+			'default' => '#000000',
+
 		),
 		'active_color'                      => array(
-			'label' => __( 'Active Color', 'cloudinary' ),
-			'type'  => 'color',
-		),
-		'on_active_color'                   => array(
-			'label' => __( 'On Active Color', 'cloudinary' ),
-			'type'  => 'color',
+			'label'   => __( 'Active Color', 'cloudinary' ),
+			'type'    => 'color',
+			'default' => '#777777',
+
 		),
 		'main_header'                       => array(
 			'type'  => 'heading',

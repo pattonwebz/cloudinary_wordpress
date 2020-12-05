@@ -39,10 +39,9 @@ class Gallery {
 	 */
 	public static $default_config = array(
 		'enable_gallery'                    => 'on',
-		'primary_color'                     => '#606060',
-		'on_primary_color'                  => '#55009b',
-		'active_color'                      => '#0f6363',
-		'on_active_color'                   => '#aaaaaa',
+		'primary_color'                     => '#000000',
+		'on_primary_color'                  => '#000000',
+		'active_color'                      => '#777777',
 		'aspect_ratio'                      => '1:1',
 		'zoom_trigger'                      => 'click',
 		'zoom_type'                         => 'popup',
@@ -134,7 +133,7 @@ class Gallery {
 
 		$this->config = apply_filters( 'cloudinary_gallery_config', $config );
 
-		return $config;
+		return $this->config;
 	}
 
 	/**
@@ -248,7 +247,7 @@ class Gallery {
 			$image_url = is_int( $image ) ? $this->media->cloudinary_url( $image_id ) : $image['url'];
 
 			$image_data[ $index ]             = array();
-			$image_data[ $index ]['publicId'] = $this->media->get_public_id( $image_id );
+			$image_data[ $index ]['publicId'] = $this->media->get_public_id( $image_id, true );
 
 			$transformations = $this->media->get_transformations_from_string( $image_url );
 

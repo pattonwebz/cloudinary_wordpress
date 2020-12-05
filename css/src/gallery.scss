@@ -36,3 +36,19 @@
 	margin: 8px 0;
 	align-items: center;
 }
+
+/* stylelint-disable */
+.wp-block-cloudinary-gallery .block-editor-media-placeholder .components-placeholder__label {
+	display: none;
+}
+/* stylelint-enable */
+
+.wp-block-cloudinary-gallery .block-editor-media-placeholder {
+	margin-top: 11px;
+	margin-bottom: 11px;
+	padding: 11px;
+}
+
+.wp-block-cloudinary-gallery .block-editor-media-placeholder .components-button {
+	margin-bottom: 0;
+}

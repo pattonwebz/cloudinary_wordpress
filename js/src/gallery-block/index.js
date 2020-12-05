@@ -13,21 +13,21 @@ import edit from './edit';
 import save from './save';
 
 const {
-	aspectRatio = '1:1',
-	carouselLocation = 'left',
-	carouselOffset = 0,
-	carouselThumbnailHeight = 1,
-	carouselThumbnailSelectedStyle = 'all',
-	carouselThumbnailWidth = 1,
-	carouselButtonShape = 'round',
+	aspectRatio,
+	carouselLocation,
+	carouselOffset,
+	carouselThumbnailHeight,
+	carouselThumbnailSelectedStyle,
+	carouselThumbnailWidth,
+	carouselButtonShape,
 	zoomTrigger,
-	zoomType = 'inline',
-	zoomViewerPosition = 'top',
-	activeColor = '#FFF',
-	onPrimaryColor = '#FFF',
-	primaryColor = '#FFF',
-	transition = 'fade',
-	carouselStyle = 'thumbnails',
+	zoomType,
+	zoomViewerPosition,
+	activeColor,
+	onPrimaryColor,
+	primaryColor,
+	transition,
+	carouselStyle,
 } = cloudinaryGalleryConfig;
 
 registerBlockType( 'cloudinary/gallery', {
@@ -39,22 +39,46 @@ registerBlockType( 'cloudinary/gallery', {
 	category: 'widgets',
 	icon: 'format-gallery',
 	attributes: {
-		displayProps_mode: { type: 'string', default: 'classic' },
-		displayProps_columns: { type: 'number', default: 1 },
-		themeProps_primary: { type: 'string', default: primaryColor },
+		displayProps_mode: {
+			type: 'string',
+			default: 'classic',
+		},
+		displayProps_columns: {
+			type: 'number',
+			default: 1,
+		},
+		themeProps_primary: {
+			type: 'string',
+			default: primaryColor,
+		},
 		themeProps_onPrimary: {
 			type: 'string',
 			default: onPrimaryColor,
 		},
-		themeProps_active: { type: 'string', default: activeColor },
-		transition: { type: 'string', default: transition },
-		aspectRatio: { type: 'string', default: aspectRatio },
-		navigation: { type: 'string', default: 'always' },
+		themeProps_active: {
+			type: 'string',
+			default: activeColor,
+		},
+		transition: {
+			type: 'string',
+			default: transition,
+		},
+		aspectRatio: {
+			type: 'string',
+			default: aspectRatio,
+		},
+		navigation: {
+			type: 'string',
+			default: 'always',
+		},
 		zoom: {
 			type: 'boolean',
 			default: zoomTrigger && zoomTrigger !== 'none',
 		},
-		zoomProps_type: { type: 'string', default: zoomType },
+		zoomProps_type: {
+			type: 'string',
+			default: zoomType,
+		},
 		zoomProps_viewerPosition: {
 			type: 'string',
 			default: zoomViewerPosition,
@@ -95,11 +119,25 @@ registerBlockType( 'cloudinary/gallery', {
 			type: 'string',
 			default: 'all',
 		},
-		thumbnailProps_selectedBorderWidth: { type: 'number', default: 4 },
-		thumbnailProps_mediaSymbolShape: { type: 'string', default: 'round' },
-		indicatorProps_shape: { type: 'string', default: 'round' },
-		selectedImages: { type: 'array', default: [] },
-		container: { type: 'string' },
+		thumbnailProps_selectedBorderWidth: {
+			type: 'number',
+			default: 4,
+		},
+		thumbnailProps_mediaSymbolShape: {
+			type: 'string',
+			default: 'round',
+		},
+		indicatorProps_shape: {
+			type: 'string',
+			default: 'round',
+		},
+		selectedImages: {
+			type: 'array',
+			default: [],
+		},
+		container: {
+			type: 'string',
+		},
 	},
 	edit,
 	save,

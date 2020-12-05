@@ -5,32 +5,20 @@
  */
 import Dot from 'dot-object';
 import cloneDeep from 'lodash/cloneDeep';
-import '@wordpress/components/build-style/style.css';
 
 /**
  * WordPress dependencies
  */
 import { __ } from '@wordpress/i18n';
-import { useEffect, useState } from '@wordpress/element';
-import {
-	ColorPalette,
-	InspectorControls,
-	MediaPlaceholder,
-} from '@wordpress/block-editor';
-import {
-	Button,
-	ButtonGroup,
-	PanelBody,
-	RangeControl,
-	SelectControl,
-	ToggleControl,
-} from '@wordpress/components';
+import '@wordpress/components/build-style/style.css';
+import { Platform, useEffect, useState } from '@wordpress/element';
+import { ColorPalette, InspectorControls, MediaPlaceholder } from '@wordpress/block-editor';
+import { Button, ButtonGroup, PanelBody, RangeControl, SelectControl, ToggleControl } from '@wordpress/components';
 
 /**
  * Internal dependencies
  */
 import '../../../css/src/gallery.scss';
-import defaults from './defaults.json';
 import Radio from './radio';
 import {
 	ALLOWED_MEDIA_TYPES,
@@ -53,6 +41,14 @@ import { generateId, showNotice } from './utils';
 
 const dot = new Dot( '_' );
 
+const PLACEHOLDER_TEXT = Platform.select( {
+	web: __(
+		'Drag images, upload new ones or select files from your library.',
+		'cloudinary'
+	),
+	native: __( 'ADD MEDIA', 'cloudinary' ),
+} );
+
 const ColorPaletteLabel = ( { children, value } ) => (
 	<div className="colorpalette-color-label">
 		<span>{ children }</span>
@@ -64,7 +60,7 @@ const ColorPaletteLabel = ( { children, value } ) => (
 	</div>
 );
 
-const Edit = ( { setAttributes, attributes, className } ) => {
+const Edit = ( { setAttributes, attributes, className, isSelected } ) => {
 	const [ errorMessage, setErrorMessage ] = useState( null );
 
 	const onSelect = ( images ) => {
@@ -115,9 +111,9 @@ const Edit = ( { setAttributes, attributes, className } ) => {
 			const gallery = cloudinary.galleryWidget( {
 				cloudName: CLDN.mloptions.cloud_name,
 				mediaAssets: selectedImages,
-				...defaults,
 				...config,
 				container: '.' + attributes.container,
+				zoom: false,
 			} );
 
 			gallery.render();
@@ -132,16 +128,23 @@ const Edit = ( { setAttributes, attributes, className } ) => {
 		<>
 			<>
 				<div className={ attributes.container || className }></div>
-				<MediaPlaceholder
-					labels={ {
-						title: __( 'Cloudinary Gallery', 'cloudinary' ),
-					} }
-					icon="format-gallery"
-					allowedTypes={ ALLOWED_MEDIA_TYPES }
-					multiple
-					isAppender={ hasImages }
-					onSelect={ onSelect }
-				/>
+				<div className="wp-block-cloudinary-gallery">
+					<MediaPlaceholder
+						labels={ {
+							title:
+								! hasImages &&
+								__( 'Cloudinary Gallery', 'cloudinary' ),
+							instructions: ! hasImages && PLACEHOLDER_TEXT,
+						} }
+						icon={ ! hasImages && 'format-gallery' }
+						disableMediaButtons={ hasImages && ! isSelected }
+						allowedTypes={ ALLOWED_MEDIA_TYPES }
+						addToGallery={ hasImages }
+						isAppender={ hasImages }
+						onSelect={ onSelect }
+						multiple
+					/>
+				</div>
 			</>
 			<InspectorControls>
 				<PanelBody title={ __( 'Layout', 'cloudinary' ) }>
