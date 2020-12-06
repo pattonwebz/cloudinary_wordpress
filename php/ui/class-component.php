@@ -87,6 +87,9 @@ abstract class Component {
 			$struct['content'] = $this->setting->get_param( $name );
 		}
 
+		// Apply type to each structs.
+		$struct['attributes']['class'][] = 'cld-' . $this->type;
+
 		return $struct;
 	}
 
@@ -94,14 +97,12 @@ abstract class Component {
 	 * Setup the components build parts.
 	 */
 	private function setup_component_parts() {
-		$type_class  = 'cld-' . $this->type;
+
 		$build_parts = array(
 			'wrap'        => array(
 				'element'    => 'div',
 				'attributes' => array(
-					'class' => array(
-						$type_class,
-					),
+					'class' => array(),
 				),
 			),
 			'header'      => array(
@@ -169,13 +170,12 @@ abstract class Component {
 		/**
 		 * Filter the components build parts.
 		 *
-		 * @param array  $build_parts The build parts.
-		 * @param string $type        The component type.
-		 * @param self   $type        The component object.
+		 * @param array $build_parts The build parts.
+		 * @param self  $type        The component object.
 		 *
 		 * @return array
 		 */
-		$structs = apply_filters( 'setup_component_parts', $build_parts, $this->type, $this );
+		$structs = apply_filters( 'setup_component_parts', $build_parts, $this );
 		foreach ( $structs as $name => $struct ) {
 			$struct['attributes']['class'][] = 'cld-ui-' . $name;
 			$this->register_component_part( $name, $struct );
@@ -249,12 +249,10 @@ abstract class Component {
 			$name                 = trim( $part, '/' );
 			$part_struct          = $this->get_part( $name );
 			$part_struct['state'] = $state;
+			$part_struct['name']  = $name;
 			$struct[ $name ]      = $this->{$name}( $part_struct );
-			if ( ! is_array( $struct[ $name ] ) ) {
-				die;
-			}
-			if ( 'open' === $state && empty( $struct[ $name ]['children'] ) ) {
-				$struct[ $name ]['children'] = $this->build_struct( $parts );
+			if ( 'open' === $state ) {
+				$struct[ $name ]['children'] += $this->build_struct( $parts );
 			}
 		}
 
@@ -317,7 +315,7 @@ abstract class Component {
 	 * @return bool
 	 */
 	public function has_content( $name, $struct = array() ) {
-		$return = ! empty( $struct['content'] ) || $this->setting->has_param( $name );
+		$return = ! empty( $struct['content'] ) || $this->setting->has_param( $name ) || ! empty( $struct['render'] );
 		if ( false === $return && ! empty( $struct['children'] ) ) {
 			foreach ( $struct['children'] as $child => $child_struct ) {
 				if ( true === $this->has_content( $child, $child_struct ) ) {
@@ -338,7 +336,7 @@ abstract class Component {
 	public function compile_part( $struct ) {
 		$this->open_tag( $struct );
 		if ( ! $this->is_void_element( $struct['element'] ) ) {
-			$this->add_content( $struct['content'] );
+			$this->add_content( $this->setting->get_param( $struct['name'], $struct['content'] ) );
 			if ( ! empty( $struct['children'] ) ) {
 				foreach ( $struct['children'] as $name => $child ) {
 					$this->handle_structure( $name, $child );

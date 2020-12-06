@@ -22,7 +22,51 @@ class Panel extends Component {
 	 *
 	 * @var string
 	 */
-	protected $blueprint = 'wrap|header|icon/|title/|collapse/|/header|body|/body|section/|/wrap';
+	protected $blueprint = 'header|icon/|title/|collapse/|/header|wrap|body|/body|section/|/wrap';
+
+	/**
+	 * Filter the header parts structure.
+	 *
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
+	 */
+	protected function header( $struct ) {
+
+		$struct['attributes']['class'][] = 'cld-' . $this->type . '-heading';
+
+		return parent::header( $struct );
+	}
+
+	/**
+	 * Filter the title parts structure.
+	 *
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
+	 */
+	protected function title( $struct ) {
+
+		$struct['element'] = 'h2';
+
+		return parent::title( $struct );
+	}
+
+	/**
+	 * Filter the wrap parts structure.
+	 *
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
+	 */
+	protected function wrap( $struct ) {
+
+		if ( $this->setting->has_param( 'title' ) ) {
+			$struct['attributes']['class'][] = 'has-heading';
+		}
+
+		return parent::wrap( $struct );
+	}
 
 	/**
 	 * Gets the active child setting.

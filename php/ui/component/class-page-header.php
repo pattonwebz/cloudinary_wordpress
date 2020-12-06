@@ -32,8 +32,9 @@ class Page_Header extends Component {
 	 */
 	protected function wrap( $struct ) {
 
-		$struct['element'] = 'header';
-		$struct['content'] = $this->setting->get_param( 'content' );
+		$struct['element']               = 'header';
+		$struct['content']               = $this->setting->get_param( 'content' );
+		$struct['attributes']['class'][] = 'cld-page-header';
 
 		return $struct;
 	}

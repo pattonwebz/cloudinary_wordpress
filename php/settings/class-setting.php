@@ -418,9 +418,9 @@ class Setting {
 	 */
 	public function add_tab_pages( $tab_pages ) {
 
-		$this->set_param( 'has_tabs', true );
+		$this->set_param( 'has_tabs', count( $tab_pages ) );
 		foreach ( $tab_pages as $tab_page => $params ) {
-			$params['type']        = 'frame';
+			$params['type']        = 'page';
 			$params['option_name'] = $this->build_option_name( $tab_page );
 			$this->add_setting( $tab_page, $params );
 		}

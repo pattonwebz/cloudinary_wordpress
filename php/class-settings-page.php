@@ -745,8 +745,6 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	 */
 	public function setup() {
 		$this->active_page();
-		add_action( 'admin_menu', array( $this, 'register_admin' ) );
-		add_action( 'admin_init', array( $this, 'register_settings' ) );
 	}
 
 	/**

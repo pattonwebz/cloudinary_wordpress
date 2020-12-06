@@ -10,13 +10,14 @@ namespace Cloudinary;
 use Cloudinary\Component\Config;
 use Cloudinary\Component\Notice;
 use Cloudinary\Component\Setup;
+use Cloudinary\Component\Settings;
 
 /**
  * Cloudinary connection class.
  *
  * Sets up the initial cloudinary connection and makes the API object available for some uses.
  */
-class Connect implements Config, Setup, Notice {
+class Connect implements Config, Setup, Notice, Settings {
 
 	/**
 	 * Holds the plugin instance.
@@ -287,7 +288,7 @@ class Connect implements Config, Setup, Notice {
 		if ( 4 > count( $valid ) ) {
 			$result['type']    = 'invalid_url';
 			$result['message'] = sprintf(
-				// translators: Placeholder refers to the expected URL format.
+			// translators: Placeholder refers to the expected URL format.
 				__( 'Incorrect Format. Expecting: %s', 'cloudinary' ),
 				'<code>cloudinary://API_KEY:API_SECRET@CLOUD_NAME</code>'
 			);
@@ -613,9 +614,10 @@ class Connect implements Config, Setup, Notice {
 				} else {
 					continue;
 				}
+
 				// translators: Placeholders are URLS and percentage values.
 				$message = sprintf(
-				/* translators: %1$s quota size, %2$s amount in percent, %3$s link URL, %4$s link anchor text. */
+					/* translators: %1$s quota size, %2$s amount in percent, %3$s link URL, %4$s link anchor text. */
 					__(
 						'<span class="dashicons dashicons-cloudinary"></span> You are %2$s of the way through your monthly quota for %1$s on your Cloudinary account. If you exceed your quota, the Cloudinary plugin will be deactivated until your next billing cycle and your media assets will be served from your WordPress Media Library. You may wish to <a href="%3$s" target="_blank">%4$s</a> and increase your quota to ensure you maintain full functionality.',
 						'cloudinary'
@@ -707,5 +709,40 @@ class Connect implements Config, Setup, Notice {
 			delete_option( self::META_KEYS['cache'] ); // remove the cache.
 			$this->plugin->config['settings']['connect'] = $data; // Set the connection url for this round.
 		}
+	}
+
+	/**
+	 * Register Settings.
+	 *
+	 * @param \Cloudinary\Settings\Setting $setting The core setting object.
+	 */
+	public function register_settings( $setting ) {
+		$args = array(
+			'type'       => 'page',
+			'menu_title' => __( 'Getting Started', 'cloudinary' ),
+			'tabs'       => array(
+				'about'   => array(
+					'page_title' => __( 'About' ),
+					array(
+						'type' => 'panel',
+						array(
+							'type'  => 'text',
+							'title' => __( 'About', 'cloudinary' ),
+						),
+					),
+				),
+				'connect' => array(
+					'page_title' => __( 'Connect' ),
+					array(
+						'type' => 'panel',
+						array(
+							'type'  => 'text',
+							'title' => __( 'Connect', 'cloudinary' ),
+						),
+					),
+				),
+			),
+		);
+		$setting->add_setting( 'getting_started', $args );
 	}
 }

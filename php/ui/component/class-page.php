@@ -42,22 +42,6 @@ class Page extends Panel {
 	}
 
 	/**
-	 * Filter the header part structure.
-	 *
-	 * @param array $struct The array structure.
-	 *
-	 * @return array
-	 */
-	protected function header( $struct ) {
-		if ( $this->setting->has_param( 'page_header' ) ) {
-			$struct['element'] = null;
-			$struct['content'] = $this->setting->get_param( 'page_header' )->render_component();
-		}
-
-		return $struct;
-	}
-
-	/**
 	 * Creates the options page and action inputs.
 	 *
 	 * @return array
@@ -88,6 +72,10 @@ class Page extends Panel {
 		// Create the action input.
 		$inputs['action']['attributes'] = $action_atts;
 
+		// Set to active.
+		$inputs['action']['content']      = true;
+		$inputs['option_page']['content'] = true;
+
 		return $inputs;
 	}
 
@@ -107,6 +95,92 @@ class Page extends Panel {
 	}
 
 	/**
+	 * Filter the Tabs part structure.
+	 *
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
+	 */
+	protected function tabs( $struct ) {
+
+		if ( 1 < $this->setting->get_param( 'has_tabs', 1 ) ) {
+			$struct['element']             = 'ul';
+			$struct['attributes']['class'] = array(
+				'cld-page-tabs',
+			);
+			$struct['children']            = $this->get_tabs();
+		}
+
+		return $struct;
+	}
+
+	/**
+	 * Get the tab parts structure.
+	 *
+	 * @return array
+	 */
+	protected function get_tabs() {
+
+		$tabs = array();
+		foreach ( $this->setting->get_settings() as $setting ) {
+			// Create the tab wrapper.
+			$tab                        = $this->get_part( 'li' );
+			$tab['attributes']['class'] = array(
+				'cld-page-tabs-tab',
+			);
+
+			if ( $this->get_active_setting() === $setting ) {
+				$tab['attributes']['class'][] = 'is-active';
+			}
+
+			// Create the link.
+			$link                       = $this->get_part( 'a' );
+			$link['content']            = $setting->get_param( 'menu_title', $setting->get_param( 'page_title' ) );
+			$link['attributes']['href'] = $setting->get_component()->get_url();
+
+			// Add tab to list.
+			$tab['children'][ $setting->get_slug() ] = $link;
+			$tabs[ $setting->get_slug() ]            = $tab;
+		}
+
+		return $tabs;
+	}
+
+	/**
+	 * Get the URL for this page.
+	 *
+	 * @return string
+	 */
+	public function get_url() {
+
+		$args = array(
+			'page' => $this->setting->get_slug(),
+		);
+		if ( $this->setting->has_parent() && $this->setting->get_parent()->has_param( 'has_tabs' ) ) {
+			$args['tab']  = $args['page'];
+			$args['page'] = $this->setting->get_parent()->get_slug();
+		}
+
+		return add_query_arg( $args, admin_url( 'admin.php' ) );
+	}
+
+	/**
+	 * Filter the header part structure.
+	 *
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
+	 */
+	protected function header( $struct ) {
+		if ( $this->setting->has_param( 'page_header' ) ) {
+			$struct['element'] = null;
+			$struct['content'] = $this->setting->get_param( 'page_header' )->render_component();
+		}
+
+		return $struct;
+	}
+
+	/**
 	 * Filter the settings based on active tab.
 	 *
 	 * @param array $struct The array structure.
@@ -117,9 +191,12 @@ class Page extends Panel {
 
 		if ( $this->setting->has_param( 'has_tabs' ) ) {
 			$struct['content'] = $this->get_active_setting()->render_component();
+
+			return $struct;
 		}
 
 		return parent::settings( $struct );
 	}
+
 }
 

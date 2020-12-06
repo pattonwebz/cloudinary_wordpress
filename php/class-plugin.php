@@ -155,16 +155,18 @@ final class Plugin {
 	}
 
 	/**
-	 * Setup settings.
+	 * Get the core settings page structure for settings.
+	 *
+	 * @return array
 	 */
-	public function setup_settings() {
-		$slug           = $this->slug . '_temp'; // @todo use the real slug when ready to implement.
-		$params         = array(
+	private function get_settings_page_structure() {
+		$structure = array(
 			'version'     => $this->version,
-			'page_title'  => __( 'Testing Settings' ),
-			'menu_title'  => __( 'Testing Settings' ),
+			'page_title'  => __( 'Cloudinary' ),
+			'menu_title'  => __( 'Cloudinary' ),
 			'capability'  => 'manage_options',
-			'icon'        => $this->dir_url . '/css/image.svg',
+			'icon'        => 'dashicons-cloudinary',
+			'option_name' => $this->slug,
 			'page_header' => array(
 				'content' => '<img src="' . $this->dir_url . '/css/logo.svg" alt="' . esc_attr__( "Cloudinary's logo", 'cloudinary' ) . '" width="150px"><p style="margin-left: 1rem; font-size: 0.75rem;"><a href="#">Need help?</a></p>',
 			),
@@ -172,9 +174,9 @@ final class Plugin {
 				'content' => __( 'Thanks for using Cloudinary, please take a minute to rate our plugin.', 'cloudinary' ),
 			),
 			'pages'       => array(
-				$slug   => array(
-					'page_title' => __( 'Example Settings' ),
-					'menu_title' => __( 'Example', 'cloudinary' ),
+				$this->slug => array(
+					'page_title' => __( 'Dashboard' ),
+					'menu_title' => __( 'Cloudinary', 'cloudinary' ),
 					array(
 						'type' => 'panel',
 						array(
@@ -188,20 +190,18 @@ final class Plugin {
 						),
 					),
 				),
-				'media' => array(
-					'type'       => 'panel',
-					'menu_title' => __( 'Media', 'cloudinary' ),
-					array(
-						'type' => 'panel',
-						array(
-							'type'  => 'text',
-							'title' => __( 'Your Current Plan', 'cloudinary' ),
-						),
-					),
-				),
 			),
 		);
-		$this->settings = \Cloudinary\Settings::create_setting( $slug, $params );
+
+		return $structure;
+	}
+
+	/**
+	 * Setup settings.
+	 */
+	public function setup_settings() {
+		$params         = $this->get_settings_page_structure();
+		$this->settings = \Cloudinary\Settings::create_setting( $this->slug, $params );
 		$components     = array_filter( $this->components, array( $this, 'is_setting_component' ) );
 		foreach ( $components as $slug => $component ) {
 			/**
@@ -212,7 +212,7 @@ final class Plugin {
 			$component->register_settings( $this->settings );
 		}
 		// Init settings.
-		\Cloudinary\Settings::init_setting( $slug );
+		\Cloudinary\Settings::init_setting( $this->slug );
 	}
 
 	/**

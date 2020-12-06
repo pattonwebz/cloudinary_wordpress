@@ -21,10 +21,43 @@ class Text extends Component {
 	 *
 	 * @var string
 	 */
-	protected $blueprint = 'icon/|title/|tooltip/|prefix/|input/|suffix/|description/';
+	protected $blueprint = 'wrap|icon/|div|label|title/|tooltip/|prefix/|/label|/div|input/|suffix/|description/|/wrap';
 
 	/**
-	 * Filter the link parts structure.
+	 * Filter the wrap parts structure.
+	 *
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
+	 */
+	protected function wrap( $struct ) {
+
+		$struct['attributes']['class'] = array(
+			'cld-input',
+			'cld-input-' . $this->type,
+		);
+
+		return $struct;
+	}
+
+	/**
+	 * Filter the label parts structure.
+	 *
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
+	 */
+	protected function label( $struct ) {
+
+		$struct['attributes']['class'][] = 'cld-input-label';
+		$struct['attributes']['for']     = $this->setting->get_slug();
+
+
+		return $struct;
+	}
+
+	/**
+	 * Filter the input parts structure.
 	 *
 	 * @param array $struct The array structure.
 	 *
@@ -37,10 +70,26 @@ class Text extends Component {
 		$struct['attributes']['name']    = $this->get_name();
 		$struct['attributes']['id']      = $this->setting->get_slug();
 		$struct['attributes']['value']   = $this->setting->get_value();
-		$struct['attributes']['class'][] = 'regular-text';
+		$struct['attributes']['class'][] = 'regular-' . $this->type;
+		$struct['render']                = true;
 		if ( $this->setting->has_param( 'required' ) ) {
 			$struct['attributes']['required'] = 'required';
 		}
+
+		return $struct;
+	}
+
+	/**
+	 * Filter the description parts structure.
+	 *
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
+	 */
+	protected function description( $struct ) {
+
+		$struct['element']               = 'p';
+		$struct['attributes']['class'][] = 'description';
 
 		return $struct;
 	}

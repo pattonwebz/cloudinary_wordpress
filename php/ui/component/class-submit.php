@@ -21,7 +21,7 @@ class Submit extends Component {
 	 *
 	 * @var string
 	 */
-	protected $blueprint = 'submit_button';
+	protected $blueprint = 'wrap|submit_button/|/wrap';
 
 	/**
 	 * Filter the link parts structure.
@@ -33,8 +33,8 @@ class Submit extends Component {
 	protected function submit_button( $struct ) {
 
 		$struct['element']             = 'button';
+		$struct['content']             = $this->setting->get_param( 'label', __( 'Save Changes', 'cloudinary' ) );
 		$struct['attributes']['type']  = $this->type;
-		$struct['attributes']['value'] = $this->setting->get_param( 'label', __( 'Submit', 'cloudinary' ) );
 		$struct['attributes']['class'] = array(
 			'button',
 			'button-primary',
