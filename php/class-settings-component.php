@@ -1,6 +1,6 @@
 <?php
 /**
- * Cloudinary SEttings Component Abstract.
+ * Cloudinary Settings Component Abstract.
  *
  * @package Cloudinary
  */
@@ -8,7 +8,6 @@
 namespace Cloudinary;
 
 use \Cloudinary\Component\Settings;
-use Cloudinary\Component\Settings_Trait;
 use \Cloudinary\Settings\Setting;
 
 /**
@@ -29,6 +28,22 @@ abstract class Settings_Component implements Settings {
 	 * @var string
 	 */
 	protected $settings_slug;
+
+	/**
+	 * Holds the core plugin.
+	 *
+	 * @var Plugin
+	 */
+	protected $plugin;
+
+	/**
+	 * Component constructor.
+	 *
+	 * @param Plugin $plugin Global instance of the main plugin.
+	 */
+	public function __construct( Plugin $plugin ) {
+		$this->plugin = $plugin;
+	}
 
 	/**
 	 * Init the settings object.

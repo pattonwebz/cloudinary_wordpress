@@ -35,7 +35,7 @@ class On_Off extends Text {
 		$struct['attributes']['name']  = $this->get_name();
 		$struct['attributes']['id']    = $this->setting->get_slug();
 		$struct['attributes']['value'] = true;
-		if ( $this->setting->has_value() ) {
+		if ( $this->setting->get_value() ) {
 			$struct['attributes']['checked'] = 'checked';
 		}
 		unset( $struct['attributes']['class'] );

@@ -42,7 +42,7 @@ abstract class Component {
 	 *
 	 * @var string
 	 */
-	protected $blueprint = 'wrap|header|icon/|title/|collapse/|/header|body|/body|settings/|/wrap';
+	protected $blueprint = 'wrap|header|icon/|title/|collapse/|/header|body|clear/|/body|settings/|/wrap';
 
 	/**
 	 * Holds a list of the Components used parts.
@@ -151,11 +151,23 @@ abstract class Component {
 					'class' => array(),
 				),
 			),
+			'clear'       => array(
+				'element'    => 'div',
+				'attributes' => array(
+					'class' => array(
+						'clear',
+					),
+				),
+			),
 			'input'       => array(
 				'element'    => 'input',
 				'render'     => 'true',
-				'attributes' => array(
-					'class' => array(),
+				'attributes' => $this->setting->get_param(
+					'attributes',
+					array(
+						'type'  => $this->type,
+						'class' => array(),
+					)
 				),
 			),
 			'settings'    => array(
@@ -494,7 +506,7 @@ abstract class Component {
 	public function get_part( $part ) {
 		$struct = array(
 			'element'    => $part,
-			'attributes' => array(),
+			'attributes' => $this->setting->get_param( 'attributes', array() ),
 			'children'   => array(),
 			'state'      => null,
 			'content'    => null,
@@ -694,6 +706,19 @@ abstract class Component {
 
 		// Check that this type of component exists.
 		return is_callable( array( $caller . '\\' . $type, 'init' ) );
+	}
+
+	/**
+	 * Filter the body struct.
+	 *
+	 * @param array $struct The struct array.
+	 *
+	 * @return array
+	 */
+	protected function body( $struct ) {
+		$struct['content'] = $this->setting->get_param( 'content' );
+
+		return $struct;
 	}
 
 	/**

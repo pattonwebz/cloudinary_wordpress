@@ -709,6 +709,10 @@ class Setting {
 	 * @return mixed
 	 */
 	public function get_value() {
+		if ( is_null( $this->value ) ) {
+			$this->value = $this->get_param( 'default' );
+		}
+
 		return $this->value;
 	}
 

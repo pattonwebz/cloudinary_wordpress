@@ -14,4 +14,13 @@ namespace Cloudinary\UI\Component;
  */
 class Checkbox extends Radio {
 
+	/**
+	 * Get the field name.
+	 *
+	 * @return string
+	 */
+	protected function get_name() {
+		return parent::get_name() . '[]';
+	}
+
 }

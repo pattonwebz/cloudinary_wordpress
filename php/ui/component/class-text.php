@@ -73,7 +73,6 @@ class Text extends Component {
 	protected function input( $struct ) {
 
 		$struct['element']               = 'input';
-		$struct['attributes']['type']    = $this->type;
 		$struct['attributes']['name']    = $this->get_name();
 		$struct['attributes']['id']      = $this->setting->get_slug();
 		$struct['attributes']['value']   = $this->setting->get_value();

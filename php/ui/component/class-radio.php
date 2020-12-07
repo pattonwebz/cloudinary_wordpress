@@ -51,7 +51,7 @@ class Radio extends Text {
 				// Set to value if a non keyed array.
 				$key = $value;
 			}
-			if ( $key === $this->setting->get_value() ) {
+			if ( $this->is_checked( $key ) ) {
 				$option['attributes']['checked'] = 'checked';
 			}
 			$option['attributes']['value']        = $key;
@@ -62,5 +62,17 @@ class Radio extends Text {
 		}
 
 		return $return;
+	}
+
+	/**
+	 * Check if the option is in the value.
+	 *
+	 * @param string $key The hey to check if it's checked.
+	 *
+	 * @return bool
+	 */
+	protected function is_checked( $key ) {
+
+		return in_array( $key, (array) $this->setting->get_value(), true );
 	}
 }

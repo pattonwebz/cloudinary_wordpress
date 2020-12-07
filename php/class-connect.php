@@ -25,7 +25,7 @@ class Connect extends Settings_Component implements Config, Setup, Notice {
 	 *
 	 * @var     Plugin Instance of the global plugin.
 	 */
-	private $plugin;
+	protected $plugin;
 
 	/**
 	 * Holds the cloudinary API instance

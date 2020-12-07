@@ -20,7 +20,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	 * @since   0.1
 	 * @var     Plugin Instance of the global plugin.
 	 */
-	private $plugin;
+	protected $plugin;
 
 	/**
 	 * Settings page UI definition.
