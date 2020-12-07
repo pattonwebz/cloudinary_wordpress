@@ -16,7 +16,7 @@ use Cloudinary\Component\Setup;
  *
  * Sets up the initial cloudinary connection and makes the API object available for some uses.
  */
-class Connect implements Config, Setup, Notice {
+class Connect extends Settings_Component implements Config, Setup, Notice {
 
 	/**
 	 * Holds the plugin instance.
@@ -25,7 +25,7 @@ class Connect implements Config, Setup, Notice {
 	 *
 	 * @var     Plugin Instance of the global plugin.
 	 */
-	private $plugin;
+	protected $plugin;
 
 	/**
 	 * Holds the cloudinary API instance
@@ -75,6 +75,7 @@ class Connect implements Config, Setup, Notice {
 	 */
 	public $disabled = false;
 
+
 	/**
 	 * Holds the meta keys for connect meta to maintain consistency.
 	 */
@@ -100,7 +101,8 @@ class Connect implements Config, Setup, Notice {
 	 * @param \Cloudinary\Plugin $plugin Instance of the plugin.
 	 */
 	public function __construct( Plugin $plugin ) {
-		$this->plugin = $plugin;
+		$this->plugin        = $plugin;
+		$this->settings_slug = 'dashboard';
 		add_filter( 'pre_update_option_cloudinary_connect', array( $this, 'verify_connection' ) );
 		add_filter( 'cron_schedules', array( $this, 'get_status_schedule' ) ); // phpcs:ignore WordPress.WP.CronInterval
 		add_action( 'cloudinary_status', array( $this, 'check_status' ) );
@@ -166,7 +168,7 @@ class Connect implements Config, Setup, Notice {
 		}
 
 		$data['cloudinary_url'] = str_replace( 'CLOUDINARY_URL=', '', $data['cloudinary_url'] );
-		$current                = $this->plugin->config['settings']['connect'];
+		$current                = $this->plugin->settings->find_setting( 'connect' )->get_value();
 
 		// Same URL, return original data.
 		if ( $current['cloudinary_url'] === $data['cloudinary_url'] ) {
@@ -287,7 +289,7 @@ class Connect implements Config, Setup, Notice {
 		if ( 4 > count( $valid ) ) {
 			$result['type']    = 'invalid_url';
 			$result['message'] = sprintf(
-				// translators: Placeholder refers to the expected URL format.
+			// translators: Placeholder refers to the expected URL format.
 				__( 'Incorrect Format. Expecting: %s', 'cloudinary' ),
 				'<code>cloudinary://API_KEY:API_SECRET@CLOUD_NAME</code>'
 			);
@@ -613,9 +615,10 @@ class Connect implements Config, Setup, Notice {
 				} else {
 					continue;
 				}
+
 				// translators: Placeholders are URLS and percentage values.
 				$message = sprintf(
-				/* translators: %1$s quota size, %2$s amount in percent, %3$s link URL, %4$s link anchor text. */
+					/* translators: %1$s quota size, %2$s amount in percent, %3$s link URL, %4$s link anchor text. */
 					__(
 						'<span class="dashicons dashicons-cloudinary"></span> You are %2$s of the way through your monthly quota for %1$s on your Cloudinary account. If you exceed your quota, the Cloudinary plugin will be deactivated until your next billing cycle and your media assets will be served from your WordPress Media Library. You may wish to <a href="%3$s" target="_blank">%4$s</a> and increase your quota to ensure you maintain full functionality.',
 						'cloudinary'
@@ -641,9 +644,12 @@ class Connect implements Config, Setup, Notice {
 	public function get_notices() {
 		$this->usage_notices();
 		$screen = get_current_screen();
-		if ( empty( $this->plugin->config['connect'] ) ) {
-			if ( is_object( $screen ) && in_array( $screen->id, $this->plugin->components['settings']->handles, true ) ) {
-				$link            = '<a href="' . esc_url( admin_url( 'admin.php?page=cld_connect' ) ) . '">' . __( 'Connect', 'cloudinary' ) . '</a> ';
+		$slg    = $this->settings->find_setting( 'cloudinary_url' )->get_value();
+		if ( empty( $slg ) ) {
+			$page_base = $this->settings->get_root_setting()->get_slug();
+			if ( is_object( $screen ) && $page_base === $screen->parent_base ) {
+				$url             = $this->settings->find_setting( 'connect' )->get_component()->get_url();
+				$link            = '<a href="' . $url . '">' . __( 'Connect', 'cloudinary' ) . '</a> ';
 				$this->notices[] = array(
 					'message'     => $link . __( 'your Cloudinary account with WordPress to get started.', 'cloudinary' ),
 					'type'        => 'error',
@@ -707,5 +713,44 @@ class Connect implements Config, Setup, Notice {
 			delete_option( self::META_KEYS['cache'] ); // remove the cache.
 			$this->plugin->config['settings']['connect'] = $data; // Set the connection url for this round.
 		}
+	}
+
+	/**
+	 * Define the Settings.
+	 *
+	 * @return array
+	 */
+	public function settings() {
+
+		$args = array(
+			'menu_title' => __( 'Getting Started', 'cloudinary' ),
+			'page_title' => __( 'Getting Started', 'cloudinary' ),
+			'type'       => 'page',
+			'tabs'       => array(
+				'about'   => array(
+					'page_title' => __( 'About' ),
+					array(
+						'type' => 'panel',
+						array(
+							'type'  => 'text',
+							'title' => __( 'About', 'cloudinary' ),
+						),
+					),
+				),
+				'connect' => array(
+					'page_title' => __( 'Connect' ),
+					array(
+						'type' => 'panel',
+						array(
+							'type'  => 'text',
+							'slug'  => 'cloudinary_url',
+							'title' => __( 'Connect', 'cloudinary' ),
+						),
+					),
+				),
+			),
+		);
+
+		return $args;
 	}
 }

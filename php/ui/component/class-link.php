@@ -1,6 +1,6 @@
 <?php
 /**
- * Submit UI Component.
+ * Link UI Component.
  *
  * @package Cloudinary
  */
@@ -14,14 +14,14 @@ use Cloudinary\UI\Component;
  *
  * @package Cloudinary\UI
  */
-class Submit extends Component {
+class Link extends Component {
 
 	/**
 	 * Holds the components build blueprint.
 	 *
 	 * @var string
 	 */
-	protected $blueprint = 'wrap|submit_button/|/wrap';
+	protected $blueprint = 'link_tag';
 
 	/**
 	 * Filter the link parts structure.
@@ -30,12 +30,13 @@ class Submit extends Component {
 	 *
 	 * @return array
 	 */
-	protected function submit_button( $struct ) {
+	protected function link_tag( $struct ) {
 
-		$struct['element']             = 'button';
-		$struct['content']             = $this->setting->get_param( 'label', __( 'Save Changes', 'cloudinary' ) );
-		$struct['attributes']['type']  = $this->type;
-		$struct['attributes']['class'] = array(
+		$struct['element']              = 'a';
+		$struct['content']              = $this->setting->get_param( 'content' );
+		$struct['attributes']['href']   = $this->setting->get_param( 'url' );
+		$struct['attributes']['target'] = '_blank';
+		$struct['attributes']['class']  = array(
 			'button',
 			'button-primary',
 		);

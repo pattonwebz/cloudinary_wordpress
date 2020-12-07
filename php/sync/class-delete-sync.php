@@ -23,7 +23,7 @@ class Delete_Sync {
 	 *
 	 * @var     \Cloudinary\Plugin Instance of the global plugin.
 	 */
-	private $plugin;
+	protected $plugin;
 
 	/**
 	 * Delete_Sync constructor.

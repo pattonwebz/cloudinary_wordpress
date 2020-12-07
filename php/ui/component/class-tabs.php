@@ -1,6 +1,6 @@
 <?php
 /**
- * Number Field UI Component.
+ * Tabs UI Component.
  *
  * @package Cloudinary
  */
@@ -8,10 +8,13 @@
 namespace Cloudinary\UI\Component;
 
 /**
- * Class Number Component
+ * Tab Component.
  *
  * @package Cloudinary\UI
  */
-class Number extends Text {
+class Tabs extends Page {
+
+
+
 
 }
