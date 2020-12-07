@@ -29,11 +29,11 @@ class Settings {
 	protected $settings;
 
 	/**
-	 * List of Pages.
+	 * List of Page handles.
 	 *
-	 * @var Setting[]
+	 * @var array
 	 */
-	protected $pages = array();
+	public $handles = array();
 
 	/**
 	 * Holds the current Page.
@@ -53,33 +53,43 @@ class Settings {
 	 * Initiate the settings object.
 	 */
 	protected function __construct() {
-		$this->settings = new Setting( '_settings' );
-		add_action( 'admin_menu', array( $this, 'register_admin' ) );
+		add_action( 'admin_menu', array( $this, 'build_menus' ) );
 	}
 
 	/**
 	 * Register the page.
 	 */
-	public function register_admin() {
-		$render_function = array( $this, 'render' );
-		foreach ( $this->settings->get_settings() as $setting ) {
-			// Setup the main page.
-			$page_handle                 = add_menu_page( $setting->get_param( 'page_title' ), $setting->get_param( 'menu_title' ), $setting->get_param( 'capability' ), $setting->get_slug(), $render_function, $setting->get_param( 'icon' ) );
-			$this->pages[ $page_handle ] = $setting;
-			$setting->set_param( 'page_handle', $page_handle );
-			// Setup the Child pages.
-			foreach ( $setting->get_settings() as $sub_setting ) {
-				if ( 'page' !== $sub_setting->get_param( 'type' ) ) {
-					continue;
-				}
-				$sub_setting->set_param( 'page_header', $setting->get_param( 'page_header' ) );
-				$sub_setting->set_param( 'page_footer', $setting->get_param( 'page_footer' ) );
-				$capability                  = $sub_setting->get_param( 'capability', $setting->get_param( 'capability' ) );
-				$page_handle                 = add_submenu_page( $setting->get_slug(), $sub_setting->get_param( 'page_title', $setting->get_param( 'page_title' ) ), $sub_setting->get_param( 'menu_title', $setting->get_param( 'menu_title' ) ), $capability, $sub_setting->get_slug(), $render_function, $sub_setting->get_param( 'position' ) );
-				$this->pages[ $page_handle ] = $sub_setting;
-				$sub_setting->set_param( 'page_handle', $page_handle );
-			}
+	public function build_menus() {
+		foreach ( $this->settings as $setting ) {
+			$this->register_admin( $setting );
 		}
+	}
+
+	/**
+	 * Register the page.
+	 *
+	 * @param Setting $setting The settings to create pages.
+	 */
+	public function register_admin( $setting ) {
+		$render_function = array( $this, 'render' );
+
+		// Setup the main page.
+		$page_handle                   = add_menu_page( $setting->get_param( 'page_title' ), $setting->get_param( 'menu_title' ), $setting->get_param( 'capability' ), $setting->get_slug(), $render_function, $setting->get_param( 'icon' ) );
+		$this->handles[ $page_handle ] = $setting;
+		$setting->set_param( 'page_handle', $page_handle );
+		// Setup the Child page handles.
+		foreach ( $setting->get_settings() as $sub_setting ) {
+			if ( 'page' !== $sub_setting->get_param( 'type' ) ) {
+				continue;
+			}
+			$sub_setting->set_param( 'page_header', $setting->get_param( 'page_header' ) );
+			$sub_setting->set_param( 'page_footer', $setting->get_param( 'page_footer' ) );
+			$capability                    = $sub_setting->get_param( 'capability', $setting->get_param( 'capability' ) );
+			$page_handle                   = add_submenu_page( $setting->get_slug(), $sub_setting->get_param( 'page_title', $setting->get_param( 'page_title' ) ), $sub_setting->get_param( 'menu_title', $sub_setting->get_param( 'page_title' ) ), $capability, $sub_setting->get_slug(), $render_function, $sub_setting->get_param( 'position' ) );
+			$this->handles[ $page_handle ] = $sub_setting;
+			$sub_setting->set_param( 'page_handle', $page_handle );
+		}
+
 	}
 
 	/**
@@ -88,7 +98,7 @@ class Settings {
 	public function render() {
 		$setting = $this->get_active_page();
 		if ( $setting->has_param( 'page_footer' ) ) {
-			add_action( 'in_admin_footer', array( $this, 'bind_footer') );
+			add_action( 'in_admin_footer', array( $this, 'bind_footer' ) );
 		}
 		echo $setting->get_component()->render(); // phpcs:ignore
 	}
@@ -101,21 +111,27 @@ class Settings {
 	public function get_active_page() {
 		$screen = get_current_screen();
 		$page   = $this->settings;
-		if ( $screen instanceof WP_Screen && isset( $this->pages[ $screen->id ] ) ) {
-			$page = $this->pages[ $screen->id ];
+		if ( $screen instanceof WP_Screen && isset( $this->handles[ $screen->id ] ) ) {
+			$page = $this->handles[ $screen->id ];
 		}
 
 		return $page;
 	}
 
+	/**
+	 * Bind the footer to the admin page.
+	 */
 	public function bind_footer() {
 		ob_start();
 		add_action( 'admin_footer', array( $this, 'render_footer' ) );
 	}
 
+	/**
+	 * Render the footer in admin page.
+	 */
 	public function render_footer() {
 		ob_get_clean();
-		echo $this->get_active_page()->get_param( 'page_footer' )->get_component()->render();
+		echo $this->get_active_page()->get_param( 'page_footer' )->get_component()->render(); // phpcs:ignore
 	}
 
 	/**
@@ -127,8 +143,12 @@ class Settings {
 	 * @return Setting
 	 */
 	protected function register_setting( $slug, $params = array() ) {
-		$setting = $this->settings->add_setting( $slug, $params );
-		$setting->set_param( 'type', 'page' );
+
+		// Create new setting instance.
+		$setting = new Setting( $slug, $params );
+
+		// Register internals.
+		$this->settings[ $slug ] = $setting;
 
 		return $setting;
 	}
@@ -145,7 +165,8 @@ class Settings {
 		if ( is_null( self::$instance ) ) {
 			self::$instance = new self();
 		}
-		$params['option_name'] = ''; // Root option.
+		$params['option_name'] = $slug; // Root option.
+		$params['type']        = 'page';
 
 		return self::$instance->register_setting( $slug, $params );
 	}
@@ -156,10 +177,9 @@ class Settings {
 	 * @param string $slug The setting slug to initialise.
 	 */
 	public static function init_setting( $slug ) {
-		if ( ! is_null( self::$instance ) && self::$instance->settings->has_setting( $slug ) ) {
-			$self     = self::$instance;
-			$settings = $self->settings->get_setting( $slug );
-			$settings->set_param( 'option_name', $settings->get_slug() );
+		if ( ! is_null( self::$instance ) && ! empty( self::$instance->settings[ $slug ] ) ) {
+			$settings = self::$instance->settings[ $slug ];
+			$settings->register_settings();
 			$settings->setup_component();
 			$settings->load_value();
 		}

@@ -7,6 +7,7 @@
 
 namespace Cloudinary\Settings;
 
+use Cloudinary\Settings;
 use Cloudinary\UI\Component;
 
 /**
@@ -24,9 +25,16 @@ class Setting {
 	protected $params = array();
 
 	/**
-	 * Parent of the setting.
+	 * Root settings.
 	 *
 	 * @var Setting|null
+	 */
+	protected $root_setting;
+
+	/**
+	 * Parent of the setting.
+	 *
+	 * @var Setting|Settings|null
 	 */
 	protected $parent;
 
@@ -74,9 +82,16 @@ class Setting {
 	 */
 	public function __construct( $slug, $params = array(), $parent = null ) {
 		$this->slug           = $slug;
-		$this->parent         = $parent;
 		$this->setting_params = $this->get_settings_params();
-		$this->setup_setting( $params );
+		$root                 = $this;
+		if ( ! is_null( $parent ) ) {
+			$root = $parent->get_root_setting();
+			$this->set_parent( $parent );
+		}
+		$this->root_setting = $root;
+		if ( ! empty( $params ) ) {
+			$this->setup_setting( $params );
+		}
 	}
 
 	/**
@@ -122,6 +137,18 @@ class Setting {
 	 */
 	public function set_param( $param, $value ) {
 		$this->params[ $param ] = $value;
+		if ( is_null( $value ) ) {
+			$this->remove_param( $param );
+		}
+	}
+
+	/**
+	 * Remove a parameter.
+	 *
+	 * @param string $param Param key to set.
+	 */
+	public function remove_param( $param ) {
+		unset( $this->params[ $param ] );
 	}
 
 	/**
@@ -229,32 +256,29 @@ class Setting {
 	 */
 	public function get_setting( $slug ) {
 		$setting = null;
-		if ( $this->has_setting( $slug ) ) {
-			return $this->settings[ $slug ];
+		if ( $this->has_settings() ) {
+			if ( $this->has_setting( $slug ) ) {
+				return $this->settings[ $slug ];
+			}
+			$setting = $this->find_setting_recursively( $slug );
 		}
 
-		$setting = $this->add_setting( $slug );
-
-		return $setting;
+		return ! is_null( $setting ) ? $setting : $this->create_setting( $slug, null, $this ); // return a dynamic setting.
 	}
 
 	/**
-	 * Find a setting.
+	 * Find a setting from the root.
 	 *
 	 * @param string $slug The setting slug to get.
 	 *
 	 * @return Setting
 	 */
 	public function find_setting( $slug ) {
-		$setting = null;
-		if ( $this->has_settings() ) {
-			if ( $this->has_setting( $slug ) ) {
-				return $this->get_setting( $slug );
-			}
-			$setting = $this->find_setting_recursively( $slug );
+		if ( ! $this->is_root_setting() ) {
+			return $this->get_root_setting()->find_setting( $slug );
 		}
 
-		return ! is_null( $setting ) ? $setting : $this->get_setting( $slug ); // return a dynamic setting.
+		return $this->get_setting( $slug );
 	}
 
 	/**
@@ -289,6 +313,7 @@ class Setting {
 	 * @param array $params The setting params.
 	 */
 	public function setup_setting( array $params ) {
+
 		$dynamic_params = array_filter( $params, array( $this, 'is_setting_param' ), ARRAY_FILTER_USE_KEY );
 		foreach ( $params as $param => $value ) {
 
@@ -308,7 +333,8 @@ class Setting {
 	 */
 	protected function register_setting() {
 		$option_group = $this->get_option_name();
-		if ( ! is_null( $option_group ) && $this->get_parent() && ! $this->has_settings() && ! $this->get_parent()->has_param( 'setting_registered' ) ) {
+		$root_group   = $this->get_root_setting()->get_option_name();
+		if ( $option_group !== $root_group ) { // Dont save the core setting.
 			$args = array(
 				'type'              => 'array',
 				'description'       => $this->get_param( 'description' ),
@@ -318,7 +344,7 @@ class Setting {
 			register_setting( $option_group, $option_group, $args );
 			add_filter( 'pre_update_site_option_' . $option_group, array( $this, 'set_notices' ), 10, 3 );
 			add_filter( 'pre_update_option_' . $option_group, array( $this, 'set_notices' ), 10, 3 );
-			$this->get_parent()->set_param( 'setting_registered', true );
+			$this->set_param( 'setting_registered', true );
 		}
 	}
 
@@ -377,7 +403,7 @@ class Setting {
 			// Dynamic array based without a key slug.
 			if ( is_int( $param ) && is_array( $value ) ) {
 				$slug = isset( $value['slug'] ) ? $value['slug'] : $this->slug . '_' . $param;
-				$this->add_setting( $slug, $value );
+				$this->create_setting( $slug, $value, $this );
 				continue;
 			}
 
@@ -418,11 +444,11 @@ class Setting {
 	 */
 	public function add_tab_pages( $tab_pages ) {
 
-		$this->set_param( 'has_tabs', count( $tab_pages ) );
+		$this->set_param( 'has_tabs', true );
 		foreach ( $tab_pages as $tab_page => $params ) {
 			$params['type']        = 'page';
 			$params['option_name'] = $this->build_option_name( $tab_page );
-			$this->add_setting( $tab_page, $params );
+			$this->create_setting( $tab_page, $params, $this );
 		}
 
 	}
@@ -468,7 +494,7 @@ class Setting {
 		foreach ( $pages as $slug => $params ) {
 			$params['option_name'] = $this->build_option_name( $slug );
 			$params['type']        = 'page';
-			$this->add_setting( $slug, $params );
+			$this->create_setting( $slug, $params, $this );
 		}
 	}
 
@@ -499,8 +525,21 @@ class Setting {
 				$setting->setup_component();
 			}
 		}
-		// Register WordPress Settings.
-		$this->register_setting();
+	}
+
+	/**
+	 *  Register Settings with WordPress.
+	 */
+	public function register_settings() {
+		// Register WordPress Settings only if has a capture component.
+		if ( $this->is_capture() ) {
+			if ( $this->has_param( 'option_name' ) ) {
+				$this->register_setting();
+			}
+			foreach ( $this->get_settings() as $setting ) {
+				$setting->register_settings();
+			}
+		}
 	}
 
 	/**
@@ -515,7 +554,7 @@ class Setting {
 				$params['option_name'] = $this->build_option_name( $setting );
 				$params['type']        = $type;
 			}
-			$this->add_setting( $setting, $params );
+			$this->create_setting( $setting, $params, $this );
 		}
 	}
 
@@ -621,22 +660,37 @@ class Setting {
 	}
 
 	/**
+	 * Get all option names in settings.
+	 *
+	 * @return array
+	 */
+	protected function get_option_names() {
+		static $names = array();
+
+		if ( $this->has_param( 'option_name' ) && $this->has_param( 'setting_registered' ) ) {
+			$names[ $this->get_slug() ] = $this->get_param( 'option_name' );
+		}
+		if ( $this->has_settings() ) {
+			foreach ( $this->get_settings() as $setting ) {
+				$setting->get_option_names();
+			}
+		}
+
+		return $names;
+	}
+
+	/**
 	 * Load settings value.
 	 */
 	public function load_value() {
-		// Keep track of loaded options as to prevent looping.
-		if ( $this->has_param( 'loaded' ) ) {
-			return;
-		}
-		foreach ( $this->get_settings() as $setting ) {
-			$setting->load_value();
-		}
-		if ( $this->has_param( 'option_name' ) ) {
-			$option_value = get_option( $this->get_param( 'option_name' ), $this->get_param( 'default' ) );
-			if ( ! is_null( $option_value ) ) {
-				// Push value to child settings.
-				$this->set_value( $option_value );
-			}
+
+		$names       = $this->get_option_names();
+		$this->value = array();
+		foreach ( $names as $slug => $name ) {
+			$data    = get_option( $name );
+			$setting = $this->find_setting( $slug );
+			$setting->set_value( $data );
+			$this->value[ $slug ] = $data;
 		}
 	}
 
@@ -652,54 +706,69 @@ class Setting {
 	/**
 	 * Get the value for a setting.
 	 *
-	 * @param bool $rebuild Flag to rebuild sub settings.
-	 *
 	 * @return mixed
 	 */
-	public function get_value( $rebuild = false ) {
-
-		if ( true === $rebuild || is_null( $this->value ) && $this->has_settings() ) {
-			$this->value = $this->get_setting_values( $rebuild );
-		}
-
+	public function get_value() {
 		return $this->value;
 	}
 
 	/**
-	 * Get the value of a setting.
+	 * Create a setting.
 	 *
-	 * @param bool $rebuild Flag to rebuild sub settings.
-	 *
-	 * @return mixed
-	 */
-	public function get_setting_values( $rebuild = false ) {
-		$values = $this->value;
-		if ( $this->has_settings() ) {
-
-			foreach ( $this->get_settings() as $setting ) {
-				$setting_value                  = $setting->get_value( $rebuild );
-				$values[ $setting->get_slug() ] = $setting_value;
-			}
-		}
-
-		return $values;
-	}
-
-	/**
-	 * Add a setting setting.
-	 *
-	 * @param string $slug   The setting slag to add.
-	 * @param array  $params Settings params.
+	 * @param string  $slug   The setting slag to add.
+	 * @param array   $params Settings params.
+	 * @param Setting $parent The optional parent to add new setting to.
 	 *
 	 * @return Setting
 	 */
-	public function add_setting( $slug, $params = array() ) {
+	public function create_setting( $slug, $params = array(), $parent = null ) {
 
-		$new_setting = new Setting( $slug, $params, $this );
+		$new_setting = new Setting( $slug, $params, $this->root_setting );
 		$new_setting->set_value( null ); // Set value to null.
-		$this->settings[ $slug ] = $new_setting;
+		if ( $parent ) {
+			$parent->add_setting( $new_setting );
+		}
 
 		return $new_setting;
+	}
+
+	/**
+	 * Add a setting to setting, if it already exists, move setting.
+	 *
+	 * @param Setting $setting The setting to add.
+	 *
+	 * @return Setting
+	 */
+	public function add_setting( $setting ) {
+		$setting->set_parent( $this );
+		$this->settings[ $setting->get_slug() ] = $setting;
+
+		return $setting;
+	}
+
+	/**
+	 * Set a settings parent.
+	 *
+	 * @param Setting $parent The parent to set as.
+	 */
+	public function set_parent( $parent ) {
+
+		// Remove old parent.
+		if ( ! $this->is_root_setting() && $this->has_parent() && $this->get_parent() !== $parent ) {
+			$this->get_parent()->remove_setting( $this->get_slug() );
+		}
+		$this->parent = $parent;
+	}
+
+	/**
+	 * Remove a setting.
+	 *
+	 * @param string $slug The setting slug to remove.
+	 */
+	public function remove_setting( $slug ) {
+		if ( $this->has_setting( $slug ) ) {
+			unset( $this->settings[ $slug ] );
+		}
 	}
 
 	/**
@@ -708,11 +777,51 @@ class Setting {
 	 * @return Setting
 	 */
 	public function get_root_setting() {
+		if ( ! is_null( $this->root_setting ) ) {
+			return $this->root_setting;
+		}
 		$parent = $this;
-		if ( $this->has_parent() && $this->get_parent()->has_parent() ) {
+		if ( $this->has_parent() && ! $this->get_parent() instanceof Settings ) {
 			$parent = $this->get_parent()->get_root_setting();
 		}
 
 		return $parent;
+	}
+
+	/**
+	 * Set the root setting.
+	 *
+	 * @param Setting $setting The root setting to set.
+	 */
+	public function set_root_setting( $setting ) {
+		$this->root_setting = $setting;
+	}
+
+	/**
+	 * Check if this is the root setting.
+	 *
+	 * @return bool
+	 */
+	public function is_root_setting() {
+		return $this === $this->get_root_setting();
+	}
+
+	/**
+	 * Check if the setting has a capture component recursively.
+	 *
+	 * @return bool
+	 */
+	public function is_capture() {
+		$capture = $this->get_component()->capture;
+		if ( false === $capture && $this->has_settings() ) {
+			foreach ( $this->get_settings() as $setting ) {
+				if ( $setting->is_capture() ) {
+					$capture = true;
+					break;
+				}
+			}
+		}
+
+		return $capture;
 	}
 }

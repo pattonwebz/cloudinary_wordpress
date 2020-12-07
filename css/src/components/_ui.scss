@@ -159,6 +159,19 @@
 
 			}
 		}
+
+
+		&-radio, &-checkbox {
+			&-label {
+				display       : block;
+				margin-bottom : 0.4rem;
+
+				&.list-inline {
+					display      : inline-block;
+					margin-right : 0.4rem;
+				}
+			}
+		}
 	}
 
 

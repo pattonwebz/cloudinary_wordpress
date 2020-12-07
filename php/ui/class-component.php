@@ -58,6 +58,13 @@ abstract class Component {
 	protected $html = array();
 
 	/**
+	 * Flag if component is a capture type.
+	 *
+	 * @var bool
+	 */
+	public $capture = false;
+
+	/**
 	 * Render component for a setting.
 	 * Component constructor.
 	 *
@@ -82,6 +89,9 @@ abstract class Component {
 	 * @return mixed
 	 */
 	public function __call( $name, $args ) {
+		if ( empty( $args ) ) {
+			return null;
+		}
 		$struct = $args[0];
 		if ( $this->setting->has_param( $name ) ) {
 			$struct['content'] = $this->setting->get_param( $name );
@@ -137,6 +147,13 @@ abstract class Component {
 			),
 			'body'        => array(
 				'element'    => 'div',
+				'attributes' => array(
+					'class' => array(),
+				),
+			),
+			'input'       => array(
+				'element'    => 'input',
+				'render'     => 'true',
 				'attributes' => array(
 					'class' => array(),
 				),
@@ -251,13 +268,50 @@ abstract class Component {
 			$part_struct['state'] = $state;
 			$part_struct['name']  = $name;
 			$struct[ $name ]      = $this->{$name}( $part_struct );
-			if ( 'open' === $state ) {
-				$struct[ $name ]['children'] += $this->build_struct( $parts );
-			}
+			// Prepare struct array.
+			$this->prepare_struct_array( $struct, $parts, $name );
 		}
 
 		return $struct;
+	}
 
+	/**
+	 * Prepared struct for children and multiple element building.
+	 *
+	 * @param array  $struct The structure array.
+	 * @param array  $parts  The parts of the component.
+	 * @param string $name   The component part name.
+	 */
+	protected function prepare_struct_array( &$struct, &$parts, $name ) {
+		if ( ! isset( $struct[ $name ] ) ) {
+			return; // Bail if struct is missing.
+		}
+		if ( $this->is_struct_array( $struct[ $name ] ) ) {
+			$base_struct = $struct[ $name ];
+			unset( $struct[ $name ] );
+			foreach ( $base_struct as $index => $struct_instance ) {
+				$struct_name            = $struct_instance['name'] . '_inst_' . $index;
+				$struct[ $struct_name ] = $struct_instance;
+				$this->prepare_struct_array( $struct, $parts, $struct_name );
+			}
+
+			return;
+		}
+		// Build children.
+		if ( 'open' === $struct[ $name ]['state'] ) {
+			$struct[ $name ]['children'] += $this->build_struct( $parts );
+		}
+	}
+
+	/**
+	 * Check if the structure is an array of structures.
+	 *
+	 * @param array $struct The structure to check.
+	 *
+	 * @return bool
+	 */
+	protected function is_struct_array( $struct ) {
+		return is_array( $struct ) && ! isset( $struct['state'] ) && isset( $struct[0] );
 	}
 
 	/**
@@ -266,8 +320,8 @@ abstract class Component {
 	 * @param array $structure The components structures.
 	 */
 	protected function compile_structures( $structure ) {
-		foreach ( $structure as $name => $struct ) {
-			$this->handle_structure( $name, $struct );
+		foreach ( $structure as $struct ) {
+			$this->handle_structure( $struct['name'], $struct );
 		}
 	}
 
@@ -338,8 +392,8 @@ abstract class Component {
 		if ( ! $this->is_void_element( $struct['element'] ) ) {
 			$this->add_content( $this->setting->get_param( $struct['name'], $struct['content'] ) );
 			if ( ! empty( $struct['children'] ) ) {
-				foreach ( $struct['children'] as $name => $child ) {
-					$this->handle_structure( $name, $child );
+				foreach ( $struct['children'] as $child ) {
+					$this->handle_structure( $child['name'], $child );
 				}
 			}
 			$this->close_tag( $struct );
@@ -444,6 +498,7 @@ abstract class Component {
 			'children'   => array(),
 			'state'      => null,
 			'content'    => null,
+			'name'       => $part,
 		);
 		if ( isset( $this->build_parts[ $part ] ) ) {
 			$struct = wp_parse_args( $this->build_parts[ $part ], $struct );

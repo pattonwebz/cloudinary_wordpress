@@ -10,14 +10,13 @@ namespace Cloudinary;
 use Cloudinary\Component\Config;
 use Cloudinary\Component\Notice;
 use Cloudinary\Component\Setup;
-use Cloudinary\Component\Settings;
 
 /**
  * Cloudinary connection class.
  *
  * Sets up the initial cloudinary connection and makes the API object available for some uses.
  */
-class Connect implements Config, Setup, Notice, Settings {
+class Connect extends Settings_Component implements Config, Setup, Notice {
 
 	/**
 	 * Holds the plugin instance.
@@ -76,6 +75,7 @@ class Connect implements Config, Setup, Notice, Settings {
 	 */
 	public $disabled = false;
 
+
 	/**
 	 * Holds the meta keys for connect meta to maintain consistency.
 	 */
@@ -101,7 +101,8 @@ class Connect implements Config, Setup, Notice, Settings {
 	 * @param \Cloudinary\Plugin $plugin Instance of the plugin.
 	 */
 	public function __construct( Plugin $plugin ) {
-		$this->plugin = $plugin;
+		$this->plugin        = $plugin;
+		$this->settings_slug = 'dashboard';
 		add_filter( 'pre_update_option_cloudinary_connect', array( $this, 'verify_connection' ) );
 		add_filter( 'cron_schedules', array( $this, 'get_status_schedule' ) ); // phpcs:ignore WordPress.WP.CronInterval
 		add_action( 'cloudinary_status', array( $this, 'check_status' ) );
@@ -167,7 +168,7 @@ class Connect implements Config, Setup, Notice, Settings {
 		}
 
 		$data['cloudinary_url'] = str_replace( 'CLOUDINARY_URL=', '', $data['cloudinary_url'] );
-		$current                = $this->plugin->config['settings']['connect'];
+		$current                = $this->plugin->settings->find_setting( 'connect' )->get_value();
 
 		// Same URL, return original data.
 		if ( $current['cloudinary_url'] === $data['cloudinary_url'] ) {
@@ -643,9 +644,12 @@ class Connect implements Config, Setup, Notice, Settings {
 	public function get_notices() {
 		$this->usage_notices();
 		$screen = get_current_screen();
-		if ( empty( $this->plugin->config['connect'] ) ) {
-			if ( is_object( $screen ) && in_array( $screen->id, $this->plugin->components['settings']->handles, true ) ) {
-				$link            = '<a href="' . esc_url( admin_url( 'admin.php?page=cld_connect' ) ) . '">' . __( 'Connect', 'cloudinary' ) . '</a> ';
+		$slg    = $this->settings->find_setting( 'cloudinary_url' )->get_value();
+		if ( empty( $slg ) ) {
+			$page_base = $this->settings->get_root_setting()->get_slug();
+			if ( is_object( $screen ) && $page_base === $screen->parent_base ) {
+				$url             = $this->settings->find_setting( 'connect' )->get_component()->get_url();
+				$link            = '<a href="' . $url . '">' . __( 'Connect', 'cloudinary' ) . '</a> ';
 				$this->notices[] = array(
 					'message'     => $link . __( 'your Cloudinary account with WordPress to get started.', 'cloudinary' ),
 					'type'        => 'error',
@@ -712,14 +716,16 @@ class Connect implements Config, Setup, Notice, Settings {
 	}
 
 	/**
-	 * Register Settings.
+	 * Define the Settings.
 	 *
-	 * @param \Cloudinary\Settings\Setting $setting The core setting object.
+	 * @return array
 	 */
-	public function register_settings( $setting ) {
+	public function settings() {
+
 		$args = array(
-			'type'       => 'page',
 			'menu_title' => __( 'Getting Started', 'cloudinary' ),
+			'page_title' => __( 'Getting Started', 'cloudinary' ),
+			'type'       => 'page',
 			'tabs'       => array(
 				'about'   => array(
 					'page_title' => __( 'About' ),
@@ -737,12 +743,14 @@ class Connect implements Config, Setup, Notice, Settings {
 						'type' => 'panel',
 						array(
 							'type'  => 'text',
+							'slug'  => 'cloudinary_url',
 							'title' => __( 'Connect', 'cloudinary' ),
 						),
 					),
 				),
 			),
 		);
-		$setting->add_setting( 'getting_started', $args );
+
+		return $args;
 	}
 }

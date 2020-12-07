@@ -35,8 +35,12 @@ class Page extends Panel {
 			'novalidate' => 'novalidate',
 		);
 		$struct['attributes'] = array_merge( $form_atts, $struct['attributes'] );
-		$struct['children']   = $this->page_actions();
-		$struct['content']    = wp_nonce_field( $this->get_option_name() . '-options', '_wpnonce', true, false );
+
+		if ( ! $this->setting->has_param( 'has_tabs' ) ) {
+			// Don't run action if page has tabs, since the page actions will be different for each tab.
+			$struct['children'] = $this->page_actions();
+			$struct['content']  = wp_nonce_field( $this->get_option_name() . '-options', '_wpnonce', true, false );
+		}
 
 		return $struct;
 	}
@@ -103,7 +107,7 @@ class Page extends Panel {
 	 */
 	protected function tabs( $struct ) {
 
-		if ( 1 < $this->setting->get_param( 'has_tabs', 1 ) ) {
+		if ( $this->setting->has_param( 'has_tabs' ) && 1 < count( $this->setting->get_settings( 'page' ) ) ) {
 			$struct['element']             = 'ul';
 			$struct['attributes']['class'] = array(
 				'cld-page-tabs',

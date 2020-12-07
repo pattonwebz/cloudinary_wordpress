@@ -19,7 +19,7 @@ class Select extends Text {
 	 *
 	 * @var string
 	 */
-	protected $blueprint = 'wrap|icon/|div|label|title/|tooltip/|prefix/|/label|/div|select_input|option/|/select_input|suffix/|description/|/wrap';
+	protected $blueprint = 'wrap|icon/|div|label|title/|tooltip/|prefix/|/label|/div|input|option/|/input|suffix/|description/|/wrap';
 
 	/**
 	 * Filter the select input parts structure.
@@ -28,7 +28,7 @@ class Select extends Text {
 	 *
 	 * @return array
 	 */
-	protected function select_input( $struct ) {
+	protected function input( $struct ) {
 
 		$struct['element']               = 'select';
 		$struct['attributes']['name']    = $this->get_name();
@@ -50,28 +50,25 @@ class Select extends Text {
 	 */
 	protected function option( $struct ) {
 
-		$struct['element'] = null;
-		$options           = $this->setting->get_param( 'options', array() );
-
-		$option_base = $this->get_part( 'option' );
+		$select_options               = array();
+		$options                      = $this->setting->get_param( 'options', array() );
+		$struct['attributes']['type'] = $this->type;
+		$struct['attributes']['name'] = $this->get_name();
 		foreach ( $options as $key => $value ) {
-			$option = $option_base;
+			$option = $struct;
 			if ( is_int( $key ) ) {
 				// Set to value if a non keyed array.
 				$key = $value;
 			}
 			if ( $key === $this->setting->get_value() ) {
-				$option['attributes']['selected'] = 'selected';
+				$option['attributes']['checked'] = 'checked';
 			}
 			$option['attributes']['value'] = $key;
 			$option['content']             = $value;
-			$struct['children'][ $key ]    = $option;
+			$select_options[]              = $option;
 		}
 
-		if ( $this->setting->has_param( 'required' ) ) {
-			$struct['attributes']['required'] = 'required';
-		}
 
-		return $struct;
+		return $select_options;
 	}
 }

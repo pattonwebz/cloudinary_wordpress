@@ -24,6 +24,13 @@ class Text extends Component {
 	protected $blueprint = 'wrap|icon/|div|label|title/|tooltip/|prefix/|/label|/div|input/|suffix/|description/|/wrap';
 
 	/**
+	 * Flag if component is a capture type.
+	 *
+	 * @var bool
+	 */
+	public $capture = true;
+
+	/**
 	 * Filter the wrap parts structure.
 	 *
 	 * @param array $struct The array structure.

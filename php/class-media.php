@@ -8,16 +8,18 @@
 namespace Cloudinary;
 
 use Cloudinary\Component\Setup;
+use Cloudinary\Component\Settings;
 use Cloudinary\Connect\Api;
 use Cloudinary\Media\Filter;
 use Cloudinary\Media\Upgrade;
 use Cloudinary\Media\Global_Transformations;
 use Cloudinary\Media\Video;
+use Cloudinary\Settings\Setting;
 
 /**
  * Class Media
  */
-class Media implements Setup {
+class Media extends Settings_Component implements Setup {
 
 	/**
 	 * Holds the plugin instance.
@@ -1915,5 +1917,47 @@ class Media implements Setup {
 			add_action( 'begin_fetch_post_thumbnail_html', array( $this, 'set_doing_featured' ), 10, 2 );
 			add_filter( 'post_thumbnail_html', array( $this, 'maybe_srcset_post_thumbnail' ), 10, 3 );
 		}
+	}
+
+	/**
+	 * Register sync settings.
+	 *
+	 * @return array
+	 */
+	public function settings() {
+		$args = array(
+			'type'       => 'page',
+			'menu_title' => __( 'Media Settings', 'cloudinary' ),
+			'tabs'       => array(
+				'media_desplay' => array(
+					'page_title' => __( 'Media Display' ),
+					array(
+						'type'  => 'panel',
+						'title' => __( 'Image - Global Settings', 'cloudinary' ),
+						array(
+							'type'    => 'radio',
+							'slug'    => 'sync_setting',
+							'title'   => __( 'About', 'cloudinary' ),
+							'inline'  => true,
+							'options' => array(
+								'auto'   => __( 'Auto Sync', 'cloudinary' ),
+								'manual' => __( 'Manual Sync', 'cloudinary' ),
+							),
+						),
+						array(
+							'type'        => 'on_off',
+							'slug'        => 'enable_sync',
+							'title'       => __( 'Syncing', 'cloudinary' ),
+							'description' => __( 'Enable syncing media', 'cloudinary' ),
+						),
+					),
+					array(
+						'type' => 'submit',
+					),
+				),
+			),
+		);
+
+		return $args;
 	}
 }

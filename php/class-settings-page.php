@@ -311,10 +311,10 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 				?>
 				<input type="hidden" name="<?php echo esc_attr( $setting_slug ); ?>[<?php echo esc_attr( $field['slug'] ); ?>]" value="off">
 				<input type="<?php echo esc_attr( $type ); ?>" class="cld-field regular-<?php echo esc_attr( $type ); ?>" id="<?php echo esc_attr( $field['label_for'] ); ?>" name="<?php echo esc_attr( $setting_slug ); ?>[<?php echo esc_attr( $field['slug'] ); ?>]"
-										<?php
-										if ( ! empty( $field['pattern'] ) ) :
-											?>
-					pattern="<?php echo esc_attr( $field['pattern'] ); ?>"<?php endif; ?> data-condition="<?php echo esc_attr( $condition ); ?>" data-context="<?php echo esc_attr( $context ); ?>" <?php echo esc_attr( $required ); ?> <?php checked( 'on', $value ); ?>>
+					<?php
+					if ( ! empty( $field['pattern'] ) ) :
+						?>
+						pattern="<?php echo esc_attr( $field['pattern'] ); ?>"<?php endif; ?> data-condition="<?php echo esc_attr( $condition ); ?>" data-context="<?php echo esc_attr( $context ); ?>" <?php echo esc_attr( $required ); ?> <?php checked( 'on', $value ); ?>>
 				<?php
 				break;
 			case 'radio':
@@ -721,20 +721,7 @@ class Settings_Page implements Component\Assets, Component\Config, Component\Set
 	 * @return array The array of the config options stored.
 	 */
 	public function get_config() {
-		$config = get_option( 'cloudinary_settings_cache', array() );
-		if ( empty( $config ) ) {
-			$page_slugs = array_keys( $this->pages );
-			foreach ( $page_slugs as $page ) {
-				$this->set_active_page( $page );
-				$page_config = $this->get_page_config( $page );
-				$config      = array_merge( $config, $page_config );
-			}
-
-			$this->set_active_page( null );
-			update_option( 'cloudinary_settings_cache', $config );
-		}
-
-		return $config;
+		return $this->plugin->settings->get_value();
 	}
 
 	/**

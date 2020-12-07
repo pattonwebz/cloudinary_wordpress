@@ -15,6 +15,7 @@ use Cloudinary\Component\Setup;
 use Cloudinary\Settings\Setting;
 use Cloudinary\Sync\Storage;
 use Cloudinary\Deactivation;
+use Cloudinary\Settings_Component;
 
 /**
  * Main plugin bootstrap file.
@@ -203,16 +204,43 @@ final class Plugin {
 		$params         = $this->get_settings_page_structure();
 		$this->settings = \Cloudinary\Settings::create_setting( $this->slug, $params );
 		$components     = array_filter( $this->components, array( $this, 'is_setting_component' ) );
+		$this->init_component_settings( $components );
+		$this->register_component_settings( $components );
+
+		// Init settings.
+		\Cloudinary\Settings::init_setting( $this->slug );
+	}
+
+	/**
+	 * Init component settings objects.
+	 *
+	 * @param Settings_Component[] $components of components to init settings for.
+	 */
+	private function init_component_settings( $components ) {
 		foreach ( $components as $slug => $component ) {
 			/**
-			 * Component that implements Component\\Cloudinary\Component\Settings.
+			 * Component that implements Settings.
+			 *
+			 * @var  Component\Settings $component
+			 */
+			$component->init_settings( $this->settings );
+		}
+	}
+
+	/**
+	 * Register settings.
+	 *
+	 * @param Settings_Component[] $components Array of components to register settings for.
+	 */
+	private function register_component_settings( $components ) {
+		foreach ( $components as $slug => $component ) {
+			/**
+			 * Component that implements Settings.
 			 *
 			 * @var  Component\Settings $component
 			 */
 			$component->register_settings( $this->settings );
 		}
-		// Init settings.
-		\Cloudinary\Settings::init_setting( $this->slug );
 	}
 
 	/**
@@ -369,7 +397,7 @@ final class Plugin {
 	 * @return bool If the component implements Setting.
 	 */
 	private function is_setting_component( $component ) {
-		return $component instanceof Settings;
+		return $component instanceof Settings_Component;
 	}
 
 	/**
@@ -504,7 +532,7 @@ final class Plugin {
 
 		// Remove "Trait" from the class name.
 		if ( 'trait-' === $class_trait ) {
-			$class_name = str_replace( 'Trait', '', $class_name );
+			$class_name = str_replace( '_Trait', '', $class_name );
 		}
 
 		// For file naming, the namespace is everything but the class name and the root namespace.
