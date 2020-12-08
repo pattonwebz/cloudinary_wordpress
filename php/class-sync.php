@@ -9,16 +9,18 @@ namespace Cloudinary;
 
 use Cloudinary\Component\Assets;
 use Cloudinary\Component\Setup;
+use Cloudinary\Component\Settings;
 use Cloudinary\Sync\Delete_Sync;
 use Cloudinary\Sync\Download_Sync;
 use Cloudinary\Sync\Push_Sync;
 use Cloudinary\Sync\Sync_Queue;
 use Cloudinary\Sync\Upload_Sync;
+use Cloudinary\Settings\Setting;
 
 /**
  * Class Sync
  */
-class Sync implements Setup, Assets {
+class Sync extends Settings_Component implements Setup, Assets {
 
 	/**
 	 * Holds the plugin instance.
@@ -383,7 +385,7 @@ class Sync implements Setup, Assets {
 				'state'    => 'info syncing',
 				'note'     => function () {
 					return sprintf(
-						/* translators: %s folder name */
+					/* translators: %s folder name */
 						__( 'Copying to folder %s.', 'cloudinary' ),
 						untrailingslashit( $this->managers['media']->get_cloudinary_folder() )
 					);
@@ -830,5 +832,48 @@ class Sync implements Setup, Assets {
 			$this->managers['connect'] = $this->plugin->components['connect'];
 			$this->managers['api']     = $this->plugin->components['api'];
 		}
+	}
+
+	/**
+	 * Define the settings.
+	 *
+	 * @return array
+	 */
+	public function settings() {
+		$args = array(
+			'type'       => 'page',
+			'menu_title' => __( 'Sync', 'cloudinary' ),
+			array(
+				'type'  => 'panel',
+				'title' => __( 'Sync Settings', 'cloudinary ' ),
+				array(
+					'type'    => 'radio',
+					'title'   => __( 'Sync Method', 'cloudinary' ),
+					'slug'    => 'sync_method',
+					'default' => 'manual',
+					'options' => array(
+						'auto'   => __( 'Auto Sync', 'cloudinary' ),
+						'manual' => __( 'Manual Sync', 'cloudinary' ),
+					),
+				),
+			),
+			array(
+				'type' => 'submit',
+			),
+		);
+
+		return $args;
+	}
+
+	/**
+	 * Register the setting under media.
+	 */
+	public function register_settings() {
+
+		// Register the default location.
+		parent::register_settings();
+
+		// Move setting to media.
+		$this->settings->find_setting( 'media' )->add_setting( $this->settings );
 	}
 }

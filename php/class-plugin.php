@@ -15,6 +15,11 @@ use Cloudinary\Component\Setup;
 use Cloudinary\Settings\Setting;
 use Cloudinary\Sync\Storage;
 use Cloudinary\Deactivation;
+use Cloudinary\Settings_Component;
+use WP_REST_Request;
+use WP_REST_Server;
+use const E_USER_WARNING;
+use const WPCOM_IS_VIP_ENV;
 
 /**
  * Main plugin bootstrap file.
@@ -132,10 +137,12 @@ final class Plugin {
 
 		if ( $this->components['connect'] && $this->components['connect']->is_connected() ) {
 			$this->components['sync']    = new Sync( $this );
-			$this->components['api']     = new REST_API( $this );
 			$this->components['media']   = new Media( $this );
+			$this->components['api']     = new REST_API( $this );
 			$this->components['storage'] = new Storage( $this );
 		}
+		// Testing Settings.
+		$this->components['testing'] = new Test( $this );
 	}
 
 	/**
@@ -143,7 +150,7 @@ final class Plugin {
 	 *
 	 * @param mixed $component The component.
 	 *
-	 * @return \Cloudinary\Connect|\Cloudinary\Media|\Cloudinary\REST_API|\Cloudinary\Settings_Page|\Cloudinary\Sync|null
+	 * @return Connect|Media|REST_API|Settings_Page|Sync|null
 	 */
 	public function get_component( $component ) {
 		$return = null;
@@ -155,30 +162,90 @@ final class Plugin {
 	}
 
 	/**
+	 * Get the core settings page structure for settings.
+	 *
+	 * @return array
+	 */
+	private function get_settings_page_structure() {
+		$structure = array(
+			'version'     => $this->version,
+			'page_title'  => __( 'Cloudinary' ),
+			'menu_title'  => __( 'Cloudinary' ),
+			'capability'  => 'manage_options',
+			'icon'        => 'dashicons-cloudinary',
+			'option_name' => $this->slug,
+			'page_header' => array(
+				'content' => '<img src="' . $this->dir_url . '/css/logo.svg" alt="' . esc_attr__( "Cloudinary's logo", 'cloudinary' ) . '" width="150px"><p style="margin-left: 1rem; font-size: 0.75rem;"><a href="#">Need help?</a></p>',
+			),
+			'page_footer' => array(
+				'content' => __( 'Thanks for using Cloudinary, please take a minute to rate our plugin.', 'cloudinary' ),
+			),
+			'pages'       => array(
+				$this->slug => array(
+					'page_title' => __( 'Dashboard' ),
+					'menu_title' => __( 'Cloudinary', 'cloudinary' ),
+					array(
+						'type' => 'panel',
+						array(
+							'type'  => 'plan',
+							'title' => __( 'Your Current Plan', 'cloudinary' ),
+						),
+						array(
+							'type'    => 'link',
+							'url'     => '#',
+							'content' => __( 'Upgrade Plan', 'cloudinary' ),
+						),
+					),
+				),
+			),
+		);
+
+		return $structure;
+	}
+
+	/**
 	 * Setup settings.
 	 */
 	public function setup_settings() {
-		$components = array_filter( $this->components, array( $this, 'is_setting_component' ) );
-		if ( ! empty( $components ) ) {
-			$slug           = $this->slug;
-			$params         = array(
-				'version'    => $this->version,
-				'page_title' => __( 'Cloudinary', 'cloudinary' ),
-				'menu_title' => __( 'Cloudinary', 'cloudinary' ),
-				'capability' => 'manage_options',
-				'icon'       => 'dashicons-cloudinary',
-			);
-			$this->settings = \Cloudinary\Settings::create_setting( $slug, $params );
-			foreach ( $components as $slug => $component ) {
-				/**
-				 * Component that implements Component\\Cloudinary\Component\Settings.
-				 *
-				 * @var  Component\Settings $component
-				 */
-				$component->register_settings( $this->settings );
-			}
-			// Init settings.
-			\Cloudinary\Settings::init_setting( $slug );
+		$params         = $this->get_settings_page_structure();
+		$this->settings = \Cloudinary\Settings::create_setting( $this->slug, $params );
+		$components     = array_filter( $this->components, array( $this, 'is_setting_component' ) );
+		$this->init_component_settings( $components );
+		$this->register_component_settings( $components );
+
+		// Init settings.
+		\Cloudinary\Settings::init_setting( $this->slug );
+	}
+
+	/**
+	 * Init component settings objects.
+	 *
+	 * @param Settings_Component[] $components of components to init settings for.
+	 */
+	private function init_component_settings( $components ) {
+		foreach ( $components as $slug => $component ) {
+			/**
+			 * Component that implements Settings.
+			 *
+			 * @var  Component\Settings $component
+			 */
+			$component->init_settings( $this->settings );
+		}
+	}
+
+	/**
+	 * Register settings.
+	 *
+	 * @param Settings_Component[] $components Array of components to register settings for.
+	 */
+	private function register_component_settings( $components ) {
+		foreach ( $components as $slug => $component ) {
+			/**
+			 * Component that implements Settings.
+			 *
+			 * @var  Component\Settings $component
+			 */
+			$component->register_settings( $this->settings );
 		}
 	}
 
@@ -222,7 +289,7 @@ final class Plugin {
 	public function rest_endpoints( $endpoints ) {
 
 		$endpoints['dismiss_notice'] = array(
-			'method'   => \WP_REST_Server::CREATABLE,
+			'method'   => WP_REST_Server::CREATABLE,
 			'callback' => array( $this, 'rest_dismiss_notice' ),
 			'args'     => array(),
 		);
@@ -336,7 +403,7 @@ final class Plugin {
 	 * @return bool If the component implements Setting.
 	 */
 	private function is_setting_component( $component ) {
-		return $component instanceof Settings;
+		return $component instanceof Settings_Component;
 	}
 
 	/**
@@ -377,9 +444,9 @@ final class Plugin {
 	/**
 	 * Set a transient with the duration using a token as an identifier.
 	 *
-	 * @param \WP_REST_Request $request The request object.
+	 * @param WP_REST_Request $request The request object.
 	 */
-	public function rest_dismiss_notice( \WP_REST_Request $request ) {
+	public function rest_dismiss_notice( WP_REST_Request $request ) {
 		$token    = $request->get_param( 'token' );
 		$duration = $request->get_param( 'duration' );
 
@@ -471,7 +538,7 @@ final class Plugin {
 
 		// Remove "Trait" from the class name.
 		if ( 'trait-' === $class_trait ) {
-			$class_name = str_replace( 'Trait', '', $class_name );
+			$class_name = str_replace( '_Trait', '', $class_name );
 		}
 
 		// For file naming, the namespace is everything but the class name and the root namespace.
@@ -539,7 +606,7 @@ final class Plugin {
 	 * @return bool
 	 */
 	public function is_wpcom_vip_prod() {
-		return ( defined( '\WPCOM_IS_VIP_ENV' ) && \WPCOM_IS_VIP_ENV );
+		return ( defined( '\WPCOM_IS_VIP_ENV' ) && WPCOM_IS_VIP_ENV );
 	}
 
 	/**
@@ -548,7 +615,7 @@ final class Plugin {
 	 * @param string $message Warning message.
 	 * @param int    $code    Warning code.
 	 */
-	public function trigger_warning( $message, $code = \E_USER_WARNING ) {
+	public function trigger_warning( $message, $code = E_USER_WARNING ) {
 		if ( ! $this->is_wpcom_vip_prod() ) {
 			// @phpcs:disable
 			trigger_error( esc_html( get_class( $this ) . ': ' . $message ), $code );

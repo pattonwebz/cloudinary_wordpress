@@ -39,6 +39,15 @@ $definition = array(
 				'global_video_transformations',
 			),
 		),
+		'gallery'               => array(
+			'page_title'      => __( 'Gallery Settings', 'cloudinary' ),
+			'menu_title'      => __( 'Gallery Widget', 'cloudinary' ),
+			'slug'            => 'cld_gallery',
+			'requires_config' => true,
+			'tabs'            => array(
+				'gallery',
+			),
+		),
 		'sync_media'            => array(
 			'page_title'      => __( 'Sync Media to Cloudinary', 'cloudinary' ),
 			'menu_title'      => __( 'Sync Media', 'cloudinary' ),

@@ -16,9 +16,13 @@ interface Settings {
 
 	/**
 	 * Register Settings.
+	 */
+	public function register_settings();
+
+	/**
+	 * Init Settings Object.
 	 *
 	 * @param Setting $setting The core setting.
 	 */
-	public function register_settings( $setting );
-
+	public function init_settings( $setting );
 }

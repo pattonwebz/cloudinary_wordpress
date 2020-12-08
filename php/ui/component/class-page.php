@@ -14,83 +14,73 @@ namespace Cloudinary\UI\Component;
  */
 class Page extends Panel {
 
+	/**
+	 * Holds the components build blueprint.
+	 *
+	 * @var string
+	 */
+	protected $blueprint = 'wrap|header/|tabs/|form|body|/body|settings/|/form|/wrap';
 
 	/**
-	 * Create the start of the tabs wrapper.
+	 * Filter the form parts structure.
 	 *
-	 * @return string
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
 	 */
-	protected function start_tabs() {
-		$atts = array(
-			'class' => array(
-				'settings-ui-component',
-				'settings-ui-component-tabs',
-			),
+	protected function form( $struct ) {
+		$form_atts            = array(
+			'method'     => 'post',
+			'action'     => 'options.php',
+			'novalidate' => 'novalidate',
 		);
+		$struct['attributes'] = array_merge( $form_atts, $struct['attributes'] );
 
-		return '<nav ' . $this->build_attributes( $atts ) . ' >';
-	}
-
-	/**
-	 * Render the tabs index.
-	 */
-	protected function tab_bar() {
-		$html[] = $this->start_tabs();
-		$active = $this->get_active_setting();
-		$url    = add_query_arg( array( 'page' => $this->setting->get_parent()->get_slug() ), admin_url( 'admin.php' ) );
-		foreach ( $this->setting->get_settings() as $setting ) {
-			$url       = add_query_arg( array( 'tab' => $setting->get_slug() ), $url );
-			$link_atts = array(
-				'href'  => $url,
-				'class' => array(
-					'settings-ui-component-tabs-tab',
-				),
-			);
-			if ( $active === $setting ) {
-				$link_atts['class'][] = 'active';
-			}
-			$html[] = '<a ' . $this->build_attributes( $link_atts ) . ' >';
-			$html[] = $setting->get_param( 'title' );
-			$html[] = '</a>';
+		if ( ! $this->setting->has_param( 'has_tabs' ) ) {
+			// Don't run action if page has tabs, since the page actions will be different for each tab.
+			$struct['children'] = $this->page_actions();
+			$struct['content']  = wp_nonce_field( $this->get_option_name() . '-options', '_wpnonce', true, false );
 		}
-		$html[] = $this->end_tabs();
 
-		return self::compile_html( $html );
+		return $struct;
 	}
 
 	/**
-	 * Creates the Content/Input HTML.
+	 * Creates the options page and action inputs.
 	 *
-	 * @return string
+	 * @return array
 	 */
-	protected function content() {
-
+	protected function page_actions() {
 
 		$option_name = $this->get_option_name();
 		settings_errors( $option_name );
+
+		$inputs = array(
+			'option_page' => $this->get_part( 'input' ),
+			'action'      => $this->get_part( 'input' ),
+		);
 		// Set the attributes for the field.
-		$option = array(
+		$option_atts                         = array(
 			'type'  => 'hidden',
 			'name'  => 'option_page',
 			'value' => $option_name,
 		);
+		$inputs['option_page']['attributes'] = $option_atts;
+
 		// Set the attributes for the field action.
-		$action = array(
+		$action_atts = array(
 			'type'  => 'hidden',
 			'name'  => 'action',
 			'value' => 'update',
 		);
-		$html   = array(
-			'<input ' . $this->build_attributes( $option ) . ' />',
-			'<input ' . $this->build_attributes( $action ) . ' />',
-			wp_nonce_field( $option_name . '-options', '_wpnonce', true, false ),
-		);
+		// Create the action input.
+		$inputs['action']['attributes'] = $action_atts;
 
-		if ( $this->setting->has_parent() && $this->setting->has_param( 'has_tabs' ) && 1 < $this->setting->get_setting_slugs() ) {
-			$html[] = $this->tab_bar();
-		}
+		// Set to active.
+		$inputs['action']['content']      = true;
+		$inputs['option_page']['content'] = true;
 
-		return self::compile_html( $html );
+		return $inputs;
 	}
 
 	/**
@@ -109,61 +99,108 @@ class Page extends Panel {
 	}
 
 	/**
-	 * Start the component Wrapper.
+	 * Filter the Tabs part structure.
 	 *
-	 * @return string
-	 */
-	protected function start_wrapper() {
-
-		$form_atts = array(
-			'method'     => 'post',
-			'action'     => 'options.php',
-			'novalidate' => 'novalidate',
-			'class'      => 'render-trigger',
-		);
-		$html      = array(
-			'<div ' . $this->build_attributes( $this->get_attributes( 'wrapper' ) ) . '>',
-			'<h1>' . $this->setting->get_param( 'page_title' ) . '</h1>',
-			'<form ' . $this->build_attributes( $form_atts ) . ' >',
-		);
-
-		return self::compile_html( $html );
-	}
-
-	/**
-	 * Create the end of the wrapper HTML.
+	 * @param array $struct The array structure.
 	 *
-	 * @return string
+	 * @return array
 	 */
-	protected function end_wrapper() {
-		$html = array(
-			'</form>',
-			'</div>',
-		);
+	protected function tabs( $struct ) {
 
-		return self::compile_html( $html );
-	}
-
-	/**
-	 * Create the end of the tabs wrapper.
-	 *
-	 * @return string
-	 */
-	protected function end_tabs() {
-		return '</nav>';
-	}
-
-	/**
-	 * Render the settings of the active tab.
-	 *
-	 * @return string
-	 */
-	protected function settings() {
-		if ( $this->setting->has_param( 'has_tabs' ) ) {
-			return $this->get_active_setting()->render_component();
+		if ( $this->setting->has_param( 'has_tabs' ) && 1 < count( $this->setting->get_settings( 'page' ) ) ) {
+			$struct['element']             = 'ul';
+			$struct['attributes']['class'] = array(
+				'cld-page-tabs',
+			);
+			$struct['children']            = $this->get_tabs();
 		}
 
-		return parent::settings();
+		return $struct;
 	}
+
+	/**
+	 * Get the tab parts structure.
+	 *
+	 * @return array
+	 */
+	protected function get_tabs() {
+
+		$tabs = array();
+		foreach ( $this->setting->get_settings() as $setting ) {
+			// Create the tab wrapper.
+			$tab                        = $this->get_part( 'li' );
+			$tab['attributes']['class'] = array(
+				'cld-page-tabs-tab',
+			);
+
+			if ( $this->get_active_setting() === $setting ) {
+				$tab['attributes']['class'][] = 'is-active';
+			}
+
+			// Create the link.
+			$link                       = $this->get_part( 'a' );
+			$link['content']            = $setting->get_param( 'menu_title', $setting->get_param( 'page_title' ) );
+			$link['attributes']['href'] = $setting->get_component()->get_url();
+
+			// Add tab to list.
+			$tab['children'][ $setting->get_slug() ] = $link;
+			$tabs[ $setting->get_slug() ]            = $tab;
+		}
+
+		return $tabs;
+	}
+
+	/**
+	 * Get the URL for this page.
+	 *
+	 * @return string
+	 */
+	public function get_url() {
+
+		$args = array(
+			'page' => $this->setting->get_slug(),
+		);
+		if ( $this->setting->has_parent() && $this->setting->get_parent()->has_param( 'has_tabs' ) ) {
+			$args['tab']  = $args['page'];
+			$args['page'] = $this->setting->get_parent()->get_slug();
+		}
+
+		return add_query_arg( $args, admin_url( 'admin.php' ) );
+	}
+
+	/**
+	 * Filter the header part structure.
+	 *
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
+	 */
+	protected function header( $struct ) {
+		if ( $this->setting->has_param( 'page_header' ) ) {
+			$struct['element'] = null;
+			$struct['content'] = $this->setting->get_param( 'page_header' )->render_component();
+		}
+
+		return $struct;
+	}
+
+	/**
+	 * Filter the settings based on active tab.
+	 *
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
+	 */
+	protected function settings( $struct ) {
+
+		if ( $this->setting->has_param( 'has_tabs' ) ) {
+			$struct['content'] = $this->get_active_setting()->render_component();
+
+			return $struct;
+		}
+
+		return parent::settings( $struct );
+	}
+
 }
 

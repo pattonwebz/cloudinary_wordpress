@@ -10,14 +10,16 @@ namespace Cloudinary;
 use Cloudinary\Component\Setup;
 use Cloudinary\Connect\Api;
 use Cloudinary\Media\Filter;
-use Cloudinary\Media\Upgrade;
+use Cloudinary\Media\Gallery;
 use Cloudinary\Media\Global_Transformations;
+use Cloudinary\Media\Upgrade;
 use Cloudinary\Media\Video;
+use Cloudinary\Media\WooCommerceGallery;
 
 /**
  * Class Media
  */
-class Media implements Setup {
+class Media extends Settings_Component implements Setup {
 
 	/**
 	 * Holds the plugin instance.
@@ -91,6 +93,20 @@ class Media implements Setup {
 	public $video;
 
 	/**
+	 * Gallery instance.
+	 *
+	 * @var \Cloudinary\Media\Gallery.
+	 */
+	public $gallery;
+
+	/**
+	 * WooCommerceGallery instance.
+	 *
+	 * @var \Cloudinary\Media\WooCommerceGallery
+	 */
+	public $woocommerce_gallery;
+
+	/**
 	 * Sync instance.
 	 *
 	 * @var \Cloudinary\Sync
@@ -160,7 +176,6 @@ class Media implements Setup {
 	 * @return array
 	 */
 	public function get_convertible_extensions() {
-
 
 		// Add preferred formats in future.
 		$base_types = array(
@@ -321,6 +336,43 @@ class Media implements Setup {
 	}
 
 	/**
+	 * Fetch a public id from a cloudinary url.
+	 *
+	 * @param string $url         The url to fetch the public id from.
+	 * @param bool   $as_sync_key Whether to return a plugin-based sync key, which is used to fetch an attachment id.
+	 *
+	 * @return string|null
+	 */
+	public function get_public_id_from_url( $url, $as_sync_key = false ) {
+		if ( ! $this->is_cloudinary_url( $url ) ) {
+			return null;
+		}
+
+		$path  = wp_parse_url( $url, PHP_URL_PATH );
+		$parts = explode( '/', ltrim( $path, '/' ) );
+
+		// Need to find the version part as anything after this is the public id.
+		foreach ( $parts as $part ) {
+			array_shift( $parts ); // Get rid of the first element.
+			if ( 'v' === substr( $part, 0, 1 ) && is_numeric( substr( $part, 1 ) ) ) {
+				break; // Stop removing elements.
+			}
+		}
+
+		// The remaining items should be the file.
+		$file      = implode( '/', $parts );
+		$path_info = pathinfo( $file );
+		$public_id = trim( $path_info['dirname'], './' );
+
+		if ( $as_sync_key ) {
+			$transformations = $this->get_transformations_from_string( $url );
+			$public_id      .= ! empty( $transformations ) ? wp_json_encode( $transformations ) : '';
+		}
+
+		return $public_id;
+	}
+
+	/**
 	 * Attempt to get an attachment_id from a url.
 	 *
 	 * @param string $url The url of the file.
@@ -329,29 +381,9 @@ class Media implements Setup {
 	 */
 	public function get_id_from_url( $url ) {
 		if ( $this->is_cloudinary_url( $url ) ) {
-			$path  = wp_parse_url( $url, PHP_URL_PATH );
-			$parts = explode( '/', ltrim( $path, '/' ) );
-			// Need to find the version part as anything after this is the public id.
-			foreach ( $parts as $part ) {
-				array_shift( $parts ); // Get rid of the first element.
-				if ( 'v' === substr( $part, 0, 1 ) && is_numeric( substr( $part, 1 ) ) ) {
-					break; // Stop removing elements.
-				}
-			}
-
-			// The remaining items should be the file.
-			$file            = implode( '/', $parts );
-			$pathinfo        = pathinfo( $file );
-			$public_id       = trim( $pathinfo['dirname'] . '/' . $pathinfo['filename'], './' );
-			$sync_key        = $public_id;
-			$transformations = $this->get_transformations_from_string( $url );
-			if ( ! empty( $transformations ) ) {
-				$sync_key .= wp_json_encode( $transformations );
-			}
+			$sync_key      = $this->get_public_id_from_url( $url, true );
 			$attachment_id = $this->get_id_from_sync_key( $sync_key );
-
 		} else {
-
 			// Clear out any params.
 			if ( wp_parse_url( $url, PHP_URL_QUERY ) ) {
 				$url = strstr( $url, '?', true );
@@ -1335,7 +1367,6 @@ class Media implements Setup {
 		$nonce = filter_input( INPUT_POST, 'nonce', FILTER_SANITIZE_STRING );
 		if ( wp_verify_nonce( $nonce, 'wp_rest' ) ) {
 
-
 			$asset = $this->get_asset_payload();
 			// Set a base array for pulling an asset if needed.
 			$base_return = array(
@@ -1886,9 +1917,11 @@ class Media implements Setup {
 			$this->sync              = $this->plugin->components['sync'];
 
 			// Internal components.
+			$this->global_transformations = new Global_Transformations( $this );
+			$this->gallery                = new Gallery( $this );
+			$this->woocommerce_gallery    = new WooCommerceGallery( $this->gallery );
 			$this->filter                 = new Filter( $this );
 			$this->upgrade                = new Upgrade( $this );
-			$this->global_transformations = new Global_Transformations( $this );
 			$this->video                  = new Video( $this );
 
 			// Set the max image size registered in WordPress.
@@ -1915,5 +1948,47 @@ class Media implements Setup {
 			add_action( 'begin_fetch_post_thumbnail_html', array( $this, 'set_doing_featured' ), 10, 2 );
 			add_filter( 'post_thumbnail_html', array( $this, 'maybe_srcset_post_thumbnail' ), 10, 3 );
 		}
+	}
+
+	/**
+	 * Register sync settings.
+	 *
+	 * @return array
+	 */
+	public function settings() {
+		$args = array(
+			'type'       => 'page',
+			'menu_title' => __( 'Media Settings', 'cloudinary' ),
+			'tabs'       => array(
+				'media_desplay' => array(
+					'page_title' => __( 'Media Display' ),
+					array(
+						'type'  => 'panel',
+						'title' => __( 'Image - Global Settings', 'cloudinary' ),
+						array(
+							'type'    => 'radio',
+							'slug'    => 'sync_setting',
+							'title'   => __( 'About', 'cloudinary' ),
+							'inline'  => true,
+							'options' => array(
+								'auto'   => __( 'Auto Sync', 'cloudinary' ),
+								'manual' => __( 'Manual Sync', 'cloudinary' ),
+							),
+						),
+						array(
+							'type'        => 'on_off',
+							'slug'        => 'enable_sync',
+							'title'       => __( 'Syncing', 'cloudinary' ),
+							'description' => __( 'Enable syncing media', 'cloudinary' ),
+						),
+					),
+					array(
+						'type' => 'submit',
+					),
+				),
+			),
+		);
+
+		return $args;
 	}
 }

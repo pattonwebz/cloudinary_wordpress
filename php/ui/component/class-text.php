@@ -16,43 +16,88 @@ use Cloudinary\UI\Component;
  */
 class Text extends Component {
 
+	/**
+	 * Holds the components build blueprint.
+	 *
+	 * @var string
+	 */
+	protected $blueprint = 'wrap|icon/|div|label|title/|tooltip/|prefix/|/label|/div|input/|suffix/|description/|/wrap';
 
 	/**
-	 * Creates the Content/Input HTML.
+	 * Flag if component is a capture type.
 	 *
-	 * @return string
+	 * @var bool
 	 */
-	protected function content() {
-		$atts            = $this->get_attributes( 'content' );
-		$atts['type']    = 'text';
-		$atts['name']    = $this->get_name();
-		$atts['value']   = $this->setting->get_value();
-		$atts['class'][] = 'regular-text';
-		if ( $this->setting->has_param( 'required' ) ) {
-			$atts['required'] = 'required';
-		}
+	public $capture = true;
 
-		return '<input ' . $this->build_attributes( $atts ) . ' />';
+	/**
+	 * Filter the wrap parts structure.
+	 *
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
+	 */
+	protected function wrap( $struct ) {
+
+		$struct['attributes']['class'] = array(
+			'cld-input',
+			'cld-input-' . $this->type,
+		);
+
+		return $struct;
 	}
 
 	/**
-	 * Creates the Header HTML.
+	 * Filter the label parts structure.
 	 *
-	 * @return string
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
 	 */
-	protected function heading() {
-		$html = array();
-		if ( $this->setting->has_param( 'icon' ) ) {
-			$html[] = $this->get_icon();
-		}
-		$html[] = '<strong ' . $this->build_attributes( $this->get_attributes( 'heading' ) ) . ' >';
-		$html[] = $this->setting->get_param( 'title' );
-		if ( $this->setting->has_param( 'tooltip' ) ) {
-			$html[] = $this->tooltip();
-		}
-		$html[] = '</strong>';
+	protected function label( $struct ) {
 
-		return self::compile_html( $html );
+		$struct['attributes']['class'][] = 'cld-input-label';
+		$struct['attributes']['for']     = $this->setting->get_slug();
+
+
+		return $struct;
+	}
+
+	/**
+	 * Filter the input parts structure.
+	 *
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
+	 */
+	protected function input( $struct ) {
+
+		$struct['element']               = 'input';
+		$struct['attributes']['name']    = $this->get_name();
+		$struct['attributes']['id']      = $this->setting->get_slug();
+		$struct['attributes']['value']   = $this->setting->get_value();
+		$struct['attributes']['class'][] = 'regular-' . $this->type;
+		$struct['render']                = true;
+		if ( $this->setting->has_param( 'required' ) ) {
+			$struct['attributes']['required'] = 'required';
+		}
+
+		return $struct;
+	}
+
+	/**
+	 * Filter the description parts structure.
+	 *
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
+	 */
+	protected function description( $struct ) {
+
+		$struct['element']               = 'p';
+		$struct['attributes']['class'][] = 'description';
+
+		return $struct;
 	}
 
 	/**
