@@ -9,13 +9,11 @@ namespace Cloudinary;
 
 use Cloudinary\Component\Assets;
 use Cloudinary\Component\Setup;
-use Cloudinary\Component\Settings;
 use Cloudinary\Sync\Delete_Sync;
 use Cloudinary\Sync\Download_Sync;
 use Cloudinary\Sync\Push_Sync;
 use Cloudinary\Sync\Sync_Queue;
 use Cloudinary\Sync\Upload_Sync;
-use Cloudinary\Settings\Setting;
 
 /**
  * Class Sync
@@ -293,6 +291,7 @@ class Sync extends Settings_Component implements Setup, Assets {
 		} else {
 			$file = get_attached_file( $attachment_id );
 		}
+
 		$file_info = pathinfo( $file );
 		$public_id = $cld_folder . $file_info['filename'];
 

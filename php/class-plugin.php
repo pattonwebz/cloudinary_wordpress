@@ -10,12 +10,9 @@ namespace Cloudinary;
 use Cloudinary\Component\Assets;
 use Cloudinary\Component\Config;
 use Cloudinary\Component\Notice;
-use Cloudinary\Component\Settings;
 use Cloudinary\Component\Setup;
 use Cloudinary\Settings\Setting;
 use Cloudinary\Sync\Storage;
-use Cloudinary\Deactivation;
-use Cloudinary\Settings_Component;
 use WP_REST_Request;
 use WP_REST_Server;
 use const E_USER_WARNING;
@@ -119,6 +116,7 @@ final class Plugin {
 		$this->dir_path      = $location['dir_path'];
 		$this->template_path = $this->dir_path . 'php/templates/';
 		$this->dir_url       = $location['dir_url'];
+		$this->autoload_files();
 		spl_autoload_register( array( $this, 'autoload' ) );
 		$this->register_hooks();
 	}
@@ -510,6 +508,32 @@ final class Plugin {
 				'nonce' => wp_create_nonce( 'wp_rest' ),
 			);
 			wp_add_inline_script( 'cloudinary', 'var CLDIS = ' . wp_json_encode( $args ), 'before' );
+		}
+	}
+
+	/**
+	 * Will autoload all PHP files that are NOT classes and NOT templates.
+	 *
+	 * @param string|null $target Target directory to scan or file to include (recursive).
+	 *
+	 * @return void
+	 */
+	private function autoload_files( $target = null ) {
+		$target = $target ? $target : __DIR__ . DIRECTORY_SEPARATOR;
+
+		if ( is_dir( $target ) ) {
+			$files = glob( $target . '*', GLOB_MARK );
+
+			foreach ( $files as $file ) {
+				$this->autoload_files( $file );
+			}
+		} elseif (
+			false === strpos( $target, 'class-' ) &&
+			false === strpos( $target, '/templates/' ) &&
+			false !== strrpos( $target, '.php' ) &&
+			is_file( $target )
+		) {
+			require_once $target; // phpcs:ignore
 		}
 	}
 

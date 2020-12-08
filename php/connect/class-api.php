@@ -7,7 +7,6 @@
 
 namespace Cloudinary\Connect;
 
-use Cloudinary\Connect;
 use function Cloudinary\get_plugin_instance;
 
 /**
