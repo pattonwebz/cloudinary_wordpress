@@ -21,8 +21,8 @@ abstract class Component {
 	 *
 	 * @var string
 	 */
-
 	protected $type;
+
 	/**
 	 * Holds the parent setting for this component.
 	 *
@@ -490,8 +490,10 @@ abstract class Component {
 		$prefix_element = 'close' === $state ? '/' : '';
 		$tag            = array();
 		$tag[]          = $prefix_element . $element;
-		$tag[]          = self::build_attributes( $attributes );
-		$tag[]          = $this->is_void_element( $element ) ? '/' : null;
+		if ( 'close' !== $state ) {
+			$tag[] = self::build_attributes( $attributes );
+		}
+		$tag[] = $this->is_void_element( $element ) ? '/' : null;
 
 		return self::compile_tag( $tag );
 	}
@@ -540,13 +542,15 @@ abstract class Component {
 	 * @return array
 	 */
 	protected function tooltip( $struct ) {
-
-		$struct['attributes']['class'] = array(
-			'dashicons',
-			'dashicons-editor-help',
-		);
-		$struct['attributes']['title'] = $this->setting->get_param( 'tooltip' );
-
+		$struct['content'] = null;
+		if ( $this->setting->has_param( 'tooltip_text' ) ) {
+			$struct['render']              = true;
+			$struct['attributes']['class'] = array(
+				'dashicons',
+				'dashicons-editor-help',
+			);
+			$struct['attributes']['title'] = $this->setting->get_param( 'tooltip_text' );
+		}
 
 		return $struct;
 	}

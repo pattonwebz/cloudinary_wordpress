@@ -23,7 +23,7 @@ class Test extends Settings_Component {
 			'menu_title'  => __( 'Settings test', 'cloudinary' ),
 			'option_name' => 'test_settings',
 			'tabs'        => array(
-				'fields'   => array(
+				'fields'     => array(
 					'type'       => 'page',
 					'page_title' => __( 'Input Settings', 'cloudinary ' ),
 					array(
@@ -80,10 +80,11 @@ class Test extends Settings_Component {
 							'type'  => 'group',
 							'title' => __( 'Toggles', 'cloudinary' ),
 							array(
-								'type'        => 'on_off',
-								'title'       => __( 'Toggle - default off', 'cloudinary' ),
-								'slug'        => 'toggle_off',
-								'description' => __( 'Toggle with default off', 'cloudinary' ),
+								'type'         => 'on_off',
+								'title'        => __( 'Toggle - default off', 'cloudinary' ),
+								'tooltip_text' => __( 'Hello', 'cloudinary' ),
+								'slug'         => 'toggle_off',
+								'description'  => __( 'Toggle with default off', 'cloudinary' ),
 							),
 							array(
 								'type'        => 'on_off',
@@ -129,7 +130,7 @@ class Test extends Settings_Component {
 						'type' => 'submit',
 					),
 				),
-				'contents' => array(
+				'contents'   => array(
 					'type'       => 'page',
 					'page_title' => __( 'Content Settings', 'cloudinary ' ),
 					array(
@@ -139,6 +140,26 @@ class Test extends Settings_Component {
 						array(
 							'content' => $this->get_content(),
 						),
+					),
+				),
+				'react_test' => array(
+					'type'       => 'page',
+					'page_title' => __( 'React', 'cloudinary ' ),
+					array(
+						'type'  => 'panel',
+						'title' => __( 'React example', 'cloudinary ' ),
+						'icon'  => $this->plugin->dir_url . 'css/video.svg',
+						array(
+							'type'   => 'react',
+							'slug'   => 'gallery',
+							'script' => array(
+								'slug' => 'gallery-widget',
+								'src'  => $this->plugin->dir_url . 'js/gallery.js',
+							),
+						),
+					),
+					array(
+						'type' => 'submit',
 					),
 				),
 			),

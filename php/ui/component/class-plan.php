@@ -22,7 +22,7 @@ class Plan extends Component {
 	 *
 	 * @var string
 	 */
-	protected $blueprint = 'title/|plan_box|plan_heading/|plan_summary|/plan_summary|/plan_box';
+	protected $blueprint = 'title/|plan_box|plan_heading/|plan_summary/|/plan_box';
 
 	/**
 	 * Setup action before rendering.
@@ -63,27 +63,6 @@ class Plan extends Component {
 	}
 
 	/**
-	 * Filter the plan heading parts structure.
-	 *
-	 * @param array $struct The array structure.
-	 *
-	 * @return array
-	 */
-	protected function plan_heading( $struct ) {
-		$html   = array();
-		$atts   = array(
-			'style' => 'color: var(--accent-color);',
-		);
-		$html[] = '<h2 ' . $this->build_attributes( $atts ) . ' >';
-		$html[] = $this->setting->get_param( 'plan' );
-		$html[] = '</h2>';
-
-		$struct['element'] = 'h2';
-
-		return parent::plan_heading( $struct );
-	}
-
-	/**
 	 * Filter the plan summary parts structure.
 	 *
 	 * @param array $struct The array structure.
@@ -92,15 +71,18 @@ class Plan extends Component {
 	 */
 	protected function plan_summary( $struct ) {
 
-
 		$summary            = $this->get_part( 'h4' );
 		$summary['content'] = $this->setting->get_param( 'plan_heading', __( '25 Monthly Credits', 'cloudinary' ) );
+
+		$another            = $this->get_part( 'h4' );
+		$another['content'] = 'nice';
 
 		$detail            = $this->get_part( 'span' );
 		$detail['content'] = __( '1 Credit =', 'cloudinary' );
 
 
-		$struct['children']['h4']   = $summary;
+		$struct['children']['title']   = $summary;
+		$struct['children']['more']   = $another;
 		$struct['children']['span'] = $detail;
 		$struct['children']['ul']   = $this->content();
 		$struct['element']          = 'div';

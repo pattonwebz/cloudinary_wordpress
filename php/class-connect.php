@@ -649,7 +649,7 @@ class Connect extends Settings_Component implements Config, Setup, Notice {
 			$page_base = $this->settings->get_root_setting()->get_slug();
 			if ( is_object( $screen ) && $page_base === $screen->parent_base ) {
 				$url             = $this->settings->find_setting( 'connect' )->get_component()->get_url();
-				$link            = '<a href="' . $url . '">' . __( 'Connect', 'cloudinary' ) . '</a> ';
+				$link            = '<a href="' . esc_url( $url ) . '">' . __( 'Connect', 'cloudinary' ) . '</a> ';
 				$this->notices[] = array(
 					'message'     => $link . __( 'your Cloudinary account with WordPress to get started.', 'cloudinary' ),
 					'type'        => 'error',
@@ -728,7 +728,7 @@ class Connect extends Settings_Component implements Config, Setup, Notice {
 			'type'       => 'page',
 			'tabs'       => array(
 				'about'   => array(
-					'page_title' => __( 'About' ),
+					'page_title' => __( 'About', 'cloudinary' ),
 					array(
 						'type' => 'panel',
 						array(
@@ -738,7 +738,7 @@ class Connect extends Settings_Component implements Config, Setup, Notice {
 					),
 				),
 				'connect' => array(
-					'page_title' => __( 'Connect' ),
+					'page_title' => __( 'Connect', 'cloudinary' ),
 					array(
 						'type' => 'panel',
 						array(
