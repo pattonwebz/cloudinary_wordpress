@@ -12,8 +12,19 @@ import cloneDeep from 'lodash/cloneDeep';
 import { __ } from '@wordpress/i18n';
 import '@wordpress/components/build-style/style.css';
 import { Platform, useEffect, useState } from '@wordpress/element';
-import { ColorPalette, InspectorControls, MediaPlaceholder } from '@wordpress/block-editor';
-import { Button, ButtonGroup, PanelBody, RangeControl, SelectControl, ToggleControl } from '@wordpress/components';
+import {
+	ColorPalette,
+	InspectorControls,
+	MediaPlaceholder,
+} from '@wordpress/block-editor';
+import {
+	Button,
+	ButtonGroup,
+	PanelBody,
+	RangeControl,
+	SelectControl,
+	ToggleControl,
+} from '@wordpress/components';
 
 /**
  * Internal dependencies

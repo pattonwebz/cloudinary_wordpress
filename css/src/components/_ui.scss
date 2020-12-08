@@ -1,0 +1,275 @@
+@mixin input {
+
+	margin-bottom: 1.4rem;
+	display: block;
+
+	&-label {
+		font-weight: 700;
+		display: block;
+	}
+}
+
+.cld {
+
+	&-page {
+
+		&-header {
+			background-color: #fff;
+			display: flex;
+			padding: 1.2rem;
+			align-items: center;
+			margin-left: -20px;
+		}
+
+		&-tabs {
+			background-color: #fff;
+			display: flex;
+			border-top: 1px solid $color-light-grey;
+			border-bottom: 1px solid $color-light-grey;
+			padding: 0 1rem;
+			margin-left: -20px;
+			margin-top: 0;
+
+			&-tab {
+				list-style: none;
+				text-indent: 0;
+				margin-bottom: 0;
+
+				a {
+					display: block;
+					padding: 1rem 2rem;
+					text-decoration: none;
+					font-weight: 500;
+					color: #000001;
+					text-align: center;
+					white-space: nowrap;
+				}
+
+				&.is-active a {
+					color: $color-wp-blue;
+					border-bottom: 2px solid $color-wp-blue;
+				}
+			}
+
+
+		}
+
+
+	}
+
+	&-group {
+
+		hr {
+			border-top: 1px solid $color-light-grey;
+			margin: 1.5rem 0;
+		}
+
+		&:last-child {
+
+			hr {
+				display: none;
+			}
+		}
+
+		&-heading {
+
+			h3 {
+				font-size: 0.9rem;
+				margin-bottom: 1.4rem;
+			}
+		}
+	}
+
+	&-input {
+
+		@include input;
+
+		.regular-text,
+		.regular-number {
+			display: block;
+			border: 1px solid #d0d0d0;
+			border-radius: 3px;
+			padding: 0.1rem 0.5rem;
+		}
+
+		.regular-text-small,
+		.regular-number-small {
+			width: 40%;
+		}
+
+
+		.regular-select {
+			margin-top: 0.6rem;
+			display: block;
+			appearance: none;
+			width: 100%;
+			border: 1px solid #d0d0d0;
+			border-radius: 3px;
+			padding: 0.1rem 0.5rem;
+		}
+
+		&-on-off {
+			display: flex;
+			align-items: center;
+
+			&-control {
+				position: relative;
+				display: inline-block;
+				width: 43px;
+				height: 24px;
+				margin-right: 0.4rem;
+
+				input {
+					opacity: 0;
+					width: 0;
+					height: 0;
+				}
+
+				&-slider {
+
+					position: absolute;
+					cursor: pointer;
+					top: 0;
+					left: 0;
+					right: 0;
+					bottom: 0;
+					background-color: $color-disabled-grey;
+					-webkit-transition: 0.4s;
+					transition: 0.3s;
+					border-radius: 34px;
+
+					input:checked + & {
+						background-color: $color-success;
+					}
+
+					&::before {
+						position: absolute;
+						content: "";
+						height: 18px;
+						width: 18px;
+						left: 3px;
+						bottom: 3px;
+						background-color: $color-white;
+						-webkit-transition: 0.2s;
+						transition: 0.2s;
+						border-radius: 50%;
+
+						input:checked + & {
+							-webkit-transform: translateX(19px);
+							-ms-transform: translateX(19px);
+							transform: translateX(19px);
+						}
+					}
+				}
+
+
+			}
+		}
+
+
+		&-radio,
+		&-checkbox {
+
+			&-label {
+				display: block;
+				margin-bottom: 0.4rem;
+
+				&.list-inline {
+					display: inline-block;
+					margin-right: 0.4rem;
+				}
+			}
+		}
+	}
+
+
+	&-panel {
+		background-color: #fff;
+		border: 1px solid $color-light-grey;
+		padding: 2.5rem 1.75rem 0.4rem;
+		width: 60%;
+		margin-top: 1rem;
+
+		/* Small devices */
+		@media only screen and (max-width: 992px) {
+			width: 100%;
+		}
+
+		/* Medium devices until large */
+		@media only screen and (min-width: 993px) and (max-width: 1200px) {
+			width: 80%;
+		}
+
+		&-inner {
+			padding: 1.3rem;
+			margin: 1em 0;
+			background-color: rgba(220, 220, 220, 0.2);
+			border: 1px solid $color-light-grey;
+
+			h2 {
+				color: $color-wp-blue;
+			}
+		}
+
+		.cld {
+
+			&-input {
+
+				&-label {
+					margin-bottom: 0.6rem;
+				}
+			}
+		}
+
+		&.has-heading {
+			margin-top: 0;
+		}
+
+		&-heading {
+			display: flex;
+			background-color: #fff;
+			border: 1px solid $color-light-grey;
+			border-bottom: 0;
+			padding: 0.4rem 1.75rem 0.2rem;
+			width: 60%;
+			margin-top: 1rem;
+
+			img {
+				margin-right: 0.6rem;
+			}
+
+			/* Small devices */
+			@media only screen and (max-width: 992px) {
+				width: 100%;
+			}
+
+			/* Medium devices until large */
+			@media only screen and (min-width: 993px) and (max-width: 1200px) {
+				width: 80%;
+			}
+		}
+
+	}
+
+	&-submit {
+
+		&.cld-ui-wrap {
+			background-color: #fff;
+			border: 1px solid $color-light-grey;
+			border-top: 0;
+			padding: 1.2rem 1.75rem;
+			width: 60%;
+
+			/* Small devices */
+			@media only screen and (max-width: 992px) {
+				width: 100%;
+			}
+
+			/* Medium devices until large */
+			@media only screen and (min-width: 993px) and (max-width: 1200px) {
+				width: 80%;
+			}
+		}
+	}
+
+}

@@ -23,7 +23,7 @@ class Download_Sync {
 	 *
 	 * @var     \Cloudinary\Plugin Instance of the global plugin.
 	 */
-	private $plugin;
+	protected $plugin;
 
 	/**
 	 * Holds the Media component.

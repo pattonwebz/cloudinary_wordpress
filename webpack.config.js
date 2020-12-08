@@ -174,10 +174,19 @@ const cldDeactivate = {
 	},
 };
 
+const cldVideoInit = {
+	...defaultConfig,
+	...sharedConfig,
+	entry: {
+		'video-init': './js/src/video-init.js',
+	},
+};
+
 module.exports = [
 	cldBlockEditor,
 	cldCore,
 	cldGalleryBlock,
 	cldGalleryInit,
 	cldDeactivate,
+	cldVideoInit,
 ];
