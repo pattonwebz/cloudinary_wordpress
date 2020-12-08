@@ -165,8 +165,8 @@ final class Plugin {
 	private function get_settings_page_structure() {
 		$structure = array(
 			'version'     => $this->version,
-			'page_title'  => __( 'Cloudinary' ),
-			'menu_title'  => __( 'Cloudinary' ),
+			'page_title'  => __( 'Cloudinary', 'cloudinary' ),
+			'menu_title'  => __( 'Cloudinary', 'cloudinary' ),
 			'capability'  => 'manage_options',
 			'icon'        => 'dashicons-cloudinary',
 			'option_name' => $this->slug,
@@ -178,7 +178,7 @@ final class Plugin {
 			),
 			'pages'       => array(
 				$this->slug => array(
-					'page_title' => __( 'Dashboard' ),
+					'page_title' => __( 'Dashboard', 'cloudinary' ),
 					'menu_title' => __( 'Cloudinary', 'cloudinary' ),
 					array(
 						'type' => 'panel',

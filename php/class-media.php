@@ -1930,7 +1930,7 @@ class Media extends Settings_Component implements Setup {
 			'menu_title' => __( 'Media Settings', 'cloudinary' ),
 			'tabs'       => array(
 				'media_desplay' => array(
-					'page_title' => __( 'Media Display' ),
+					'page_title' => __( 'Media Display', 'cloudinary' ),
 					array(
 						'type'  => 'panel',
 						'title' => __( 'Image - Global Settings', 'cloudinary' ),

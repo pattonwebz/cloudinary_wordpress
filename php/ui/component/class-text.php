@@ -59,7 +59,6 @@ class Text extends Component {
 		$struct['attributes']['class'][] = 'cld-input-label';
 		$struct['attributes']['for']     = $this->setting->get_slug();
 
-
 		return $struct;
 	}
 
