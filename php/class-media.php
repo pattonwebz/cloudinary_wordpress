@@ -1913,7 +1913,7 @@ class Media extends Settings_Component implements Setup {
 
 			$this->base_url          = $this->plugin->components['connect']->api->cloudinary_url();
 			$this->credentials       = $this->plugin->components['connect']->get_credentials();
-			$this->cloudinary_folder = $this->plugin->config['settings']['sync_media']['cloudinary_folder'] ? $this->plugin->config['settings']['sync_media']['cloudinary_folder'] : '';
+			$this->cloudinary_folder = ! empty( $this->plugin->config['settings']['sync_media']['cloudinary_folder'] ) ? $this->plugin->config['settings']['sync_media']['cloudinary_folder'] : '';
 			$this->sync              = $this->plugin->components['sync'];
 
 			// Internal components.
