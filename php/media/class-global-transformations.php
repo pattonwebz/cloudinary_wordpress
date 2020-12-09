@@ -64,8 +64,8 @@ class Global_Transformations {
 	public function __construct( \Cloudinary\Media $media ) {
 		$this->media            = $media;
 		$settings               = $this->media->plugin->components['settings']->get_ui();
-		$this->globals['image'] = $this->media->plugin->config['settings']['global_transformations'];
-		$this->globals['video'] = $this->media->plugin->config['settings']['global_video_transformations'];
+		$this->globals['image'] = ! empty( $this->media->plugin->config['settings']['global_transformations'] ) ? $this->media->plugin->config['settings']['global_transformations'] : '';
+		$this->globals['video'] = ! empty( $this->media->plugin->config['settings']['global_video_transformations'] ) ? $this->media->plugin->config['settings']['global_video_transformations'] : '';
 		$image_fields           = array_filter(
 			$settings['pages']['global_transformation']['tabs']['global_transformations']['fields'],
 			function ( $field ) {
@@ -402,13 +402,13 @@ class Global_Transformations {
 			}
 		}
 		$out[] = '</ul>';
-		
+
 		// Get apply Type.
 		if ( ! empty( $terms ) ) {
 			$type  = get_post_meta( $post->ID, self::META_APPLY_KEY . '_terms', true );
 			$out[] = '<label class="cld-tax-order-list-type"><input ' . checked( 'overwrite', $type, false ) . ' type="checkbox" value="overwrite" name="cld_apply_type" />' . __( 'Overwrite taxonomy', 'cloudinary' ) . '</label>';
 		}
-		
+
 		$out[] = '</div>';
 		return implode( $out );
 	}

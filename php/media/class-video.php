@@ -77,7 +77,7 @@ class Video {
 	 */
 	public function __construct( Media $media ) {
 		$this->media  = $media;
-		$this->config = $this->media->plugin->config['settings']['global_video_transformations'];
+		$this->config = ! empty( $this->media->plugin->config['settings']['global_video_transformations'] ) ? $this->media->plugin->config['settings']['global_video_transformations'] : '';
 
 		$this->setup_hooks();
 	}
