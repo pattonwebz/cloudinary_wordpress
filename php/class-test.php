@@ -139,6 +139,7 @@ class Test extends Settings_Component {
 						'icon'  => $this->plugin->dir_url . 'css/video.svg',
 						array(
 							'content' => $this->get_content(),
+							'clear' => '',
 						),
 					),
 				),

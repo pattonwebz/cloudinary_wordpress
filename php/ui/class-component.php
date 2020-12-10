@@ -78,6 +78,9 @@ abstract class Component {
 
 		// Setup the components parts for render.
 		$this->setup_component_parts();
+
+		// Setup blueprint.
+		$this->blueprint = $this->setting->get_param( 'blueprint', $this->blueprint );
 	}
 
 	/**
@@ -146,7 +149,7 @@ abstract class Component {
 				),
 			),
 			'body'        => array(
-				'element'    => 'div',
+				'element'    => 'p',
 				'attributes' => array(
 					'class' => array(),
 				),
