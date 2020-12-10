@@ -182,8 +182,8 @@ final class Plugin {
 			),
 			'pages'       => array(
 				$this->slug => array(
-					'page_title' => __( 'Dashboard', 'cloudinary' ),
-					'menu_title' => __( 'Cloudinary', 'cloudinary' ),
+					'page_title' => __( 'Cloudinary Dashboard', 'cloudinary' ),
+					'menu_title' => __( 'Dashboard', 'cloudinary' ),
 					array(
 						'type' => 'panel',
 						array(
