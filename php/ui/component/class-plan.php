@@ -63,6 +63,22 @@ class Plan extends Component {
 	}
 
 	/**
+	 * Filter the plan heading structure.
+	 *
+	 * @param array $struct The array structure.
+	 *
+	 * @return array
+	 */
+	protected function plan_heading( array $struct ) {
+		$struct['element'] = 'h3';
+		$struct['attributes']['class'] = array(
+			'cld-plan',
+		);
+
+		return $struct;
+	}
+
+	/**
 	 * Filter the plan summary parts structure.
 	 *
 	 * @param array $struct The array structure.
@@ -74,18 +90,13 @@ class Plan extends Component {
 		$summary            = $this->get_part( 'h4' );
 		$summary['content'] = $this->setting->get_param( 'plan_heading', __( '25 Monthly Credits', 'cloudinary' ) );
 
-		$another            = $this->get_part( 'h4' );
-		$another['content'] = 'nice';
-
 		$detail            = $this->get_part( 'span' );
 		$detail['content'] = __( '1 Credit =', 'cloudinary' );
 
-
-		$struct['children']['title']   = $summary;
-		$struct['children']['more']   = $another;
-		$struct['children']['span'] = $detail;
-		$struct['children']['ul']   = $this->content();
-		$struct['element']          = 'div';
+		$struct['children']['title'] = $summary;
+		$struct['children']['span']  = $detail;
+		$struct['children']['ul']    = $this->content();
+		$struct['element']           = 'div';
 
 		return $struct;
 	}
