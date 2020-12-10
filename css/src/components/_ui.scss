@@ -182,7 +182,6 @@
 		}
 	}
 
-
 	&-panel {
 		background-color: #fff;
 		border: 1px solid $color-light-grey;
@@ -249,6 +248,16 @@
 			}
 		}
 
+		ul {
+			padding: 0 3em;
+			list-style: initial;
+		}
+
+		.cld-plan {
+			color: $color-wp-blue;
+			font-weight: 700;
+			font-size: 1.5em;
+		}
 	}
 
 	&-submit {
