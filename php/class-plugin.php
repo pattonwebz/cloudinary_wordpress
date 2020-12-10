@@ -175,7 +175,7 @@ final class Plugin {
 			'icon'        => 'dashicons-cloudinary',
 			'option_name' => $this->slug,
 			'page_header' => array(
-				'content' => '<img src="' . $this->dir_url . '/css/logo.svg" alt="' . esc_attr__( "Cloudinary's logo", 'cloudinary' ) . '" width="150px"><p style="margin-left: 1rem; font-size: 0.75rem;"><a href="#">Need help?</a></p>',
+				'content' => '<img src="' . esc_url( $this->dir_url ) . 'css/logo.svg" alt="' . esc_attr__( "Cloudinary's logo", 'cloudinary' ) . '" width="150px"><p style="margin-left: 1rem; font-size: 0.75rem;"><a href="#">' . esc_html__( 'Need help?', 'cloudinary' ) . '</a></p>',
 			),
 			'page_footer' => array(
 				'content' => __( 'Thanks for using Cloudinary, please take a minute to rate our plugin.', 'cloudinary' ),
