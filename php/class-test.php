@@ -97,6 +97,9 @@ class Test extends Settings_Component {
 						array(
 							'type'  => 'group',
 							'title' => __( 'Text', 'cloudinary' ),
+							'condition' => array(
+								'toggle_on' => false,
+							),
 							array(
 								'type'        => 'text',
 								'title'       => __( 'Single text field', 'cloudinary' ),

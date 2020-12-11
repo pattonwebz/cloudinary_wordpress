@@ -65,6 +65,13 @@ abstract class Component {
 	public $capture = false;
 
 	/**
+	 * Holds the conditional logic sequence.
+	 *
+	 * @var array
+	 */
+	protected $condition = array();
+
+	/**
 	 * Render component for a setting.
 	 * Component constructor.
 	 *
@@ -81,6 +88,21 @@ abstract class Component {
 
 		// Setup blueprint.
 		$this->blueprint = $this->setting->get_param( 'blueprint', $this->blueprint );
+
+		// Setup conditional logic.
+		if ( $this->setting->has_param( 'condition' ) ) {
+			$condition = $this->setting->get_param( 'condition' );
+			foreach ( $condition as $slug => $value ) {
+				$bound            = $this->setting->find_setting( $slug );
+				$bound_attributes = $bound->get_param( 'attributes', array() );
+				$conditional_bind = wp_parse_args( array(
+					'data-bound' => $this->setting->get_slug(),
+				), $bound_attributes );
+				$bound->set_param( 'attributes', $conditional_bind );
+			}
+
+			$this->blueprint = 'conditional|' . $this->blueprint . '|/conditional';
+		}
 	}
 
 	/**
@@ -195,6 +217,13 @@ abstract class Component {
 				'element'    => 'div',
 				'attributes' => array(
 					'class' => array(),
+				),
+			),
+			'conditional' => array(
+				'element'    => 'div',
+				'attributes' => array(
+					'data-condition' => wp_json_encode( $this->setting->get_param( 'condition', array() ) ),
+					'data-bind'      => $this->setting->get_slug(),
 				),
 			),
 		);
