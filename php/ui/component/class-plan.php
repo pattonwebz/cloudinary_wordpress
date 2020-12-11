@@ -143,11 +143,10 @@ class Plan extends Component {
 	 */
 	protected function get_plan_description() {
 		$description = __( 'Pay as you go', 'cloudinary' );
-		$limit       = $this->connection->get_usage_stat( 'limit' );
-
+		$limit       = $this->connection->get_usage_stat( 'credits', 'limit' );
 		if ( $limit ) {
 			// translators: The number of monthly credits.
-			$description = _n( '%d Monthly Credit', '%d Monthly Credits', $limit, 'cloudinary' );
+			$description = sprintf( _n( '%d Monthly Credit', '%d Monthly Credits', $limit, 'cloudinary' ), $limit );
 		}
 
 		return $description;
