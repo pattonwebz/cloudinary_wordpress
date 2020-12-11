@@ -185,7 +185,7 @@
 	&-panel {
 		background-color: #fff;
 		border: 1px solid $color-light-grey;
-		padding: 2.5rem 1.75rem 0.4rem;
+		padding: 2.5rem 1.75rem 2rem;
 		width: 60%;
 		margin-top: 1rem;
 
@@ -257,6 +257,46 @@
 			color: $color-wp-blue;
 			font-weight: 700;
 			font-size: 1.5em;
+		}
+
+		.stat-boxes {
+			border: 1px solid $color-light-grey;
+			display: flex;
+			flex-wrap: nowrap;
+
+			.box {
+				border-right: 1px solid $color-light-grey;
+				flex-grow: 1;
+				padding: 2rem;
+				text-align: center;
+
+				&:last-of-type {
+					border-right: none;
+				}
+			}
+
+			.icon {
+				height: 50px;
+				margin-right: 0.5em;
+				width: 50px;
+			}
+
+			h3 {
+				margin-bottom: 1.5rem;
+				margin-top: 2.4rem;
+			}
+
+			.limit {
+				font-size: 2rem;
+				font-weight: 700;
+				margin-right: 0.5em;
+			}
+
+			.usage {
+				color: $color-wp-blue;
+				font-size: 1.5rem;
+				font-weight: 400;
+			}
 		}
 	}
 

@@ -196,6 +196,13 @@ final class Plugin {
 							'content' => __( 'Upgrade Plan', 'cloudinary' ),
 						),
 					),
+					array(
+						'type' => 'panel',
+						array(
+							'type'  => 'plan_status',
+							'title' => __( 'Your Plan Status', 'cloudinary' ),
+						),
+					),
 				),
 			),
 		);
