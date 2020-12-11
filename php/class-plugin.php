@@ -192,7 +192,7 @@ final class Plugin {
 						),
 						array(
 							'type'    => 'link',
-							'url'     => '#',
+							'url'     => 'https://cloudinary.com/console/lui/upgrade_options',
 							'content' => __( 'Upgrade Plan', 'cloudinary' ),
 						),
 					),
