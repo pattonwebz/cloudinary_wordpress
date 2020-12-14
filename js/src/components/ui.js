@@ -28,8 +28,6 @@ const UI = {
 			if ( true === check ) {
 				action = 'open';
 			}
-			console.log( check );
-			console.log( action );
 			UI.toggle( element, input, action );
 		} );
 	},
