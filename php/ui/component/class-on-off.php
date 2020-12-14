@@ -54,7 +54,7 @@ class On_Off extends Text {
 		$struct['attributes']['type']  = 'checkbox';
 		$struct['attributes']['name']  = $this->get_name();
 		$struct['attributes']['id']    = $this->setting->get_slug();
-		$struct['attributes']['value'] = 'true';
+		$struct['attributes']['value'] = true;
 		if ( $this->setting->get_value() ) {
 			$struct['attributes']['checked'] = 'checked';
 		}
