@@ -29,5 +29,5 @@ export const cloudinary = {
 	GlobalTransformations,
 	TermsOrder,
 	MediaLibrary,
-	Notices
+	Notices,
 };
