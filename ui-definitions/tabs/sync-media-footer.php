@@ -24,7 +24,7 @@ if ( ! $this->plugin->components['sync']->managers['queue']->is_running() ) {
 	<?php if ( $this->plugin->config['connect'] ) : ?>
 
 		<p>
-			<?php esc_html_e( "Bulk Sync is a one-time operation that ensures that the Cloudinary Media Library is up-to-date with the WordPress Media Library by manually pushing all media that was stored in your WordPress Media Library prior to activation of the Cloudinary plugin. Please note that there is a limit of 1000 images at a time so your server doesn't get overloaded.", 'cloudinary' ); ?>
+			<?php esc_html_e( "Bulk Sync is a one-time operation that ensures that the Cloudinary Media Library is up-to-date with the WordPress Media Library by manually pushing all media that was stored in your WordPress Media Library prior to activation of the Cloudinary plugin. Please note that there is a default limit of 1000 images at a time so your server doesn't get overloaded.", 'cloudinary' ); ?>
 		</p>
 
 		<button type="button" class="button button-hero stop-sync" id="stop-sync"><span class="dashicons dashicons-dismiss"></span> <?php esc_html_e( 'Stop Sync', 'cloudinary' ); ?></button>

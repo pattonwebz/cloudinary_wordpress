@@ -252,7 +252,7 @@ class Sync_Queue {
 			'post_type'           => 'attachment',
 			'post_mime_type'      => array( 'image', 'video' ),
 			'post_status'         => 'inherit',
-			'posts_per_page'      => 1000, // phpcs:ignore
+			'posts_per_page'      => apply_filters( 'cloudinary_sync_limit', 1000 ), // phpcs:ignore
 			'fields'              => 'ids',
 			'meta_query'          => array( // phpcs:ignore
 				'relation' => 'AND',
